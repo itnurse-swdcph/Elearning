@@ -96,6 +96,14 @@ async function initApp() {
     document.getElementById('userNameDisplay').innerText = `สวัสดี, ${user.name}`;
     document.getElementById('totalHoursDisplay').innerText = `${user.hours || 0} ชม.`;
 
+    // --- เพิ่มเงื่อนไขเช็คสิทธิ์ Admin ตรงนี้ครับ ---
+    if (user.role === 'admin') {
+        document.getElementById('adminBtn').classList.remove('hidden');
+    } else {
+        document.getElementById('adminBtn').classList.add('hidden');
+    }
+    // ----------------------------------------
+
     // Load Courses
     loadCourses();
 }
