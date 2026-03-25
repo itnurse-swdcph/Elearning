@@ -140,3 +140,95 @@ function enrollCourse(courseId) {
 
 // ตรวจสอบสถานะการล็อกอินเมื่อเปิดหน้าเว็บ
 window.onload = checkSession;
+// ================= Admin Logic =================
+
+function goToAdminPanel() {
+    document.getElementById('appSection').classList.add('hidden');
+    document.getElementById('adminSection').classList.remove('hidden');
+    loadAdminReport(); // โหลดข้อมูลตารางสถิติทันทีที่เข้าหน้าแอดมิน
+}
+
+function exitAdmin() {
+    document.getElementById('adminSection').classList.add('hidden');
+    document.getElementById('appSection').classList.remove('hidden');
+}
+
+function switchAdminTab(tabId) {
+    // ซ่อนทุก Tab
+    const tabs = document.querySelectorAll('.admin-tab');
+    tabs.forEach(tab => tab.classList.add('hidden'));
+    
+    // ลบ Active menu
+    const menus = document.querySelectorAll('.sidebar-menu li');
+    menus.forEach(menu => menu.classList.remove('active'));
+    
+    // โชว์ Tab ที่เลือก
+    document.getElementById(tabId).classList.remove('hidden');
+    event.currentTarget.classList.add('active');
+    
+    if(tabId === 'reportTab') loadAdminReport();
+}
+
+async function loadAdminReport() {
+    showLoader();
+    const res = await callAPI('getAdminReport', {});
+    hideLoader();
+    
+    const tbody = document.getElementById('reportTableBody');
+    tbody.innerHTML = '';
+    
+    if (res.status === 'success') {
+        res.data.forEach(row => {
+            const statusBadge = row.status === 'ผ่านเกณฑ์' ? 
+                '<span class="badge-pass">ผ่านเกณฑ์</span>' : 
+                '<span class="badge-fail">ยังไม่ผ่าน</span>';
+                
+            tbody.innerHTML += `
+                <tr>
+                    <td>${row.name}</td>
+                    <td>${row.department}</td>
+                    <td>${row.internal}</td>
+                    <td>${row.external}</td>
+                    <td>${row.totalHours}</td>
+                    <td><strong>${row.totalDays}</strong></td>
+                    <td>${statusBadge}</td>
+                </tr>
+            `;
+        });
+    } else {
+        showAlert('แจ้งเตือน', 'ไม่สามารถโหลดข้อมูลสถิติได้');
+    }
+}
+
+// ฟังก์ชันเพิ่มหลักสูตร
+document.getElementById('addCourseForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    showLoader();
+    const payload = {
+        title: document.getElementById('cTitle').value,
+        organizer: document.getElementById('cOrganizer').value,
+        hours: document.getElementById('cHours').value,
+        min_time: document.getElementById('cMinTime').value,
+        cover_image: document.getElementById('cCover').value,
+        video_url: document.getElementById('cVideo').value,
+        passing_score: 80 // ตั้งค่าเริ่มต้นที่ 80%
+    };
+    
+    const res = await callAPI('addCourse', payload);
+    hideLoader();
+    
+    if(res.status === 'success') {
+        showAlert('สำเร็จ', 'บันทึกหลักสูตรเรียบร้อยแล้ว');
+        document.getElementById('addCourseForm').reset();
+    }
+});
+
+// ฟังก์ชัน Export Excel อย่างง่ายด้วย JS
+function exportToExcel() {
+    let table = document.querySelector(".admin-table");
+    let html = table.outerHTML.replace(/ /g, '%20');
+    let a = document.createElement('a');
+    a.href = 'data:application/vnd.ms-excel;charset=utf-8,\uFEFF' + html;
+    a.download = 'training_report_swd.xls';
+    a.click();
+}
