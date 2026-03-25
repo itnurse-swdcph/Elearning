@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Learning & Portfolio | Nurse Swd</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <div id="loader" class="hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <div id="customAlert" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="alertTitle">แจ้งเตือน</h3>
+            <p id="alertMessage">ข้อความ</p>
+            <button onclick="closeAlert()" class="btn btn-primary">ตกลง</button>
+        </div>
+    </div>
+
+    <section id="authSection" class="auth-container">
+        <div class="auth-box">
+            <div class="brand-logo">
+                <i class="fas fa-user-nurse"></i>
+            </div>
+            <h2>ระบบพัฒนาบุคลากรทางการพยาบาล  ภารกิจด้านการพยาบาล</h2>
+            <p>โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</p>
+            
+            <form id="loginForm">
+                <div class="input-group">
+                    <input type="email" id="loginEmail" placeholder="อีเมล" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="loginPassword" placeholder="รหัสผ่าน" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">เข้าสู่ระบบ</button>
+                <p class="switch-form">ยังไม่มีบัญชี? <a href="#" onclick="toggleAuth()">ลงทะเบียนที่นี่</a></p>
+            </form>
+
+            <form id="registerForm" class="hidden">
+                <div class="input-group"><input type="text" id="regName" placeholder="ชื่อ-นามสกุล" required></div>
+                <div class="input-group"><input type="text" id="regPosition" placeholder="ตำแหน่ง" required></div>
+                <div class="input-group">
+                    <select id="regDept" required>
+                        <option value="">-- เลือกหน่วยงาน/หอผู้ป่วย --</option>
+                        <option value="OPD">ผู้ป่วยนอก (OPD)</option>
+                        <option value="IPD">ผู้ป่วยใน (IPD)</option>
+                        <option value="ER">อุบัติเหตุและฉุกเฉิน (ER)</option>
+                    </select>
+                </div>
+                <div class="input-group"><input type="email" id="regEmail" placeholder="อีเมล" required></div>
+                <div class="input-group"><input type="password" id="regPassword" placeholder="กำหนดรหัสผ่าน" required></div>
+                <button type="submit" class="btn btn-primary w-100">ลงทะเบียน</button>
+                <p class="switch-form">มีบัญชีแล้ว? <a href="#" onclick="toggleAuth()">เข้าสู่ระบบ</a></p>
+            </form>
+        </div>
+    </section>
+
+    <section id="appSection" class="hidden">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <i class="fas fa-book-medical"></i> Nurse Learning SWD
+            </div>
+            <div class="nav-user">
+                <span id="userNameDisplay">สวัสดี, User</span>
+                <button onclick="logout()" class="btn btn-outline">ออกจากระบบ</button>
+            </div>
+        </nav>
+
+        <div class="dashboard-container">
+            <div class="stats-row">
+                <div class="stat-card">
+                    <i class="fas fa-clock"></i>
+                    <div>
+                        <h4>ชั่วโมงสะสมปีนี้</h4>
+                        <p id="totalHoursDisplay">0 ชม.</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <div>
+                        <h4>หลักสูตรที่กำลังเรียน</h4>
+                        <p>0 หลักสูตร</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="section-title">หลักสูตรแนะนำ</h3>
+            <div class="course-grid" id="courseGrid">
+                </div>
+        </div>
+    </section>
+
+    <script src="app.js"></script>
+</body>
+</html>
