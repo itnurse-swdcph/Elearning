@@ -96,6 +96,74 @@
                 </div>
         </div>
     </section>
+    <section id="adminSection" class="hidden">
+        <div class="admin-layout">
+            <aside class="admin-sidebar">
+                <div class="sidebar-header">
+                    <img src="https://img1.pic.in.th/images/nurselogo128x128.png" alt="Logo" class="sidebar-logo">
+                    <h3>Admin Panel</h3>
+                </div>
+                <ul class="sidebar-menu">
+                    <li class="active" onclick="switchAdminTab('reportTab')"><i class="fas fa-chart-bar"></i> รายงานสถิติ (10วัน/ปี)</li>
+                    <li onclick="switchAdminTab('courseMgtTab')"><i class="fas fa-video"></i> จัดการหลักสูตร</li>
+                    <li onclick="switchAdminTab('userMgtTab')"><i class="fas fa-users"></i> จัดการผู้ใช้งาน</li>
+                    <li onclick="switchAdminTab('examMgtTab')"><i class="fas fa-tasks"></i> คลังข้อสอบ</li>
+                    <li class="logout-menu" onclick="logout()"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</li>
+                </ul>
+            </aside>
+
+            <main class="admin-content">
+                <header class="admin-topbar">
+                    <h2><i class="fas fa-cogs"></i> ระบบจัดการหลังบ้าน</h2>
+                    <button class="btn btn-outline" onclick="exitAdmin()">กลับหน้าผู้ใช้</button>
+                </header>
+
+                <div class="admin-body">
+                    <div id="reportTab" class="admin-tab">
+                        <div class="tab-header">
+                            <h3>สถิติการอบรม (เกณฑ์ 10 วัน/คน/ปี)</h3>
+                            <button class="btn btn-primary" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>ชื่อ-นามสกุล</th>
+                                        <th>แผนก</th>
+                                        <th>อบรมภายใน (ชม.)</th>
+                                        <th>อบรมภายนอก (ชม.)</th>
+                                        <th>รวมชั่วโมง</th>
+                                        <th>รวมวัน (1วัน=7ชม.)</th>
+                                        <th>สถานะ (10วัน)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportTableBody">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="courseMgtTab" class="admin-tab hidden">
+                        <h3>เพิ่มหลักสูตรใหม่</h3>
+                        <form id="addCourseForm" class="admin-form">
+                            <div class="form-grid">
+                                <div class="input-group"><input type="text" id="cTitle" placeholder="ชื่อหลักสูตร" required></div>
+                                <div class="input-group"><input type="text" id="cOrganizer" placeholder="หน่วยงานที่จัด" required></div>
+                                <div class="input-group"><input type="number" id="cHours" placeholder="จำนวนชั่วโมงที่ได้" required></div>
+                                <div class="input-group"><input type="number" id="cMinTime" placeholder="เวลาที่ต้องดูขั้นต่ำ (นาที)" required></div>
+                                <div class="input-group"><input type="text" id="cCover" placeholder="URL รูปหน้าปก" required></div>
+                                <div class="input-group"><input type="text" id="cVideo" placeholder="URL วิดีโอ (YouTube/Drive)" required></div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">บันทึกหลักสูตร</button>
+                        </form>
+                    </div>
+
+                    <div id="userMgtTab" class="admin-tab hidden"><h3>ระบบจัดการผู้ใช้งาน (รอการพัฒนาเฟสถัดไป)</h3></div>
+                    <div id="examMgtTab" class="admin-tab hidden"><h3>ระบบคลังข้อสอบและใบประกาศ (รอการพัฒนาเฟสถัดไป)</h3></div>
+                </div>
+            </main>
+        </div>
+    </section>
 
     <script src="app.js"></script>
 </body>
