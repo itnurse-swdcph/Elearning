@@ -291,14 +291,12 @@
         </div>
     </section>
     <section id="classroomSection" class="hidden">
-        <nav class="navbar" style="background-color: var(--primary-color);">
-            <div class="nav-brand" style="color: white; cursor: pointer;" onclick="exitClassroom()">
-                <i class="fas fa-arrow-left"></i> <span style="margin-left: 10px;">กลับหน้าหลัก</span>
+        <nav class="user-topbar" style="background-color: var(--primary-color); color: white; border-radius: 0;">
+            <div style="display: flex; align-items: center; gap: 15px; cursor: pointer;" onclick="exitClassroom()">
+                <i class="fas fa-arrow-left"></i> <span style="font-weight: 500;">กลับหน้าหลัก</span>
             </div>
-            <div class="nav-user" style="color: white;">
-                <span id="classroomCourseTitle">กำลังโหลด...</span>
-            </div>
-        </nav>
+            <h2 id="classroomCourseTitle" style="color: white; font-size: 1.2rem; margin: 0;">ชื่อหลักสูตร...</h2>
+            <div style="width: 100px;"></div> </nav>
 
         <div class="classroom-layout">
             <div class="video-section">
@@ -307,18 +305,18 @@
                 </div>
                 <div class="video-info">
                     <h3 id="currentUnitTitle">EP.1 บทนำ</h3>
-                    <p class="text-alert"><i class="fas fa-info-circle"></i> กรุณารับชมวิดีโอให้จบ ระบบล็อกการเลื่อนข้าม (Seek Lock)</p>
+                    <p class="text-alert" style="color: var(--accent-color);"><i class="fas fa-info-circle"></i> กรุณารับชมวิดีโอให้จบ ระบบล็อกการเลื่อนข้าม (Seek Lock)</p>
                 </div>
             </div>
 
             <div class="playlist-section">
                 <h3>เนื้อหาบทเรียน</h3>
-                <div class="progress-bar-container">
-                    <div id="courseProgressFill" class="progress-bar-fill" style="width: 0%;"></div>
+                <div class="progress-bar-container" style="height: 8px; width: 100%; background: #e2e8f0; border-radius: 4px; margin: 15px 0 5px; overflow: hidden;">
+                    <div id="courseProgressFill" style="height: 100%; background: var(--gold-gradient); width: 0%; transition: width 0.5s;"></div>
                 </div>
                 <p style="font-size: 0.85rem; text-align: right; margin-bottom: 15px;" id="progressText">สำเร็จ 0%</p>
                 
-                <ul id="unitPlaylist" class="unit-list">
+                <ul id="unitPlaylist" class="unit-list" style="list-style: none; padding: 0;">
                     </ul>
                 
                 <button id="btnTakeExam" class="btn btn-primary w-100 hidden" style="margin-top: 20px;" onclick="startExam()">
@@ -329,7 +327,6 @@
     </section>
 
     <script src="https://www.youtube.com/iframe_api"></script>
-
     <script src="app.js"></script>
 </body>
 </html>
