@@ -145,17 +145,41 @@
                     </div>
 
                     <div id="courseMgtTab" class="admin-tab hidden">
-                        <h3>เพิ่มหลักสูตรใหม่</h3>
+                        <div class="tab-header">
+                            <h3><i class="fas fa-plus-circle"></i> เพิ่มหลักสูตรใหม่</h3>
+                        </div>
                         <form id="addCourseForm" class="admin-form">
                             <div class="form-grid">
                                 <div class="input-group"><input type="text" id="cTitle" placeholder="ชื่อหลักสูตร" required></div>
-                                <div class="input-group"><input type="text" id="cOrganizer" placeholder="หน่วยงานที่จัด" required></div>
-                                <div class="input-group"><input type="number" id="cHours" placeholder="จำนวนชั่วโมงที่ได้" required></div>
-                                <div class="input-group"><input type="number" id="cMinTime" placeholder="เวลาที่ต้องดูขั้นต่ำ (นาที)" required></div>
-                                <div class="input-group"><input type="text" id="cCover" placeholder="URL รูปหน้าปก" required></div>
-                                <div class="input-group"><input type="text" id="cVideo" placeholder="URL วิดีโอ (YouTube/Drive)" required></div>
+                                <div class="input-group"><input type="text" id="cOrganizer" placeholder="หน่วยงานที่จัด/วิทยากร" required></div>
+                                <div class="input-group"><input type="number" id="cHours" placeholder="จำนวนชั่วโมง (ชม.)" required></div>
+                                <div class="input-group"><input type="number" id="cPassingScore" placeholder="เกณฑ์สอบผ่าน (%)" value="80" required></div>
+                                <div class="input-group" style="grid-column: 1 / -1;">
+                                    <input type="text" id="cCover" placeholder="URL รูปหน้าปกหลักสูตร" required>
+                                </div>
                             </div>
-                            <button type="submit" class="btn btn-primary">บันทึกหลักสูตร</button>
+                    
+                            <div class="units-section">
+                                <div class="units-header">
+                                    <h4><i class="fas fa-photo-video"></i> หน่วยการเรียนรู้ (วิดีโอ)</h4>
+                                    <button type="button" class="btn btn-outline btn-sm" onclick="addUnitField()">+ เพิ่มหน่วยใหม่</button>
+                                </div>
+                                
+                                <div id="unitsContainer">
+                                    <div class="unit-box">
+                                        <div class="unit-row">
+                                            <input type="text" class="u-title" placeholder="ชื่อหน่วย (เช่น EP.1 บทนำ)" required>
+                                            <input type="text" class="u-video" placeholder="URL วิดีโอ" required>
+                                            <input type="number" class="u-time" placeholder="เวลาดูขั้นต่ำ (นาที)" required>
+                                            <button type="button" class="btn-remove-unit" disabled><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                    
+                            <button type="submit" class="btn btn-primary w-100" style="margin-top: 20px; font-size: 1.1rem;">
+                                <i class="fas fa-save"></i> บันทึกหลักสูตร
+                            </button>
                         </form>
                     </div>
 
