@@ -2,15 +2,15 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbxlfD-5saP7FtUX_YxuBe3gowToA38b0qc0jW5JuWjMN9XotTlqRfc0LuaWtibYNwMp1Q/exec'; 
 
 // ================= UI Utilities =================
-function getDriveImageUrl(url) {
+ffunction getDriveImageUrl(url) {
     if (!url) return 'https://via.placeholder.com/300x180?text=Course+Cover';
     
     // ตรวจสอบว่าเป็นลิงก์ Drive หรือไม่
     const match = url.match(/drive\.google\.com\/file\/d\/([^\/]+)/);
     if (match && match[1]) {
-        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+        // ใช้ thumbnail endpoint ของ Google ซึ่งจะดึงรูปมาโชว์ได้ 100%
+        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
     }
-    // ถ้าไม่ใช่ลิงก์ Drive ก็คืนค่าเดิมกลับไป
     return url;
 }
 function showLoader() { document.getElementById('loader').classList.remove('hidden'); }
@@ -150,11 +150,10 @@ async function loadCourses() {
 
     if (res.status === 'success' && res.data.length > 0) {
         res.data.forEach(course => {
-            // Placeholder รูปภาพหากไม่ได้ตั้งค่าไว้
             const imgUrl = getDriveImageUrl(course.image);
             const html = `
                 <div class="course-card">
-                    <img src="${imgUrl}" alt="Course Cover" class="course-img">
+                    <img src="${imgUrl}" alt="Course Cover" class="course-img" onerror="this.src='https://via.placeholder.com/300x180?text=Image+Error'">
                     <div class="course-info">
                         <h4 class="course-title">${course.title}</h4>
                         <div class="course-meta">
