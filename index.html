@@ -249,6 +249,10 @@
                                 <div class="input-group" style="grid-column: 1 / -1;">
                                     <input type="text" id="cCover" placeholder="URL รูปหน้าปกหลักสูตร" required>
                                 </div>
+                                <div class="input-group" style="grid-column: 1 / -1;">
+                                    <input type="text" id="cCertTemplate" placeholder="Google Slides Template ID (สำหรับใบประกาศนียบัตร)" required>
+                                    <small style="color: var(--text-light); margin-top: 5px; display: block;">* นำ ID จากลิงก์สไลด์มาใส่ เช่น 1A2B3C...</small>
+                                </div>
                             </div>
                     
                             <div class="units-section">
@@ -337,8 +341,11 @@
             <div id="quizResult" class="hidden" style="padding: 40px 30px; text-align: center;">
                 <i id="resultIcon" class="fas fa-check-circle" style="font-size: 5rem; color: #10B981; margin-bottom: 20px;"></i>
                 <h2 id="resultTitle" style="margin-bottom: 10px;">ทำแบบทดสอบเสร็จสิ้น!</h2>
-                <p style="font-size: 1.2rem; margin-bottom: 30px;">คุณได้คะแนน <strong id="resultScore" style="font-size: 1.5rem; color: var(--primary-color);">0</strong> / <span id="resultTotal">0</span></p>
-                <button id="btnReturnFromQuiz" class="btn btn-primary" onclick="closeQuiz()">ดำเนินการต่อ</button>
+                    <p style="font-size: 1.2rem; margin-bottom: 30px;">คุณได้คะแนน <strong id="resultScore">0</strong> / <span id="resultTotal">0</span></p>                    
+                    <a id="btnDownloadCert" href="#" target="_blank" class="btn btn-success hidden" style="margin-bottom: 15px; display: inline-block;">
+                        <i class="fas fa-file-download"></i> ดาวน์โหลดใบประกาศ
+                    </a><br>                    
+                    <button id="btnReturnFromQuiz" class="btn btn-primary" onclick="closeQuiz()">ดำเนินการต่อ</button>
             </div>
         </div>
     </section>
