@@ -405,10 +405,7 @@ async function enrollCourse(courseId) {
     if(enrollRes.status === 'success') {
         completedUnits = enrollRes.data.completed_units || [];
         currentClassCourse = targetCourse;
-        currentUnits = JSON.parse(targetCourse.image); // *หมายเหตุ: ใน getCourses เดิม ข้อมูล units อยู่ใน field image ถ้าส่งมาผิด ต้องแก้ที่ Backend (เดี๋ยวอธิบายด้านล่างครับ)
-        
-        // เราจะจำลองการดึง units ชั่วคราว (ถ้า backend ไม่ได้ส่งกลับมา)
-        // เพื่อให้เห็นภาพ สมมติว่าดึง JSON ได้
+        currentUnits = JSON.parse(targetCourse.units || '[]'); // ดึงจาก .units ที่เราเพิ่งเพิ่ม
         enterClassroom();
     }
 }
