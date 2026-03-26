@@ -286,9 +286,60 @@
                     </div>
 
                     <div id="userMgtTab" class="admin-tab hidden"><h3>ระบบจัดการผู้ใช้งาน (รอการพัฒนาเฟสถัดไป)</h3></div>
-                    <div id="examMgtTab" class="admin-tab hidden"><h3>ระบบคลังข้อสอบและใบประกาศ (รอการพัฒนาเฟสถัดไป)</h3></div>
+                    <div id="examMgtTab" class="admin-tab hidden">
+                        <div class="tab-header">
+                            <h3><i class="fas fa-tasks"></i> จัดการคลังข้อสอบ</h3>
+                        </div>
+                        <div class="admin-form" style="margin-bottom: 20px;">
+                            <label><strong>เลือกหลักสูตรที่ต้องการจัดการข้อสอบ:</strong></label>
+                            <select id="examCourseSelect" class="w-100" style="padding: 10px; margin-top: 10px;" onchange="loadCourseExamsForAdmin()">
+                                <option value="">-- กรุณาเลือกหลักสูตร --</option>
+                            </select>
+                        </div>
+
+                        <div id="examBuilderSection" class="hidden">
+                            <div class="units-header">
+                                <h4>ชุดข้อสอบ (Pre-test / Post-test)</h4>
+                                <button class="btn btn-outline btn-sm" onclick="addQuestionBox()"><i class="fas fa-plus"></i> เพิ่มข้อสอบ</button>
+                            </div>
+                            <div id="questionsContainer">
+                                </div>
+                            <button class="btn btn-primary w-100" style="margin-top: 20px;" onclick="saveExamsToDB()"><i class="fas fa-save"></i> บันทึกชุดข้อสอบ</button>
+                        </div>
+                    </div>
                 </div>
             </main>
+        </div>
+    </section>
+    <section id="quizSection" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: #f8fafc; z-index: 1000; overflow-y: auto;">
+        <div style="max-width: 800px; margin: 40px auto; background: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden;">
+            <div style="background: var(--primary-color); color: white; padding: 20px; text-align: center;">
+                <h2 id="quizTitle">แบบทดสอบ</h2>
+                <p id="quizSubtitle" style="margin-top: 5px; opacity: 0.8;">หลักสูตร: ...</p>
+            </div>
+            
+            <div id="quizContent" style="padding: 30px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; color: var(--text-light); font-weight: 500;">
+                    <span id="quizProgressText">ข้อที่ 1 / 10</span>
+                </div>
+                
+                <h3 id="questionText" style="font-size: 1.2rem; margin-bottom: 20px; color: var(--text-main);">1. คำถาม...?</h3>
+                
+                <div id="optionsContainer" style="display: flex; flex-direction: column; gap: 10px;">
+                    </div>
+                
+                <div style="margin-top: 30px; display: flex; justify-content: flex-end;">
+                    <button id="btnNextQuestion" class="btn btn-primary" onclick="nextQuestion()">ข้อถัดไป <i class="fas fa-arrow-right"></i></button>
+                    <button id="btnSubmitQuiz" class="btn btn-success hidden" onclick="submitQuizData()"><i class="fas fa-paper-plane"></i> ส่งคำตอบ</button>
+                </div>
+            </div>
+            
+            <div id="quizResult" class="hidden" style="padding: 40px 30px; text-align: center;">
+                <i id="resultIcon" class="fas fa-check-circle" style="font-size: 5rem; color: #10B981; margin-bottom: 20px;"></i>
+                <h2 id="resultTitle" style="margin-bottom: 10px;">ทำแบบทดสอบเสร็จสิ้น!</h2>
+                <p style="font-size: 1.2rem; margin-bottom: 30px;">คุณได้คะแนน <strong id="resultScore" style="font-size: 1.5rem; color: var(--primary-color);">0</strong> / <span id="resultTotal">0</span></p>
+                <button id="btnReturnFromQuiz" class="btn btn-primary" onclick="closeQuiz()">ดำเนินการต่อ</button>
+            </div>
         </div>
     </section>
     <section id="classroomSection" class="hidden">
