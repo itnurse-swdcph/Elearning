@@ -210,6 +210,45 @@
             </main>
         </div>
     </section>
+    <section id="classroomSection" class="hidden">
+        <nav class="navbar" style="background-color: var(--primary-color);">
+            <div class="nav-brand" style="color: white; cursor: pointer;" onclick="exitClassroom()">
+                <i class="fas fa-arrow-left"></i> <span style="margin-left: 10px;">กลับหน้าหลัก</span>
+            </div>
+            <div class="nav-user" style="color: white;">
+                <span id="classroomCourseTitle">กำลังโหลด...</span>
+            </div>
+        </nav>
+
+        <div class="classroom-layout">
+            <div class="video-section">
+                <div class="video-wrapper">
+                    <div id="youtubePlayer"></div>
+                </div>
+                <div class="video-info">
+                    <h3 id="currentUnitTitle">EP.1 บทนำ</h3>
+                    <p class="text-alert"><i class="fas fa-info-circle"></i> กรุณารับชมวิดีโอให้จบ ระบบล็อกการเลื่อนข้าม (Seek Lock)</p>
+                </div>
+            </div>
+
+            <div class="playlist-section">
+                <h3>เนื้อหาบทเรียน</h3>
+                <div class="progress-bar-container">
+                    <div id="courseProgressFill" class="progress-bar-fill" style="width: 0%;"></div>
+                </div>
+                <p style="font-size: 0.85rem; text-align: right; margin-bottom: 15px;" id="progressText">สำเร็จ 0%</p>
+                
+                <ul id="unitPlaylist" class="unit-list">
+                    </ul>
+                
+                <button id="btnTakeExam" class="btn btn-primary w-100 hidden" style="margin-top: 20px;" onclick="startExam()">
+                    <i class="fas fa-clipboard-check"></i> ทำแบบทดสอบ (Post-Test)
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
 
     <script src="app.js"></script>
 </body>
