@@ -88,26 +88,47 @@ function checkSession() {
 async function initApp() {
     const user = JSON.parse(localStorage.getItem('swd_user'));
     
-    // Switch Views
     document.getElementById('authSection').classList.add('hidden');
     document.getElementById('appSection').classList.remove('hidden');
     
-    // Set User Info
-    document.getElementById('userNameDisplay').innerText = `สวัสดี, ${user.name}`;
-    document.getElementById('totalHoursDisplay').innerText = `${user.hours || 0} ชม.`;
+    // อัปเดตข้อมูลผู้ใช้ใน Sidebar
+    document.getElementById('userNameDisplay').innerText = user.name;
+    document.getElementById('userDeptDisplay').innerText = user.department;
+    document.getElementById('totalHoursDisplay').innerText = user.hours || 0;
 
-    // --- เพิ่มเงื่อนไขเช็คสิทธิ์ Admin ตรงนี้ครับ ---
+    // เช็คสิทธิ์ Admin
     if (user.role === 'admin') {
         document.getElementById('adminBtn').classList.remove('hidden');
     } else {
         document.getElementById('adminBtn').classList.add('hidden');
     }
-    // ----------------------------------------
 
-    // Load Courses
+    // โหลดหลักสูตรเข้า Dashboard
     loadCourses();
 }
+function switchUserTab(tabId, element) {
+    // 1. ซ่อนทุก Tab
+    const tabs = document.querySelectorAll('.user-tab');
+    tabs.forEach(tab => tab.classList.add('hidden'));
+    
+    // 2. ลบแถบสี Active ออกจากเมนูทั้งหมด
+    const menus = document.querySelectorAll('#userMenu li');
+    menus.forEach(menu => menu.classList.remove('active'));
+    
+    // 3. โชว์ Tab ที่เลือก และไฮไลท์เมนู
+    document.getElementById(tabId).classList.remove('hidden');
+    element.classList.add('active');
 
+    // โหลดข้อมูลเพิ่มถ้ากดเข้าหน้าประวัติ
+    if(tabId === 'historyTab') {
+        loadTrainingHistory();
+    }
+}
+
+// ฟังก์ชันจำลองการโหลดประวัติ (เดี๋ยวเราจะเขียนเชื่อม API ภายหลัง)
+function loadTrainingHistory() {
+    // โค้ดส่วนนี้เดี๋ยวเราจะเขียนเพื่อดึงข้อมูลจาก Sheet: Enrollments และ External_Training มาโชว์ครับ
+}
 async function loadCourses() {
     showLoader();
     const res = await callAPI('getCourses', {});
