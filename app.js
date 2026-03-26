@@ -386,6 +386,7 @@ document.getElementById('addCourseForm').addEventListener('submit', async (e) =>
         hours: totalDecimalHours,
         passing_score: document.getElementById('cPassingScore').value,
         cover_image: document.getElementById('cCover').value,
+        cert_template: document.getElementById('cCertTemplate').value,
         units: unitsData 
     };
     
