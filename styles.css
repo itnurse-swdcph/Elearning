@@ -439,3 +439,14 @@ body { background-color: var(--bg-color); color: var(--text-main); }
 .option-label.selected { border-color: var(--primary-color); background: #f0f8ff; }
 .btn-success { background: #10B981; color: white; border: none; }
 .btn-success:hover { background: #059669; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+/* สไตล์เพิ่มเติมเพื่อให้ Popup ทำข้อสอบดูดีขึ้น */
+#quizSection {
+    backdrop-filter: blur(5px);
+}
+#quizSection > div {
+    animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes slideUp {
+    from { transform: translateY(50px) scale(0.95); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+}
