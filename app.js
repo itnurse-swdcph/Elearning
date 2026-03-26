@@ -240,3 +240,65 @@ function exportToExcel() {
     a.download = 'training_report_swd.xls';
     a.click();
 }
+// ================= Course Units Logic =================
+
+// ฟังก์ชันเพิ่มกล่องกรอกข้อมูลวิดีโอ
+function addUnitField() {
+    const container = document.getElementById('unitsContainer');
+    const unitHTML = `
+        <div class="unit-box">
+            <div class="unit-row">
+                <input type="text" class="u-title" placeholder="ชื่อหน่วย (เช่น EP.2 ...)" required>
+                <input type="text" class="u-video" placeholder="URL วิดีโอ" required>
+                <input type="number" class="u-time" placeholder="เวลาดูขั้นต่ำ (นาที)" required>
+                <button type="button" class="btn-remove-unit" onclick="removeUnitField(this)"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', unitHTML);
+}
+
+// ฟังก์ชันลบกล่องวิดีโอ
+function removeUnitField(btn) {
+    btn.closest('.unit-box').remove();
+}
+
+// ฟังก์ชันบันทึกหลักสูตร
+document.getElementById('addCourseForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // 1. ดึงข้อมูลหน่วยการเรียนรู้ทั้งหมดมาสร้างเป็น Array
+    const unitBoxes = document.querySelectorAll('.unit-box');
+    let unitsData = [];
+    
+    unitBoxes.forEach((box) => {
+        unitsData.push({
+            title: box.querySelector('.u-title').value,
+            video_url: box.querySelector('.u-video').value,
+            min_time: parseInt(box.querySelector('.u-time').value)
+        });
+    });
+
+    // 2. เตรียมข้อมูล Payload
+    const payload = {
+        title: document.getElementById('cTitle').value,
+        organizer: document.getElementById('cOrganizer').value,
+        hours: document.getElementById('cHours').value,
+        passing_score: document.getElementById('cPassingScore').value,
+        cover_image: document.getElementById('cCover').value,
+        units: unitsData // ส่ง Array ไปเลย
+    };
+    
+    showLoader();
+    const res = await callAPI('addCourse', payload);
+    hideLoader();
+    
+    if(res.status === 'success') {
+        showAlert('สำเร็จ', 'บันทึกหลักสูตรเรียบร้อยแล้ว');
+        document.getElementById('addCourseForm').reset();
+        
+        // ลบกล่องที่เพิ่มมาให้เหลือแค่อันเดียว
+        const extraBoxes = document.querySelectorAll('.unit-box:not(:first-child)');
+        extraBoxes.forEach(box => box.remove());
+    }
+});
