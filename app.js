@@ -868,19 +868,25 @@ async function submitQuizData() {
     document.getElementById('resultScore').innerText = score;
     document.getElementById('resultTotal').innerText = maxScore;
     
+    // ประกาศตัวแปรปุ่มดำเนินการต่อ เพื่อเรียกใช้ง่ายๆ
+    const btnReturn = document.getElementById('btnReturnFromQuiz');
+    btnReturn.classList.remove('hidden'); // ให้โชว์เป็นค่าเริ่มต้นไว้ก่อน
+    
     if(activeQuizType === 'pre') {
         document.getElementById('resultTitle').innerText = 'ทำ Pre-test เสร็จสิ้น';
         document.getElementById('resultTitle').style.color = 'var(--text-main)';
         document.getElementById('resultIcon').className = 'fas fa-clipboard-check text-primary';
     } else {
         if(isPassed) {
-            document.getElementById('resultTitle').innerText = 'ยินดีด้วย! คุณสอบผ่าน';
             document.getElementById('resultTitle').style.color = '#10B981';
             document.getElementById('resultIcon').className = 'fas fa-check-circle';
             document.getElementById('resultIcon').style.color = '#10B981';
-        // --- เพิ่มการสั่งเจเนอเรต PDF อัตโนมัติเมื่อสอบผ่าน ---
-            document.getElementById('resultTitle').innerText = 'กำลังสร้างใบประกาศ...';
+            
+            // --- เริ่มต้นการสร้าง PDF ---
+            document.getElementById('resultTitle').innerText = 'กำลังสร้างใบประกาศ... กรุณารอสักครู่';
             document.getElementById('btnDownloadCert').classList.add('hidden');
+            
+            btnReturn.classList.add('hidden'); // <--- 1. ซ่อนปุ่ม "ดำเนินการต่อ" ตรงนี้! ป้องกันคนกดออก
             
             const certRes = await callAPI('generateCert', {
                 user_id: user.id,
@@ -892,11 +898,15 @@ async function submitQuizData() {
                 document.getElementById('resultTitle').innerText = 'ยินดีด้วย! คุณสอบผ่าน';
                 const btnCert = document.getElementById('btnDownloadCert');
                 btnCert.href = certRes.pdf_url;
-                btnCert.classList.remove('hidden'); // โชว์ปุ่มให้คลิกโหลด PDF
+                btnCert.classList.remove('hidden'); // โชว์ปุ่มโหลด PDF
             } else {
                 document.getElementById('resultTitle').innerText = 'สอบผ่าน (แต่พบปัญหาสร้างใบประกาศ)';
                 console.error(certRes.message);
             }
+            
+            btnReturn.classList.remove('hidden'); // <--- 2. โชว์ปุ่ม "ดำเนินการต่อ" กลับมาเมื่อกระบวนการเสร็จสิ้น!
+            // --------------------------
+            
         } else {
             document.getElementById('resultTitle').innerText = 'เสียใจด้วย คุณสอบไม่ผ่านเกณฑ์';
             document.getElementById('resultTitle').style.color = '#EF4444';
