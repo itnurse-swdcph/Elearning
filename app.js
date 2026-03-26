@@ -453,7 +453,7 @@ async function enrollCourse(courseId) {
 
     if(enrollRes.status === 'success') {
         // ดึงข้อมูลการเรียนจาก DB
-        const progData = enrollRes.data;
+        const progData = enrollRes.data || {}; 
         completedUnits = progData.completed || [];
         resumeTimes = progData.resumeTimes || {};
         currentClassCourse = targetCourse;
@@ -462,7 +462,17 @@ async function enrollCourse(courseId) {
         catch(e) { currentUnits = []; }
         
         if(currentUnits.length === 0) return showAlert('แจ้งเตือน', 'หลักสูตรนี้ยังไม่มีวิดีโอเนื้อหาครับ');
-        enterClassroom();
+        
+        // --- ส่วนที่แก้ไข: เช็คว่าทำ Pre-test หรือยัง ---
+        // ถ้าค่า preTestScore ยังไม่มี แสดงว่าเพิ่งเข้ามาครั้งแรก ให้ไปทำข้อสอบก่อน
+        if (progData.preTestScore === undefined || progData.preTestScore === null) {
+            startQuiz('pre'); 
+        } else {
+            // ถ้าทำข้อสอบก่อนเรียนไปแล้ว ให้เข้าห้องเรียนไปดูวิดีโอต่อได้เลย
+            enterClassroom();
+        }
+        // ----------------------------------------
+        
     } else {
         showAlert('ข้อผิดพลาดจากระบบ', enrollRes.message);
     }
@@ -623,5 +633,248 @@ function markUnitComplete(index) {
 }
 
 function startExam() {
-    showAlert('เตรียมพร้อม', 'ระบบแบบทดสอบและใบประกาศ PDF จะอยู่ในขั้นตอนต่อไปครับ');
+    startQuiz('post');
+}
+// ================= Admin: Exam Management =================
+let adminCurrentExams = [];
+
+// โหลดรายชื่อหลักสูตรใส่ Dropdown (เรียกใช้ตอนเข้าหน้าแอดมิน)
+function initExamAdmin() {
+    const select = document.getElementById('examCourseSelect');
+    select.innerHTML = '<option value="">-- กรุณาเลือกหลักสูตร --</option>';
+    adminCoursesData.forEach(c => {
+        select.innerHTML += `<option value="${c.course_id}">${c.title}</option>`;
+    });
+}
+
+// เมื่อแอดมินเลือกหลักสูตร
+async function loadCourseExamsForAdmin() {
+    const courseId = document.getElementById('examCourseSelect').value;
+    const builder = document.getElementById('examBuilderSection');
+    if(!courseId) { builder.classList.add('hidden'); return; }
+    
+    showLoader();
+    const res = await callAPI('getCourseExams', { course_id: courseId });
+    hideLoader();
+    
+    builder.classList.remove('hidden');
+    document.getElementById('questionsContainer').innerHTML = '';
+    
+    if(res.status === 'success' && res.data.length > 0) {
+        res.data.forEach((ex, idx) => addQuestionBox(ex, idx + 1));
+    } else {
+        addQuestionBox(); // โชว์กล่องเปล่า 1 กล่อง
+    }
+}
+
+// สร้างกล่องพิมพ์ข้อสอบ
+function addQuestionBox(data = null, num = null) {
+    const container = document.getElementById('questionsContainer');
+    const qCount = container.children.length + 1;
+    const qNum = num || qCount;
+    
+    const d = data || { question: '', a: '', b: '', c: '', d: '', answer: 'A' };
+    
+    const html = `
+        <div class="exam-box">
+            <button class="btn-remove" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
+            <h5 style="margin-bottom: 10px; color: var(--primary-color);">ข้อที่ ${qNum}</h5>
+            <input type="text" class="q-text" placeholder="พิมพ์คำถาม..." value="${d.question}" style="width: 100%; padding: 10px; margin-bottom: 10px;" required>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div style="display:flex; gap:5px; align-items:center;">
+                    <input type="radio" name="ans_${qCount}" value="A" ${d.answer === 'A' ? 'checked' : ''}> ก. <input type="text" class="q-a" placeholder="ตัวเลือก ก." value="${d.a}" style="width: 100%; padding: 8px;">
+                </div>
+                <div style="display:flex; gap:5px; align-items:center;">
+                    <input type="radio" name="ans_${qCount}" value="B" ${d.answer === 'B' ? 'checked' : ''}> ข. <input type="text" class="q-b" placeholder="ตัวเลือก ข." value="${d.b}" style="width: 100%; padding: 8px;">
+                </div>
+                <div style="display:flex; gap:5px; align-items:center;">
+                    <input type="radio" name="ans_${qCount}" value="C" ${d.answer === 'C' ? 'checked' : ''}> ค. <input type="text" class="q-c" placeholder="ตัวเลือก ค." value="${d.c}" style="width: 100%; padding: 8px;">
+                </div>
+                <div style="display:flex; gap:5px; align-items:center;">
+                    <input type="radio" name="ans_${qCount}" value="D" ${d.answer === 'D' ? 'checked' : ''}> ง. <input type="text" class="q-d" placeholder="ตัวเลือก ง." value="${d.d}" style="width: 100%; padding: 8px;">
+                </div>
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+}
+
+// แอดมินกดบันทึกข้อสอบ
+async function saveExamsToDB() {
+    const courseId = document.getElementById('examCourseSelect').value;
+    if(!courseId) return showAlert('แจ้งเตือน', 'กรุณาเลือกหลักสูตรก่อนบันทึก');
+    
+    const boxes = document.querySelectorAll('.exam-box');
+    let examsData = [];
+    
+    boxes.forEach(box => {
+        const checkedAns = box.querySelector('input[type="radio"]:checked');
+        examsData.push({
+            question: box.querySelector('.q-text').value,
+            a: box.querySelector('.q-a').value,
+            b: box.querySelector('.q-b').value,
+            c: box.querySelector('.q-c').value,
+            d: box.querySelector('.q-d').value,
+            answer: checkedAns ? checkedAns.value : 'A'
+        });
+    });
+    
+    if(examsData.length === 0) return showAlert('แจ้งเตือน', 'ต้องมีข้อสอบอย่างน้อย 1 ข้อ');
+    
+    showLoader();
+    const res = await callAPI('saveCourseExams', { course_id: courseId, exams: examsData });
+    hideLoader();
+    
+    if(res.status === 'success') showAlert('สำเร็จ', 'บันทึกคลังข้อสอบเรียบร้อยแล้ว');
+}
+
+// *อย่าลืมไปเพิ่มการเรียก initExamAdmin() ไว้ในฟังก์ชัน switchAdminTab(tabId) ด้วยนะครับ (เมื่อ tabId === 'examMgtTab')*
+
+
+// ================= User: Quiz Taking System =================
+let userQuizData = [];
+let currentQIndex = 0;
+let userAnswers = {}; // เก็บคำตอบ { 0: 'A', 1: 'C' }
+let activeQuizType = 'pre'; // 'pre' หรือ 'post'
+
+// เริ่มทำข้อสอบ (เรียกจากหน้า Dashboard หรือ ห้องเรียน)
+async function startQuiz(type) {
+    activeQuizType = type;
+    showLoader();
+    
+    // ดึงข้อสอบ
+    const res = await callAPI('getCourseExams', { course_id: currentClassCourse.id });
+    hideLoader();
+    
+    if(res.status === 'success' && res.data.length > 0) {
+        userQuizData = res.data;
+        currentQIndex = 0;
+        userAnswers = {};
+        
+        document.getElementById('quizTitle').innerText = type === 'pre' ? 'แบบทดสอบก่อนเรียน (Pre-test)' : 'แบบทดสอบหลังเรียน (Post-test)';
+        document.getElementById('quizSubtitle').innerText = `วิชา: ${currentClassCourse.title}`;
+        
+        document.getElementById('quizSection').classList.remove('hidden');
+        document.getElementById('quizContent').classList.remove('hidden');
+        document.getElementById('quizResult').classList.add('hidden');
+        
+        renderQuestion();
+    } else {
+        showAlert('แจ้งเตือน', 'หลักสูตรนี้ยังไม่มีการตั้งค่าแบบทดสอบครับ กรุณาข้ามไปเรียนได้เลย');
+        if(type === 'pre') enterClassroom(); // ถ้าไม่มีข้อสอบ ให้เข้าเรียนเลย
+    }
+}
+
+// แสดงคำถามทีละข้อ
+function renderQuestion() {
+    const q = userQuizData[currentQIndex];
+    document.getElementById('quizProgressText').innerText = `ข้อที่ ${currentQIndex + 1} / ${userQuizData.length}`;
+    document.getElementById('questionText').innerText = `${currentQIndex + 1}. ${q.question}`;
+    
+    const ans = userAnswers[currentQIndex] || '';
+    
+    const optionsHtml = `
+        <label class="option-label ${ans==='A'?'selected':''}" onclick="selectAnswer('A')">
+            <input type="radio" name="userAns" value="A" ${ans==='A'?'checked':''}> ก. ${q.a}
+        </label>
+        <label class="option-label ${ans==='B'?'selected':''}" onclick="selectAnswer('B')">
+            <input type="radio" name="userAns" value="B" ${ans==='B'?'checked':''}> ข. ${q.b}
+        </label>
+        <label class="option-label ${ans==='C'?'selected':''}" onclick="selectAnswer('C')">
+            <input type="radio" name="userAns" value="C" ${ans==='C'?'checked':''}> ค. ${q.c}
+        </label>
+        <label class="option-label ${ans==='D'?'selected':''}" onclick="selectAnswer('D')">
+            <input type="radio" name="userAns" value="D" ${ans==='D'?'checked':''}> ง. ${q.d}
+        </label>
+    `;
+    document.getElementById('optionsContainer').innerHTML = optionsHtml;
+    
+    // จัดการปุ่ม
+    if(currentQIndex === userQuizData.length - 1) {
+        document.getElementById('btnNextQuestion').classList.add('hidden');
+        document.getElementById('btnSubmitQuiz').classList.remove('hidden');
+    } else {
+        document.getElementById('btnNextQuestion').classList.remove('hidden');
+        document.getElementById('btnSubmitQuiz').classList.add('hidden');
+    }
+}
+
+// เลือกคำตอบ (ทำไฮไลท์สี)
+function selectAnswer(val) {
+    userAnswers[currentQIndex] = val;
+    document.querySelectorAll('.option-label').forEach(el => el.classList.remove('selected'));
+    document.querySelector(`input[value="${val}"]`).parentElement.classList.add('selected');
+    document.querySelector(`input[value="${val}"]`).checked = true;
+}
+
+// กดไปข้อถัดไป
+function nextQuestion() {
+    if(!userAnswers[currentQIndex]) return showAlert('แจ้งเตือน', 'กรุณาเลือกคำตอบก่อนไปข้อถัดไป');
+    currentQIndex++;
+    renderQuestion();
+}
+
+// กดส่งคำตอบเพื่อตรวจ
+async function submitQuizData() {
+    if(!userAnswers[currentQIndex]) return showAlert('แจ้งเตือน', 'กรุณาเลือกคำตอบข้อสุดท้าย');
+    
+    let score = 0;
+    userQuizData.forEach((q, idx) => {
+        if(userAnswers[idx] === q.answer) score++;
+    });
+    
+    const maxScore = userQuizData.length;
+    const passingScoreReq = currentClassCourse.passing_score || 80; // ดึงเกณฑ์จากหลักสูตร (%)
+    const userPercent = (score / maxScore) * 100;
+    const isPassed = userPercent >= passingScoreReq;
+    
+    showLoader();
+    const user = JSON.parse(localStorage.getItem('swd_user'));
+    
+    // ส่งข้อมูลไปบันทึก
+    await callAPI('submitQuiz', {
+        user_id: user.id,
+        course_id: currentClassCourse.id,
+        type: activeQuizType,
+        score: score,
+        is_passed: isPassed
+    });
+    hideLoader();
+    
+    // โชว์หน้าสรุปผล
+    document.getElementById('quizContent').classList.add('hidden');
+    const resBox = document.getElementById('quizResult');
+    resBox.classList.remove('hidden');
+    
+    document.getElementById('resultScore').innerText = score;
+    document.getElementById('resultTotal').innerText = maxScore;
+    
+    if(activeQuizType === 'pre') {
+        document.getElementById('resultTitle').innerText = 'ทำ Pre-test เสร็จสิ้น';
+        document.getElementById('resultTitle').style.color = 'var(--text-main)';
+        document.getElementById('resultIcon').className = 'fas fa-clipboard-check text-primary';
+    } else {
+        if(isPassed) {
+            document.getElementById('resultTitle').innerText = 'ยินดีด้วย! คุณสอบผ่าน';
+            document.getElementById('resultTitle').style.color = '#10B981';
+            document.getElementById('resultIcon').className = 'fas fa-check-circle';
+            document.getElementById('resultIcon').style.color = '#10B981';
+        } else {
+            document.getElementById('resultTitle').innerText = 'เสียใจด้วย คุณสอบไม่ผ่านเกณฑ์';
+            document.getElementById('resultTitle').style.color = '#EF4444';
+            document.getElementById('resultIcon').className = 'fas fa-times-circle';
+            document.getElementById('resultIcon').style.color = '#EF4444';
+        }
+    }
+}
+
+// ปิดหน้าข้อสอบและไปสเตปถัดไป
+function closeQuiz() {
+    document.getElementById('quizSection').classList.add('hidden');
+    if(activeQuizType === 'pre') {
+        enterClassroom(); // ทำ Pre เสร็จ เข้าเรียนต่อ
+    } else {
+        exitClassroom(); // ทำ Post เสร็จ กลับหน้าหลัก (ถ้าผ่าน ใบประกาศจะเด้งในอนาคต)
+    }
 }
