@@ -61,40 +61,117 @@
     </section>
 
     <section id="appSection" class="hidden">
-        <nav class="navbar">
-            <div class="nav-brand">
-                <img src="https://img2.pic.in.th/LINE_ALBUM_442025_251220_1.jpg" alt="Logo Hospital" class="nav-logo" style="border-radius: 50%;">
-                <img src="https://img1.pic.in.th/images/nurselogo128x128.png" alt="Logo Nurse" class="nav-logo">
-                <span class="brand-text">ระบบการเรียนรู้ดิจิทัล Learning SWD</span>
-            </div>
-           <div class="nav-user">
-                <span id="userNameDisplay">สวัสดี, User</span>
-                <button id="adminBtn" class="btn btn-primary hidden" onclick="goToAdminPanel()">จัดการระบบ (Admin)</button>
-                <button onclick="logout()" class="btn btn-outline">ออกจากระบบ</button>
-            </div>
-        </nav>
-
-        <div class="dashboard-container">
-            <div class="stats-row">
-                <div class="stat-card">
-                    <i class="fas fa-clock"></i>
-                    <div>
-                        <h4>ชั่วโมงสะสมปีนี้</h4>
-                        <p id="totalHoursDisplay">0 ชม.</p>
+        <div class="user-layout">
+            <aside class="user-sidebar">
+                <div class="sidebar-header">
+                    <img src="https://img1.pic.in.th/images/nurselogo128x128.png" alt="Logo Nurse" class="sidebar-logo">
+                    <h3 class="brand-text" style="font-size: 1.1rem; text-align: center;">Learning SWD</h3>
+                </div>
+                <div class="user-profile-mini">
+                    <div class="avatar"><i class="fas fa-user-nurse"></i></div>
+                    <div class="info">
+                        <strong id="userNameDisplay">ชื่อผู้ใช้งาน</strong>
+                        <span id="userDeptDisplay">แผนก</span>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <i class="fas fa-chalkboard-teacher"></i>
-                    <div>
-                        <h4>หลักสูตรที่กำลังเรียน</h4>
-                        <p>0 หลักสูตร</p>
-                    </div>
-                </div>
-            </div>
+                <ul class="sidebar-menu" id="userMenu">
+                    <li class="active" onclick="switchUserTab('dashboardTab', this)"><i class="fas fa-home"></i> หน้าหลัก (Dashboard)</li>
+                    <li onclick="switchUserTab('externalTab', this)"><i class="fas fa-file-upload"></i> บันทึกอบรมภายนอก</li>
+                    <li onclick="switchUserTab('historyTab', this)"><i class="fas fa-history"></i> ประวัติการอบรม (Portfolio)</li>
+                    
+                    <li id="adminBtn" class="hidden admin-link" onclick="goToAdminPanel()"><i class="fas fa-cogs"></i> จัดการระบบ (Admin)</li>
+                    
+                    <li class="logout-menu" onclick="logout()"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</li>
+                </ul>
+            </aside>
 
-            <h3 class="section-title">หลักสูตรแนะนำ</h3>
-            <div class="course-grid" id="courseGrid">
+            <main class="user-content">
+                <header class="user-topbar">
+                    <h2><i class="fas fa-graduation-cap"></i> ระบบบริหารจัดการการเรียนรู้ดิจิทัล</h2>
+                    <div class="topbar-right">
+                        <span class="badge-hours">ชั่วโมงสะสมรวม: <strong id="totalHoursDisplay">0</strong> ชม.</span>
+                    </div>
+                </header>
+
+                <div class="user-body">
+                    <div id="dashboardTab" class="user-tab">
+                        <div class="stats-row">
+                            <div class="stat-card">
+                                <i class="fas fa-book-reader"></i>
+                                <div>
+                                    <h4>หลักสูตรที่กำลังเรียน</h4>
+                                    <p class="stat-number">0</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-certificate text-success"></i>
+                                <div>
+                                    <h4>ใบประกาศนียบัตรที่ได้รับ</h4>
+                                    <p class="stat-number">0</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h3 class="section-title">หลักสูตรแนะนำ (Internal Learning)</h3>
+                        <div class="course-grid" id="courseGrid">
+                            </div>
+                    </div>
+
+                    <div id="externalTab" class="user-tab hidden">
+                        <div class="tab-header">
+                            <h3><i class="fas fa-file-upload"></i> บันทึกประวัติการอบรมภายนอก</h3>
+                        </div>
+                        <form id="externalTrainingForm" class="admin-form">
+                            <div class="form-grid">
+                                <div class="input-group" style="grid-column: 1 / -1;">
+                                    <input type="text" id="extTopic" placeholder="หัวข้อการอบรม / ประชุมวิชาการ" required>
+                                </div>
+                                <div class="input-group"><input type="text" id="extOrganizer" placeholder="หน่วยงานที่จัด" required></div>
+                                <div class="input-group"><input type="date" id="extDate" required title="วันที่จัดอบรม"></div>
+                                <div class="input-group time-input-group">
+                                    <input type="number" id="extHours" placeholder="ชั่วโมง" min="0" required>
+                                    <span class="time-separator">:</span>
+                                    <input type="number" id="extMins" placeholder="นาที" min="0" max="59" required>
+                                    <small>ระยะเวลา</small>
+                                </div>
+                                <div class="input-group">
+                                    <label style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 5px; display: block;">แนบไฟล์ใบประกาศ (PDF/JPG)</label>
+                                    <input type="file" id="extCertFile" accept=".pdf, image/*" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="margin-top: 15px;">
+                                <i class="fas fa-paper-plane"></i> บันทึกข้อมูลเข้า Portfolio
+                            </button>
+                        </form>
+                    </div>
+
+                    <div id="historyTab" class="user-tab hidden">
+                        <div class="tab-header">
+                            <h3><i class="fas fa-history"></i> ประวัติการเรียนรู้ (Training History)</h3>
+                            <button class="btn btn-outline"><i class="fas fa-print"></i> พิมพ์รายงาน</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>วันที่</th>
+                                        <th>หัวข้อ / หลักสูตร</th>
+                                        <th>ประเภท</th>
+                                        <th>หน่วยกิต (ชม.)</th>
+                                        <th>สถานะ / ใบประกาศ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyTableBody">
+                                    <tr>
+                                        <td colspan="5" style="text-align: center; color: var(--text-light);">กำลังโหลดข้อมูลประวัติ...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                 </div>
+            </main>
         </div>
     </section>
     <section id="adminSection" class="hidden">
