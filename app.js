@@ -643,12 +643,24 @@ function startExam() {
 let adminCurrentExams = [];
 
 // โหลดรายชื่อหลักสูตรใส่ Dropdown (เรียกใช้ตอนเข้าหน้าแอดมิน)
-function initExamAdmin() {
+// โหลดรายชื่อหลักสูตรใส่ Dropdown (ฉบับดึงข้อมูลสดจากฐานข้อมูล)
+async function initExamAdmin() {
     const select = document.getElementById('examCourseSelect');
+    select.innerHTML = '<option value="">-- กำลังโหลดหลักสูตร... --</option>';
+    
+    // สั่งดึงข้อมูลหลักสูตรทั้งหมดของแอดมิน
+    const res = await callAPI('getAdminCourses', {});
+    
     select.innerHTML = '<option value="">-- กรุณาเลือกหลักสูตร --</option>';
-    adminCoursesData.forEach(c => {
-        select.innerHTML += `<option value="${c.course_id}">${c.title}</option>`;
-    });
+    
+    if (res.status === 'success' && res.data.length > 0) {
+        adminCoursesData = res.data; // อัปเดตข้อมูลในความจำเครื่อง
+        res.data.forEach(c => {
+            select.innerHTML += `<option value="${c.course_id}">${c.title}</option>`;
+        });
+    } else {
+        select.innerHTML = '<option value="">-- ยังไม่มีหลักสูตรในระบบ --</option>';
+    }
 }
 
 // เมื่อแอดมินเลือกหลักสูตร
