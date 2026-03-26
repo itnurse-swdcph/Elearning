@@ -381,3 +381,48 @@ body { background-color: var(--bg-color); color: var(--text-main); }
     .video-section { height: 50vh; flex: none; }
     .playlist-section { flex: none; height: auto; }
 }
+/* ================= User Portal Layout ================= */
+.user-layout { display: flex; height: 100vh; background-color: var(--bg-color); }
+.user-sidebar {
+    width: 260px; background-color: white; border-right: 1px solid #e2e8f0;
+    display: flex; flex-direction: column; z-index: 10;
+}
+.user-profile-mini {
+    padding: 20px; text-align: center; border-bottom: 1px solid #e2e8f0;
+    background: linear-gradient(to bottom, #f8fafc, white);
+}
+.user-profile-mini .avatar {
+    width: 60px; height: 60px; background: var(--primary-color); color: white;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; margin: 0 auto 10px; border: 3px solid #e2e8f0;
+}
+.user-profile-mini .info strong { display: block; color: var(--primary-color); }
+.user-profile-mini .info span { font-size: 0.8rem; color: var(--text-light); }
+
+.user-sidebar .sidebar-menu { padding-top: 10px; list-style: none; flex-grow: 1; }
+.user-sidebar .sidebar-menu li {
+    padding: 15px 25px; cursor: pointer; color: var(--text-main);
+    border-left: 4px solid transparent; transition: var(--transition);
+    display: flex; align-items: center; gap: 15px; font-weight: 500;
+}
+.user-sidebar .sidebar-menu li:hover { background-color: #f1f5f9; color: var(--primary-color); }
+.user-sidebar .sidebar-menu li.active {
+    background-color: #f0f8ff; border-left-color: var(--primary-color); color: var(--primary-color);
+}
+.admin-link { background-color: #FEF2F2 !important; color: #EF4444 !important; }
+
+.user-content { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; }
+.user-topbar {
+    background: white; padding: 20px 30px; display: flex;
+    justify-content: space-between; align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02); z-index: 5;
+}
+.user-topbar h2 { font-size: 1.3rem; color: var(--primary-color); }
+.badge-hours {
+    background: var(--gold-gradient); color: var(--primary-color);
+    padding: 8px 15px; border-radius: 20px; font-weight: 600; font-size: 0.9rem;
+    box-shadow: var(--shadow-gold);
+}
+.user-body { padding: 30px; max-width: 1200px; margin: 0 auto; width: 100%; }
+.stat-number { font-size: 1.8rem; font-weight: 700; color: var(--primary-color); margin-top: 5px; }
+.text-success { color: #10B981 !important; }
