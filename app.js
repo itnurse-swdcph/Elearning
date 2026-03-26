@@ -329,6 +329,7 @@ function editCourse(courseId) {
     document.getElementById('cOrganizer').value = course.organizer;
     document.getElementById('cPassingScore').value = course.passing_score;
     document.getElementById('cCover').value = course.cover_image;
+    document.getElementById('cCertTemplate').value = course.cert_template || '';
 
     const hr = Math.floor(course.hours);
     const min = Math.round((course.hours - hr) * 60);
@@ -876,6 +877,25 @@ async function submitQuizData() {
             document.getElementById('resultTitle').style.color = '#10B981';
             document.getElementById('resultIcon').className = 'fas fa-check-circle';
             document.getElementById('resultIcon').style.color = '#10B981';
+        // --- เพิ่มการสั่งเจเนอเรต PDF อัตโนมัติเมื่อสอบผ่าน ---
+            document.getElementById('resultTitle').innerText = 'กำลังสร้างใบประกาศ...';
+            document.getElementById('btnDownloadCert').classList.add('hidden');
+            
+            const certRes = await callAPI('generateCert', {
+                user_id: user.id,
+                user_name: user.name,
+                course_id: currentClassCourse.id
+            });
+            
+            if(certRes.status === 'success') {
+                document.getElementById('resultTitle').innerText = 'ยินดีด้วย! คุณสอบผ่าน';
+                const btnCert = document.getElementById('btnDownloadCert');
+                btnCert.href = certRes.pdf_url;
+                btnCert.classList.remove('hidden'); // โชว์ปุ่มให้คลิกโหลด PDF
+            } else {
+                document.getElementById('resultTitle').innerText = 'สอบผ่าน (แต่พบปัญหาสร้างใบประกาศ)';
+                console.error(certRes.message);
+            }
         } else {
             document.getElementById('resultTitle').innerText = 'เสียใจด้วย คุณสอบไม่ผ่านเกณฑ์';
             document.getElementById('resultTitle').style.color = '#EF4444';
