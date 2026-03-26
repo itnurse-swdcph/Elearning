@@ -140,6 +140,9 @@ function switchUserTab(tabId, element) {
 function loadTrainingHistory() {
     // โค้ดส่วนนี้เดี๋ยวเราจะเขียนเพื่อดึงข้อมูลจาก Sheet: Enrollments และ External_Training มาโชว์ครับ
 }
+// เพิ่มตัวแปรนี้ไว้เก็บข้อมูลหลักสูตรชั่วคราว
+let globalCourses = []; 
+
 async function loadCourses() {
     showLoader();
     const res = await callAPI('getCourses', {});
@@ -149,6 +152,9 @@ async function loadCourses() {
     grid.innerHTML = '';
 
     if (res.status === 'success' && res.data.length > 0) {
+        // เก็บข้อมูลที่โหลดมาครั้งแรกใส่ตัวแปรไว้ จะได้ไม่ต้องโหลดซ้ำ
+        globalCourses = res.data; 
+
         res.data.forEach(course => {
             const imgUrl = getDriveImageUrl(course.image);
             const html = `
@@ -404,6 +410,7 @@ let ytPlayer;
 let currentClassCourse = null;
 let currentUnits = [];
 let completedUnits = []; 
+let resumeTimes = {}; // ตัวแปรใหม่สำหรับเก็บเวลาที่ดูค้างไว้
 let activeUnitIndex = 0;
 let maxTimeWatched = 0; 
 let trackerInterval;
@@ -415,41 +422,49 @@ function extractYTId(url) {
     return (match && match[2].length === 11) ? match[2] : null;
 }
 
+// 1. ฟังก์ชันบันทึกความคืบหน้า (ทั้งตอนดูจบ และตอนกดออก)
+function saveProgressToDB() {
+    if(!currentClassCourse) return;
+    const user = JSON.parse(localStorage.getItem('swd_user'));
+    
+    // อัปเดตเวลาล่าสุดก่อนส่ง
+    if(ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
+        maxTimeWatched = Math.max(maxTimeWatched, ytPlayer.getCurrentTime());
+    }
+    resumeTimes[activeUnitIndex] = maxTimeWatched; 
+    
+    callAPI('updateProgress', {
+        user_id: user.id,
+        course_id: currentClassCourse.id,
+        progress_data: { completed: completedUnits, resumeTimes: resumeTimes }
+    });
+}
+
+// 2. กดเข้าเรียน
 async function enrollCourse(courseId) {
     const user = JSON.parse(localStorage.getItem('swd_user'));
-    showLoader();
     
-    const courseRes = await callAPI('getCourses', {});
-    const targetCourse = courseRes.data.find(c => c.id === courseId);
-    
-    if(!targetCourse) {
-        hideLoader();
-        showAlert('ข้อผิดพลาด', 'ไม่พบข้อมูลหลักสูตรนี้');
-        return;
-    }
+    const targetCourse = globalCourses.find(c => c.id === courseId);
+    if(!targetCourse) return showAlert('ข้อผิดพลาด', 'ไม่พบข้อมูลหลักสูตรนี้');
 
+    showLoader();
     const enrollRes = await callAPI('enrollCourse', { user_id: user.id, course_id: courseId });
     hideLoader();
 
     if(enrollRes.status === 'success') {
-        completedUnits = enrollRes.data.completed_units || [];
+        // ดึงข้อมูลการเรียนจาก DB
+        const progData = enrollRes.data;
+        completedUnits = progData.completed || [];
+        resumeTimes = progData.resumeTimes || {};
         currentClassCourse = targetCourse;
         
-        try {
-            currentUnits = JSON.parse(targetCourse.units || '[]');
-        } catch(e) {
-            currentUnits = [];
-        }
+        try { currentUnits = JSON.parse(targetCourse.units || '[]'); } 
+        catch(e) { currentUnits = []; }
         
-        if(currentUnits.length === 0) {
-            showAlert('แจ้งเตือน', 'หลักสูตรนี้ยังไม่มีวิดีโอเนื้อหาครับ');
-            return;
-        }
-
+        if(currentUnits.length === 0) return showAlert('แจ้งเตือน', 'หลักสูตรนี้ยังไม่มีวิดีโอเนื้อหาครับ');
         enterClassroom();
     } else {
-        // เพิ่มแจ้งเตือนกันเหนียว ถ้าระบบหลังบ้าน Error
-        showAlert('ข้อผิดพลาดจากระบบ', enrollRes.message || 'ไม่สามารถเข้าสู่บทเรียนได้');
+        showAlert('ข้อผิดพลาดจากระบบ', enrollRes.message);
     }
 }
 
@@ -460,6 +475,7 @@ function enterClassroom() {
     
     renderPlaylist();
     
+    // หา EP ถัดไปที่ยังไม่จบมาเล่นก่อน
     let nextUnfinishedUnit = 0;
     for(let i=0; i<currentUnits.length; i++) {
         if(!completedUnits.includes(i)) {
@@ -470,13 +486,14 @@ function enterClassroom() {
     loadVideo(nextUnfinishedUnit);
 }
 
+// 3. ปิดหน้าห้องเรียน (ส่งข้อมูลเวลาไปบันทึก)
 function exitClassroom() {
-    if(ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
     clearInterval(trackerInterval);
+    saveProgressToDB(); // บันทึกเวลาที่ดูค้างไว้ลง Google Sheets ทันที
+    
+    if(ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
     document.getElementById('classroomSection').classList.add('hidden');
     document.getElementById('appSection').classList.remove('hidden');
-    
-    loadCourses(); 
 }
 
 function renderPlaylist() {
@@ -514,52 +531,78 @@ function renderPlaylist() {
     document.getElementById('courseProgressFill').style.width = percent + '%';
     document.getElementById('progressText').innerText = `สำเร็จ ${percent}%`;
 
-    if(percent === 100) {
-        document.getElementById('btnTakeExam').classList.remove('hidden');
-    } else {
-        document.getElementById('btnTakeExam').classList.add('hidden');
-    }
+    if(percent === 100) document.getElementById('btnTakeExam').classList.remove('hidden');
 }
 
+// 4. โหลดวิดีโอพร้อม Resume เวลา
 function loadVideo(index) {
+    // ถ้ามีการเปลี่ยน EP ให้เซฟเวลาของ EP เดิมก่อน
+    if (activeUnitIndex !== index && currentClassCourse) {
+        saveProgressToDB();
+    }
+
     activeUnitIndex = index;
     const unit = currentUnits[index];
     const videoId = extractYTId(unit.video_url);
     
     document.getElementById('currentUnitTitle').innerText = unit.title;
-    maxTimeWatched = 0; 
+    
+    // ดึงเวลาที่ดูค้างไว้ (ผสมกันระหว่าง Local Storage ป้องกันไฟดับ และ DB)
+    const user = JSON.parse(localStorage.getItem('swd_user'));
+    const cacheKey = `resume_${user.id}_${currentClassCourse.id}_${index}`;
+    let localSavedTime = parseFloat(localStorage.getItem(cacheKey)) || 0;
+    let dbSavedTime = resumeTimes[index] || 0;
+    maxTimeWatched = Math.max(localSavedTime, dbSavedTime);
+
     renderPlaylist(); 
 
-    if(!videoId) {
-        showAlert('ข้อผิดพลาด', 'ลิงก์วิดีโอไม่ถูกต้อง (รองรับเฉพาะ YouTube เท่านั้น)');
-        return;
-    }
+    if(!videoId) return showAlert('ข้อผิดพลาด', 'ลิงก์วิดีโอไม่ถูกต้อง');
 
     if(!ytPlayer) {
         ytPlayer = new YT.Player('youtubePlayer', {
             height: '100%', width: '100%',
             videoId: videoId,
-            playerVars: { 'controls': 1, 'disablekb': 1, 'rel': 0 },
+            playerVars: { 
+                'controls': 1, 'disablekb': 1, 'rel': 0, 
+                'start': Math.floor(maxTimeWatched) // สั่งให้เริ่มเล่นจากจุดที่ดูค้างไว้
+            },
             events: { 'onStateChange': onPlayerStateChange }
         });
     } else {
-        ytPlayer.loadVideoById(videoId);
+        // ใช้คำสั่งโหลดวิดีโอแบบระบุวินาทีเริ่มต้น
+        ytPlayer.loadVideoById({videoId: videoId, startSeconds: Math.floor(maxTimeWatched)});
     }
 }
 
+// 5. ระบบตรวจจับเวลาและจัดการตอนจบ
 function onPlayerStateChange(event) {
     if (event.data == YT.PlayerState.PLAYING) {
         trackerInterval = setInterval(() => {
             const currentTime = ytPlayer.getCurrentTime();
             const duration = ytPlayer.getDuration();
             
+            // เช็คการแอบกรอวิดีโอ
             if (currentTime > maxTimeWatched + 3) {
-                ytPlayer.seekTo(maxTimeWatched); 
-                showAlert('กรุณารับชมวิดีโอให้จบ', 'ระบบล็อกการเลื่อนข้าม เพื่อให้แน่ใจว่าคุณได้รับเนื้อหาครบถ้วนครับ');
+                // ถ้า EP นี้ดูจบแล้ว (Done) ให้ดูอิสระได้ ไม่ล็อก!
+                if (completedUnits.includes(activeUnitIndex)) {
+                    maxTimeWatched = currentTime; 
+                } else {
+                    // ถ้ายังไม่จบ ดึงกลับมาที่เดิม
+                    ytPlayer.seekTo(maxTimeWatched); 
+                    showAlert('กรุณารับชมวิดีโอให้จบ', 'ระบบล็อกการเลื่อนข้ามสำหรับ EP ที่ยังเรียนไม่จบครับ');
+                }
             } else {
                 maxTimeWatched = Math.max(maxTimeWatched, currentTime);
             }
 
+            // แบคอัปเวลาลงเครื่องอัตโนมัติทุกๆ 5 วินาที (กันไฟดับ/เผลอปิดแท็บ)
+            if (Math.floor(currentTime) % 5 === 0) {
+                const user = JSON.parse(localStorage.getItem('swd_user'));
+                const cacheKey = `resume_${user.id}_${currentClassCourse.id}_${activeUnitIndex}`;
+                localStorage.setItem(cacheKey, maxTimeWatched);
+            }
+
+            // จบ EP (เหลือไม่ถึง 2 วิสุดท้าย)
             if (duration > 0 && currentTime >= duration - 2) {
                 markUnitComplete(activeUnitIndex);
             }
@@ -569,19 +612,13 @@ function onPlayerStateChange(event) {
     }
 }
 
-async function markUnitComplete(index) {
+// 6. บันทึกเมื่อจบหน่วย
+function markUnitComplete(index) {
     if(!completedUnits.includes(index)) {
         completedUnits.push(index);
+        saveProgressToDB(); // บันทึกว่าจบแล้ว
         renderPlaylist();
-        
-        const user = JSON.parse(localStorage.getItem('swd_user'));
-        await callAPI('updateProgress', {
-            user_id: user.id,
-            course_id: currentClassCourse.id,
-            completed_units: completedUnits
-        });
-        
-        showAlert('ยอดเยี่ยม!', `คุณเรียน EP.${index+1} จบแล้ว!`);
+        showAlert('ยอดเยี่ยม!', `คุณเรียน ${currentUnits[index].title} จบแล้ว!`);
     }
 }
 
