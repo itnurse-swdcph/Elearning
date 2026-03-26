@@ -408,186 +408,11 @@ document.getElementById('addCourseForm').addEventListener('submit', async (e) =>
 let ytPlayer;
 let currentClassCourse = null;
 let currentUnits = [];
-let completedUnits = []; // เก็บ index ของ EP ที่ดูจบแล้ว
+let completedUnits = []; 
 let activeUnitIndex = 0;
-let maxTimeWatched = 0; // เก็บเวลาสูงสุดที่ดูถึง (ห้ามกดเกินนี้)
+let maxTimeWatched = 0; 
 let trackerInterval;
 
-// ฟังก์ชันดึงรหัส YouTube Video ID จาก URL
-function extractYTId(url) {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
-}
-
-// 1. กดลงทะเบียนเรียนจากหน้าหลัก (แทนที่ฟังก์ชัน enrollCourse เดิม)
-async function enrollCourse(courseId) {
-    const user = JSON.parse(localStorage.getItem('swd_user'));
-    
-    showLoader();
-    // ดึงข้อมูลหลักสูตรทั้งหมดเพื่อหาว่าเราคลิกคอร์สไหน
-    const courseRes = await callAPI('getCourses', {});
-    const targetCourse = courseRes.data.find(c => c.id === courseId);
-    
-    // ลงทะเบียนเรียนในระบบ
-    const enrollRes = await callAPI('enrollCourse', { user_id: user.id, course_id: courseId });
-    hideLoader();
-
-    if(enrollRes.status === 'success') {
-        completedUnits = enrollRes.data.completed_units || [];
-        currentClassCourse = targetCourse;
-        currentUnits = JSON.parse(targetCourse.units || '[]'); // ดึงจาก .units ที่เราเพิ่งเพิ่ม
-        enterClassroom();
-    }
-}
-
-// 2. เปิดหน้าห้องเรียน
-function enterClassroom() {
-    document.getElementById('appSection').classList.add('hidden');
-    document.getElementById('classroomSection').classList.remove('hidden');
-    document.getElementById('classroomCourseTitle').innerText = currentClassCourse.title;
-    
-    // สมมติโครงสร้าง Units เพื่อให้ทำงานได้ (คุณต้องอัปเดต getCourses ให้ส่ง units กลับมาด้วย)
-    // ตรงนี้ผมจะใช้วิธีเรียกข้อมูลล่าสุดจากแอดมินมาแทน
-    
-    renderPlaylist();
-    loadVideo(0); // โหลด EP แรก
-}
-
-// 3. ปิดหน้าห้องเรียน
-function exitClassroom() {
-    if(ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
-    clearInterval(trackerInterval);
-    document.getElementById('classroomSection').classList.add('hidden');
-    document.getElementById('appSection').classList.remove('hidden');
-}
-
-// 4. แสดงรายการ Playlist
-function renderPlaylist() {
-    const list = document.getElementById('unitPlaylist');
-    list.innerHTML = '';
-    
-    let totalDone = 0;
-
-    currentUnits.forEach((unit, index) => {
-        const isDone = completedUnits.includes(index);
-        const isActive = index === activeUnitIndex;
-        // บังคับให้ดูเรียง EP (ถ้า EP ก่อนหน้ายังไม่จบ จะล็อก EP ถัดไป)
-        const isLocked = index > 0 && !completedUnits.includes(index - 1);
-        
-        if(isDone) totalDone++;
-
-        let statusIcon = isDone ? '<i class="fas fa-check-circle unit-status done"></i>' : 
-                         (isLocked ? '<i class="fas fa-lock text-light"></i>' : '<i class="fas fa-play-circle text-light"></i>');
-
-        list.innerHTML += `
-            <li class="${isActive ? 'active' : ''} ${isLocked ? 'locked' : ''}" 
-                onclick="${isLocked ? '' : `loadVideo(${index})`}">
-                <div>
-                    <strong>${unit.title}</strong><br>
-                    <small class="text-light"><i class="fas fa-clock"></i> ${unit.min_time} นาที</small>
-                </div>
-                ${statusIcon}
-            </li>
-        `;
-    });
-
-    // อัปเดต Progress Bar
-    const percent = Math.round((totalDone / currentUnits.length) * 100) || 0;
-    document.getElementById('courseProgressFill').style.width = percent + '%';
-    document.getElementById('progressText').innerText = `สำเร็จ ${percent}%`;
-
-    // ถ้าดูจบทุก EP ให้โชว์ปุ่มทำข้อสอบ
-    if(percent === 100) {
-        document.getElementById('btnTakeExam').classList.remove('hidden');
-    }
-}
-
-// 5. โหลดวิดีโอลง Player
-function loadVideo(index) {
-    activeUnitIndex = index;
-    const unit = currentUnits[index];
-    const videoId = extractYTId(unit.video_url);
-    
-    document.getElementById('currentUnitTitle').innerText = unit.title;
-    maxTimeWatched = 0; // รีเซ็ตเวลาล็อก
-    renderPlaylist(); // รีเฟรชแถบสี
-
-    if(!ytPlayer) {
-        // สร้าง Player ครั้งแรก
-        ytPlayer = new YT.Player('youtubePlayer', {
-            height: '100%', width: '100%',
-            videoId: videoId,
-            playerVars: { 'controls': 1, 'disablekb': 1, 'rel': 0 },
-            events: {
-                'onStateChange': onPlayerStateChange
-            }
-        });
-    } else {
-        // เปลี่ยนวิดีโอ
-        ytPlayer.loadVideoById(videoId);
-    }
-}
-
-// 6. ตรวจจับสถานะวิดีโอและการล็อกการข้าม (Seek Lock)
-function onPlayerStateChange(event) {
-    if (event.data == YT.PlayerState.PLAYING) {
-        // เริ่มจับเวลาเช็คคนแอบเลื่อน
-        trackerInterval = setInterval(() => {
-            const currentTime = ytPlayer.getCurrentTime();
-            const duration = ytPlayer.getDuration();
-            
-            // ป้องกันการกดข้าม (ถ้าเวลาปัจจุบัน มากกว่า เวลาสูงสุดที่เคยดูเกิน 3 วินาที)
-            if (currentTime > maxTimeWatched + 3) {
-                ytPlayer.seekTo(maxTimeWatched); // ดึงกลับมาเวลาเดิม
-                showAlert('คำเตือน', 'กรุณารับชมตามลำดับ ไม่สามารถกดข้ามวิดีโอได้ครับ');
-            } else {
-                // อัปเดตเวลาสูงสุด
-                maxTimeWatched = Math.max(maxTimeWatched, currentTime);
-            }
-
-            // ถ้าดูจบแล้ว (เหลือเวลาไม่ถึง 2 วินาทีสุดท้าย)
-            if (duration > 0 && currentTime >= duration - 2) {
-                markUnitComplete(activeUnitIndex);
-            }
-        }, 1000);
-    } else {
-        clearInterval(trackerInterval); // หยุดจับเวลาถ้ากด Stop/Pause
-    }
-}
-
-// 7. บันทึกเมื่อดูจบ EP
-async function markUnitComplete(index) {
-    if(!completedUnits.includes(index)) {
-        completedUnits.push(index);
-        renderPlaylist();
-        
-        const user = JSON.parse(localStorage.getItem('swd_user'));
-        // ส่ง API ไปบันทึกในฐานข้อมูล
-        await callAPI('updateProgress', {
-            user_id: user.id,
-            course_id: currentClassCourse.id,
-            completed_units: completedUnits
-        });
-        
-        showAlert('ยอดเยี่ยม!', `คุณเรียน ${currentUnits[index].title} จบแล้ว!`);
-    }
-}
-
-function startExam() {
-    showAlert('เตรียมพร้อม', 'ระบบแบบทดสอบ (Pre/Post-Test) จะเปิดใช้งานในเฟสต่อไปครับ');
-}
-// ================= Classroom & Video Tracker Logic =================
-
-let ytPlayer;
-let currentClassCourse = null;
-let currentUnits = [];
-let completedUnits = []; // เก็บ index ของ EP ที่ดูจบแล้ว
-let activeUnitIndex = 0;
-let maxTimeWatched = 0; // เก็บเวลาสูงสุดที่ดูถึง (กันกดข้าม)
-let trackerInterval;
-
-// ฟังก์ชันดึงรหัส YouTube Video ID 
 function extractYTId(url) {
     if(!url) return null;
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -595,12 +420,10 @@ function extractYTId(url) {
     return (match && match[2].length === 11) ? match[2] : null;
 }
 
-// เมื่อผู้ใช้กด "ลงทะเบียนเรียน" จากหน้า Dashboard
 async function enrollCourse(courseId) {
     const user = JSON.parse(localStorage.getItem('swd_user'));
     showLoader();
     
-    // 1. ดึงข้อมูลหลักสูตรทั้งหมดเพื่อหาว่าคลิกวิชาไหน
     const courseRes = await callAPI('getCourses', {});
     const targetCourse = courseRes.data.find(c => c.id === courseId);
     
@@ -610,7 +433,6 @@ async function enrollCourse(courseId) {
         return;
     }
 
-    // 2. เรียก API ลงทะเบียน (จะคืนค่า EP ที่เคยดูจบแล้วมาให้ด้วย)
     const enrollRes = await callAPI('enrollCourse', { user_id: user.id, course_id: courseId });
     hideLoader();
 
@@ -618,7 +440,6 @@ async function enrollCourse(courseId) {
         completedUnits = enrollRes.data.completed_units || [];
         currentClassCourse = targetCourse;
         
-        // แปลง JSON ข้อความให้กลายเป็น Array ของวิดีโอ
         try {
             currentUnits = JSON.parse(targetCourse.units || '[]');
         } catch(e) {
@@ -634,16 +455,13 @@ async function enrollCourse(courseId) {
     }
 }
 
-// เปิดหน้าห้องเรียน
 function enterClassroom() {
-    // ซ่อนหน้า Dashboard ปกติ และโชว์ห้องเรียน
     document.getElementById('appSection').classList.add('hidden');
     document.getElementById('classroomSection').classList.remove('hidden');
     document.getElementById('classroomCourseTitle').innerText = currentClassCourse.title;
     
     renderPlaylist();
     
-    // หา EP ถัดไปที่ยังเรียนไม่จบ เพื่อโหลดขึ้นมาให้ดูอัตโนมัติ
     let nextUnfinishedUnit = 0;
     for(let i=0; i<currentUnits.length; i++) {
         if(!completedUnits.includes(i)) {
@@ -654,18 +472,15 @@ function enterClassroom() {
     loadVideo(nextUnfinishedUnit);
 }
 
-// ปิดหน้าห้องเรียน (กดปุ่ม กลับหน้าหลัก)
 function exitClassroom() {
     if(ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
     clearInterval(trackerInterval);
     document.getElementById('classroomSection').classList.add('hidden');
     document.getElementById('appSection').classList.remove('hidden');
     
-    // รีเฟรชหน้า Dashboard เผื่อมีชั่วโมงเพิ่ม
     loadCourses(); 
 }
 
-// สร้างปุ่มและรายการ EP ด้านขวา
 function renderPlaylist() {
     const list = document.getElementById('unitPlaylist');
     list.innerHTML = '';
@@ -674,7 +489,6 @@ function renderPlaylist() {
     currentUnits.forEach((unit, index) => {
         const isDone = completedUnits.includes(index);
         const isActive = index === activeUnitIndex;
-        // ล็อก EP ถ้า EP ก่อนหน้ายังดูไม่จบ
         const isLocked = index > 0 && !completedUnits.includes(index - 1);
         
         if(isDone) totalDone++;
@@ -682,7 +496,6 @@ function renderPlaylist() {
         let statusIcon = isDone ? '<i class="fas fa-check-circle" style="color: #10B981; font-size: 1.2rem;"></i>' : 
                          (isLocked ? '<i class="fas fa-lock" style="color: #94a3b8;"></i>' : '<i class="fas fa-play-circle" style="color: #94a3b8;"></i>');
         
-        // สไตล์สำหรับการคลิก
         let liStyle = `padding: 15px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s;`;
         if (isActive) liStyle += `border-left: 4px solid var(--primary-color); background-color: #f0fdf4; cursor: default;`;
         else if (isLocked) liStyle += `opacity: 0.6; background-color: #f8fafc; cursor: not-allowed;`;
@@ -710,24 +523,21 @@ function renderPlaylist() {
     }
 }
 
-// โหลดวิดีโอลง Player
 function loadVideo(index) {
     activeUnitIndex = index;
     const unit = currentUnits[index];
     const videoId = extractYTId(unit.video_url);
     
     document.getElementById('currentUnitTitle').innerText = unit.title;
-    maxTimeWatched = 0; // เริ่มนับเวลาใหม่
+    maxTimeWatched = 0; 
     renderPlaylist(); 
 
-    // ถ้าไม่มีลิงก์ YouTube ที่ถูกต้อง
     if(!videoId) {
         showAlert('ข้อผิดพลาด', 'ลิงก์วิดีโอไม่ถูกต้อง (รองรับเฉพาะ YouTube เท่านั้น)');
         return;
     }
 
     if(!ytPlayer) {
-        // วิดีโอแรก สร้าง Player
         ytPlayer = new YT.Player('youtubePlayer', {
             height: '100%', width: '100%',
             videoId: videoId,
@@ -735,19 +545,16 @@ function loadVideo(index) {
             events: { 'onStateChange': onPlayerStateChange }
         });
     } else {
-        // มี Player แล้ว แค่เปลี่ยนลิงก์
         ytPlayer.loadVideoById(videoId);
     }
 }
 
-// ระบบเช็คเวลา (Anti-Cheat Seek Lock)
 function onPlayerStateChange(event) {
     if (event.data == YT.PlayerState.PLAYING) {
         trackerInterval = setInterval(() => {
             const currentTime = ytPlayer.getCurrentTime();
             const duration = ytPlayer.getDuration();
             
-            // ถ้ากดลากข้ามไปเกิน 3 วินาที จะโดนดึงกลับ
             if (currentTime > maxTimeWatched + 3) {
                 ytPlayer.seekTo(maxTimeWatched); 
                 showAlert('กรุณารับชมวิดีโอให้จบ', 'ระบบล็อกการเลื่อนข้าม เพื่อให้แน่ใจว่าคุณได้รับเนื้อหาครบถ้วนครับ');
@@ -755,7 +562,6 @@ function onPlayerStateChange(event) {
                 maxTimeWatched = Math.max(maxTimeWatched, currentTime);
             }
 
-            // ถ้าดูจนเหลือไม่ถึง 2 วินาทีสุดท้าย ถือว่าผ่าน!
             if (duration > 0 && currentTime >= duration - 2) {
                 markUnitComplete(activeUnitIndex);
             }
@@ -765,7 +571,6 @@ function onPlayerStateChange(event) {
     }
 }
 
-// บันทึกความคืบหน้าเมื่อดูจบ EP
 async function markUnitComplete(index) {
     if(!completedUnits.includes(index)) {
         completedUnits.push(index);
@@ -782,7 +587,6 @@ async function markUnitComplete(index) {
     }
 }
 
-// ปุ่มทำข้อสอบ
 function startExam() {
     showAlert('เตรียมพร้อม', 'ระบบแบบทดสอบและใบประกาศ PDF จะอยู่ในขั้นตอนต่อไปครับ');
 }
