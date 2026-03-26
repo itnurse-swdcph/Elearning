@@ -2,7 +2,7 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbxlfD-5saP7FtUX_YxuBe3gowToA38b0qc0jW5JuWjMN9XotTlqRfc0LuaWtibYNwMp1Q/exec'; 
 
 // ================= UI Utilities =================
-ffunction getDriveImageUrl(url) {
+function getDriveImageUrl(url) {
     if (!url) return 'https://via.placeholder.com/300x180?text=Course+Cover';
     
     // ตรวจสอบว่าเป็นลิงก์ Drive หรือไม่
