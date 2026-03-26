@@ -426,3 +426,16 @@ body { background-color: var(--bg-color); color: var(--text-main); }
 .user-body { padding: 30px; max-width: 1200px; margin: 0 auto; width: 100%; }
 .stat-number { font-size: 1.8rem; font-weight: 700; color: var(--primary-color); margin-top: 5px; }
 .text-success { color: #10B981 !important; }
+/* ================= Quiz UI ================= */
+.exam-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 15px; position: relative; }
+.exam-box .btn-remove { position: absolute; top: 15px; right: 15px; color: #EF4444; background: #FEF2F2; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+
+.option-label {
+    display: flex; align-items: center; padding: 15px; border: 2px solid #e2e8f0;
+    border-radius: 8px; cursor: pointer; transition: all 0.2s; background: white;
+}
+.option-label:hover { border-color: #cbd5e1; background: #f8fafc; }
+.option-label input[type="radio"] { margin-right: 15px; transform: scale(1.2); }
+.option-label.selected { border-color: var(--primary-color); background: #f0f8ff; }
+.btn-success { background: #10B981; color: white; border: none; }
+.btn-success:hover { background: #059669; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
