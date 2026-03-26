@@ -146,13 +146,24 @@
 
                     <div id="courseMgtTab" class="admin-tab hidden">
                         <div class="tab-header">
-                            <h3><i class="fas fa-plus-circle"></i> เพิ่มหลักสูตรใหม่</h3>
+                            <h3 id="courseFormTitle"><i class="fas fa-plus-circle"></i> เพิ่มหลักสูตรใหม่</h3>
+                            <button id="btnCancelEdit" class="btn btn-outline hidden" onclick="resetCourseForm()">ยกเลิกการแก้ไข</button>
                         </div>
+                        
                         <form id="addCourseForm" class="admin-form">
+                            <input type="hidden" id="editCourseId" value="">
+                            
                             <div class="form-grid">
                                 <div class="input-group"><input type="text" id="cTitle" placeholder="ชื่อหลักสูตร" required></div>
                                 <div class="input-group"><input type="text" id="cOrganizer" placeholder="หน่วยงานที่จัด/วิทยากร" required></div>
-                                <div class="input-group"><input type="number" id="cHours" placeholder="จำนวนชั่วโมง (ชม.)" required></div>
+                                
+                                <div class="input-group time-input-group">
+                                    <input type="number" id="cHours" placeholder="ชั่วโมง" min="0" required>
+                                    <span class="time-separator">:</span>
+                                    <input type="number" id="cMins" placeholder="นาที" min="0" max="59" required>
+                                    <small>หน่วยกิตที่ได้</small>
+                                </div>
+                                
                                 <div class="input-group"><input type="number" id="cPassingScore" placeholder="เกณฑ์สอบผ่าน (%)" value="80" required></div>
                                 <div class="input-group" style="grid-column: 1 / -1;">
                                     <input type="text" id="cCover" placeholder="URL รูปหน้าปกหลักสูตร" required>
@@ -166,21 +177,31 @@
                                 </div>
                                 
                                 <div id="unitsContainer">
-                                    <div class="unit-box">
-                                        <div class="unit-row">
-                                            <input type="text" class="u-title" placeholder="ชื่อหน่วย (เช่น EP.1 บทนำ)" required>
-                                            <input type="text" class="u-video" placeholder="URL วิดีโอ" required>
-                                            <input type="number" class="u-time" placeholder="เวลาดูขั้นต่ำ (นาที)" required>
-                                            <button type="button" class="btn-remove-unit" disabled><i class="fas fa-trash"></i></button>
-                                        </div>
                                     </div>
-                                </div>
                             </div>
                     
-                            <button type="submit" class="btn btn-primary w-100" style="margin-top: 20px; font-size: 1.1rem;">
+                            <button type="submit" id="btnSubmitCourse" class="btn btn-primary w-100" style="margin-top: 20px; font-size: 1.1rem;">
                                 <i class="fas fa-save"></i> บันทึกหลักสูตร
                             </button>
                         </form>
+                    
+                        <div class="table-responsive" style="margin-top: 40px;">
+                            <div class="tab-header">
+                                <h3><i class="fas fa-list"></i> หลักสูตรในระบบ</h3>
+                            </div>
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>ชื่อหลักสูตร</th>
+                                        <th>วิทยากร/ผู้จัด</th>
+                                        <th>หน่วยกิต</th>
+                                        <th>จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminCourseListBody">
+                                    </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     <div id="userMgtTab" class="admin-tab hidden"><h3>ระบบจัดการผู้ใช้งาน (รอการพัฒนาเฟสถัดไป)</h3></div>
