@@ -237,3 +237,66 @@ body { background-color: var(--bg-color); color: var(--text-main); }
 /* Forms in Admin */
 .admin-form { background: white; padding: 30px; border-radius: var(--border-radius); box-shadow: var(--shadow-sm); }
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+/* ================= Course Units UI ================= */
+.units-section {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 2px dashed #eee;
+}
+.units-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.units-header h4 {
+    color: var(--secondary-color);
+}
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+.unit-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: var(--transition);
+}
+.unit-box:hover {
+    border-color: var(--primary-color);
+}
+.unit-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.unit-row input {
+    margin-bottom: 0 !important; /* ยกเลิก margin ของ input-group เดิม */
+}
+.u-title { flex: 2; }
+.u-video { flex: 3; }
+.u-time { flex: 1; min-width: 120px; }
+.btn-remove-unit {
+    background: #FEF2F2;
+    color: #EF4444;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.btn-remove-unit:not(:disabled):hover {
+    background: #EF4444;
+    color: white;
+}
+.btn-remove-unit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ปรับ Responsive สำหรับมือถือ */
+@media (max-width: 768px) {
+    .unit-row { flex-direction: column; align-items: stretch; }
+}
