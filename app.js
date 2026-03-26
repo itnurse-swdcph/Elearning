@@ -172,11 +172,6 @@ async function loadCourses() {
     }
 }
 
-function enrollCourse(courseId) {
-    showAlert('ยืนยันการลงทะเบียน', 'กำลังเข้าสู่บทเรียน... (ระบบวิดีโอและข้อสอบจะอยู่ในเฟสต่อไป)');
-    // *ต่อยอด: ส่ง API ไปบันทึกใน Sheet Enrollments และพาไปหน้า Video Tracker
-}
-
 // ตรวจสอบสถานะการล็อกอินเมื่อเปิดหน้าเว็บ
 window.onload = checkSession;
 // ================= Admin Logic =================
@@ -452,6 +447,9 @@ async function enrollCourse(courseId) {
         }
 
         enterClassroom();
+    } else {
+        // เพิ่มแจ้งเตือนกันเหนียว ถ้าระบบหลังบ้าน Error
+        showAlert('ข้อผิดพลาดจากระบบ', enrollRes.message || 'ไม่สามารถเข้าสู่บทเรียนได้');
     }
 }
 
