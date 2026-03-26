@@ -208,10 +208,14 @@ function switchAdminTab(tabId) {
     
     if(tabId === 'reportTab') loadAdminReport();
     if(tabId === 'courseMgtTab') {
-        // ถ้ากดมาหน้าจัดการหลักสูตร ให้ล้างฟอร์มและโหลดตารางรายชื่อ
         resetCourseForm();
         loadAdminCoursesTable(); 
     }
+    // --- เพิ่ม 3 บรรทัดนี้เข้าไป ---
+    if(tabId === 'examMgtTab') {
+        initExamAdmin(); // เรียกฟังก์ชันดึงรายชื่อวิชามาใส่ Dropdown
+    }
+    // -------------------------
 }
 
 async function loadAdminReport() {
