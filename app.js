@@ -175,6 +175,11 @@ function switchAdminTab(tabId) {
     event.currentTarget.classList.add('active');
     
     if(tabId === 'reportTab') loadAdminReport();
+    if(tabId === 'courseMgtTab') {
+        // ถ้ากดมาหน้าจัดการหลักสูตร ให้ล้างฟอร์มและโหลดตารางรายชื่อ
+        resetCourseForm();
+        loadAdminCoursesTable(); 
+    }
 }
 
 async function loadAdminReport() {
@@ -208,29 +213,6 @@ async function loadAdminReport() {
     }
 }
 
-// ฟังก์ชันเพิ่มหลักสูตร
-document.getElementById('addCourseForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    showLoader();
-    const payload = {
-        title: document.getElementById('cTitle').value,
-        organizer: document.getElementById('cOrganizer').value,
-        hours: document.getElementById('cHours').value,
-        min_time: document.getElementById('cMinTime').value,
-        cover_image: document.getElementById('cCover').value,
-        video_url: document.getElementById('cVideo').value,
-        passing_score: 80 // ตั้งค่าเริ่มต้นที่ 80%
-    };
-    
-    const res = await callAPI('addCourse', payload);
-    hideLoader();
-    
-    if(res.status === 'success') {
-        showAlert('สำเร็จ', 'บันทึกหลักสูตรเรียบร้อยแล้ว');
-        document.getElementById('addCourseForm').reset();
-    }
-});
-
 // ฟังก์ชัน Export Excel อย่างง่ายด้วย JS
 function exportToExcel() {
     let table = document.querySelector(".admin-table");
@@ -240,17 +222,51 @@ function exportToExcel() {
     a.download = 'training_report_swd.xls';
     a.click();
 }
-// ================= Course Units Logic =================
 
-// ฟังก์ชันเพิ่มกล่องกรอกข้อมูลวิดีโอ
-function addUnitField() {
+// ================= Course Management Logic =================
+
+let adminCoursesData = [];
+
+// โหลดรายชื่อหลักสูตรในตารางแอดมิน
+async function loadAdminCoursesTable() {
+    showLoader();
+    const res = await callAPI('getAdminCourses', {});
+    hideLoader();
+
+    const tbody = document.getElementById('adminCourseListBody');
+    tbody.innerHTML = '';
+
+    if (res.status === 'success') {
+        adminCoursesData = res.data; 
+        res.data.forEach(course => {
+            // แปลงชั่วโมงกลับมาแสดงผล
+            const hr = Math.floor(course.hours);
+            const min = Math.round((course.hours - hr) * 60);
+            const timeText = min > 0 ? `${hr} ชม. ${min} นาที` : `${hr} ชม.`;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${course.title}</strong></td>
+                    <td>${course.organizer}</td>
+                    <td>${timeText}</td>
+                    <td>
+                        <button class="btn btn-action btn-edit" onclick="editCourse('${course.course_id}')"><i class="fas fa-edit"></i> แก้ไข</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+}
+
+// ฟังก์ชันเพิ่ม/ลบ กล่องกรอกข้อมูลวิดีโอ
+function addUnitField(title = '', video = '', time = '') {
     const container = document.getElementById('unitsContainer');
     const unitHTML = `
         <div class="unit-box">
             <div class="unit-row">
-                <input type="text" class="u-title" placeholder="ชื่อหน่วย (เช่น EP.2 ...)" required>
-                <input type="text" class="u-video" placeholder="URL วิดีโอ" required>
-                <input type="number" class="u-time" placeholder="เวลาดูขั้นต่ำ (นาที)" required>
+                <input type="text" class="u-title" placeholder="ชื่อหน่วย (เช่น EP.1)" value="${title}" required>
+                <input type="text" class="u-video" placeholder="URL วิดีโอ" value="${video}" required>
+                <input type="number" class="u-time" placeholder="เวลาดูขั้นต่ำ (นาที)" value="${time}" required>
                 <button type="button" class="btn-remove-unit" onclick="removeUnitField(this)"><i class="fas fa-trash"></i></button>
             </div>
         </div>
@@ -258,19 +274,61 @@ function addUnitField() {
     container.insertAdjacentHTML('beforeend', unitHTML);
 }
 
-// ฟังก์ชันลบกล่องวิดีโอ
 function removeUnitField(btn) {
     btn.closest('.unit-box').remove();
 }
 
-// ฟังก์ชันบันทึกหลักสูตร
+// นำข้อมูลลงฟอร์มเพื่อเตรียมแก้ไข
+function editCourse(courseId) {
+    const course = adminCoursesData.find(c => c.course_id === courseId);
+    if(!course) return;
+
+    // เปลี่ยนหน้าตา UI
+    document.getElementById('courseFormTitle').innerHTML = '<i class="fas fa-edit"></i> แก้ไขข้อมูลหลักสูตร';
+    document.getElementById('btnSubmitCourse').innerHTML = '<i class="fas fa-save"></i> บันทึกการแก้ไข';
+    document.getElementById('btnCancelEdit').classList.remove('hidden');
+    document.getElementById('editCourseId').value = course.course_id;
+
+    document.getElementById('cTitle').value = course.title;
+    document.getElementById('cOrganizer').value = course.organizer;
+    document.getElementById('cPassingScore').value = course.passing_score;
+    document.getElementById('cCover').value = course.cover_image;
+
+    const hr = Math.floor(course.hours);
+    const min = Math.round((course.hours - hr) * 60);
+    document.getElementById('cHours').value = hr;
+    document.getElementById('cMins').value = min;
+
+    document.getElementById('unitsContainer').innerHTML = '';
+    const units = JSON.parse(course.units || '[]');
+    if(units.length === 0) {
+        addUnitField();
+    } else {
+        units.forEach(u => addUnitField(u.title, u.video_url, u.min_time));
+    }
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ล้างฟอร์มกลับเป็นโหมดเพิ่มหลักสูตร
+function resetCourseForm() {
+    document.getElementById('addCourseForm').reset();
+    document.getElementById('courseFormTitle').innerHTML = '<i class="fas fa-plus-circle"></i> เพิ่มหลักสูตรใหม่';
+    document.getElementById('btnSubmitCourse').innerHTML = '<i class="fas fa-save"></i> บันทึกหลักสูตร';
+    document.getElementById('btnCancelEdit').classList.add('hidden');
+    document.getElementById('editCourseId').value = '';
+    
+    document.getElementById('unitsContainer').innerHTML = '';
+    addUnitField(); // สร้างช่องว่างไว้ 1 ช่องเสมอ
+}
+
+// ฟังก์ชันบันทึกหลักสูตร (จัดการทั้งตอนเพิ่มใหม่ และตอนแก้ไข)
 document.getElementById('addCourseForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    // 1. ดึงข้อมูลหน่วยการเรียนรู้ทั้งหมดมาสร้างเป็น Array
+    // 1. ดึงข้อมูลหน่วยย่อย
     const unitBoxes = document.querySelectorAll('.unit-box');
     let unitsData = [];
-    
     unitBoxes.forEach((box) => {
         unitsData.push({
             title: box.querySelector('.u-title').value,
@@ -279,26 +337,38 @@ document.getElementById('addCourseForm').addEventListener('submit', async (e) =>
         });
     });
 
-    // 2. เตรียมข้อมูล Payload
+    // 2. คำนวณชั่วโมงเป็นทศนิยม
+    const hr = parseFloat(document.getElementById('cHours').value) || 0;
+    const min = parseFloat(document.getElementById('cMins').value) || 0;
+    const totalDecimalHours = +(hr + (min / 60)).toFixed(2);
+
+    // 3. เตรียม Payload
     const payload = {
         title: document.getElementById('cTitle').value,
         organizer: document.getElementById('cOrganizer').value,
-        hours: document.getElementById('cHours').value,
+        hours: totalDecimalHours,
         passing_score: document.getElementById('cPassingScore').value,
         cover_image: document.getElementById('cCover').value,
-        units: unitsData // ส่ง Array ไปเลย
+        units: unitsData 
     };
     
+    // 4. เช็คว่าเป็นโหมดเพิ่มใหม่ หรือ โหมดแก้ไข
+    const editId = document.getElementById('editCourseId').value;
+    let actionName = 'addCourse';
+    if (editId !== '') {
+        actionName = 'updateCourse';
+        payload.course_id = editId;
+    }
+    
     showLoader();
-    const res = await callAPI('addCourse', payload);
+    const res = await callAPI(actionName, payload);
     hideLoader();
     
     if(res.status === 'success') {
-        showAlert('สำเร็จ', 'บันทึกหลักสูตรเรียบร้อยแล้ว');
-        document.getElementById('addCourseForm').reset();
-        
-        // ลบกล่องที่เพิ่มมาให้เหลือแค่อันเดียว
-        const extraBoxes = document.querySelectorAll('.unit-box:not(:first-child)');
-        extraBoxes.forEach(box => box.remove());
+        showAlert('สำเร็จ', res.message);
+        resetCourseForm();
+        loadAdminCoursesTable(); 
+    } else {
+        showAlert('ผิดพลาด', res.message);
     }
 });
