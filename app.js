@@ -216,32 +216,32 @@ function switchUserTab(tabId, element) {
 async function loadTrainingHistory() {
     const user = JSON.parse(localStorage.getItem('swd_user'));
     const tbody = document.getElementById('historyTableBody');
+    if(!tbody) return;
     
-    // โชว์ข้อความกำลังโหลด
     tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">กำลังดึงข้อมูลประวัติการอบรม...</td></tr>';
-    
-    // เรียก API ไปดึงข้อมูล
     const res = await callAPI('getUserHistory', { user_id: user.id });
     
     if (res.status === 'success') {
-        tbody.innerHTML = ''; // ล้างตาราง
-        
+        tbody.innerHTML = ''; 
         if (res.data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">ยังไม่มีประวัติการอบรมในระบบครับ</td></tr>';
             return;
         }
         
-        // วนลูปสร้างแถวในตาราง
         res.data.forEach(item => {
-            // เช็คว่ามีลิงก์ใบประกาศไหม ถ้ามีให้สร้างปุ่ม ถ้าไม่มีให้ขึ้นข้อความ
             const certBtn = item.cert_url && item.cert_url.trim() !== '' 
-                ? `<a href="${item.cert_url}" target="_blank" class="btn btn-outline" style="padding: 5px 10px; font-size: 0.85rem;"><i class="fas fa-file-pdf text-danger"></i> ดูใบประกาศ</a>`
-                : '<span style="color: #94a3b8; font-size: 0.85rem;">ไม่มีใบประกาศ</span>';
+                ? `<a href="${item.cert_url}" target="_blank" class="btn btn-outline" style="padding: 5px 10px; font-size: 0.85rem;"><i class="fas fa-file-pdf text-danger"></i> หลักฐาน</a>`
+                : '<span style="color: #94a3b8; font-size: 0.85rem;">ไม่มีไฟล์</span>';
+            
+            // ป้ายกำกับสถานะ (สำหรับอบรมภายนอก)
+            let statusBadge = '';
+            if(item.status === 'pending') statusBadge = '<span class="badge" style="background:#f59e0b; color:white; font-size: 0.7rem;">รอตรวจ</span>';
+            else if(item.status === 'rejected') statusBadge = '<span class="badge" style="background:#ef4444; color:white; font-size: 0.7rem;">ไม่อนุมัติ</span>';
                 
             tbody.innerHTML += `
                 <tr>
                     <td>${item.date || '-'}</td>
-                    <td><strong>${item.title}</strong></td>
+                    <td><strong>${item.title}</strong> ${statusBadge}</td>
                     <td><span class="badge-hours" style="background: #f1f5f9; color: var(--text-light); box-shadow: none;">${item.type}</span></td>
                     <td>${item.hours}</td>
                     <td>${certBtn}</td>
@@ -249,9 +249,9 @@ async function loadTrainingHistory() {
             `;
         });
         
-        // อัปเดตตัวเลขจำนวนใบประกาศในหน้า Dashboard ด้วย (โบนัส)
-        const certCount = res.data.filter(i => i.cert_url).length;
-        document.querySelector('.fa-certificate').nextElementSibling.querySelector('.stat-number').innerText = certCount;
+        // อัปเดตตัวเลขจำนวนใบประกาศในหน้า Dashboard (นับเฉพาะที่อนุมัติ/ผ่านแล้ว)
+        const certCount = res.data.filter(i => i.status === 'approved').length;
+        document.querySelectorAll('.stat-number')[1].innerText = certCount;
         
     } else {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #EF4444;">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่</td></tr>';
@@ -317,19 +317,27 @@ function exitAdmin() {
     document.getElementById('appSection').classList.remove('hidden');
 }
 
-function switchAdminTab(tabId) {
+function switchAdminTab(tabId, element = null) {
     // ซ่อนทุก Tab
     const tabs = document.querySelectorAll('.admin-tab');
     tabs.forEach(tab => tab.classList.add('hidden'));
     
     // ลบ Active menu
-    const menus = document.querySelectorAll('.sidebar-menu li');
+    const menus = document.querySelectorAll('.admin-sidebar li'); // เช็คให้ตรงกับคลาสเมนูของคุณ (เช่น .admin-sidebar li หรือ .sidebar-menu li)
     menus.forEach(menu => menu.classList.remove('active'));
     
     // โชว์ Tab ที่เลือก
-    document.getElementById(tabId).classList.remove('hidden');
-    event.currentTarget.classList.add('active');
+    const targetTab = document.getElementById(tabId);
+    if(targetTab) targetTab.classList.remove('hidden');
     
+    // เพิ่มสี Active ให้เมนูที่ถูกคลิก (แบบป้องกัน Error)
+    if (element) {
+        element.classList.add('active');
+    } else if (window.event && window.event.currentTarget) {
+        window.event.currentTarget.classList.add('active');
+    }
+    
+    // โหลดข้อมูลตามหน้า Tab ที่เลือก
     if(tabId === 'reportTab') loadAdminReport();
     if(tabId === 'courseMgtTab') {
         resetCourseForm();
@@ -344,37 +352,41 @@ function switchAdminTab(tabId) {
     if(tabId === 'userMgtTab') {
         loadAdminUsersTable();
     }
-    // -------------------------
 }
 
+// ================= Admin: Report & Stats =================
 async function loadAdminReport() {
-    showLoader();
-    const res = await callAPI('getAdminReport', {});
-    hideLoader();
+    const tbody = document.getElementById('adminReportBody'); // เช็คให้ตรงกับ id ของ tbody ในหน้า index.html (หน้าสถิติ)
+    if(!tbody) return;
     
-    const tbody = document.getElementById('reportTableBody');
-    tbody.innerHTML = '';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">กำลังโหลดข้อมูลสถิติ...</td></tr>';
+    const res = await callAPI('getAdminReport', {});
     
     if (res.status === 'success') {
-        res.data.forEach(row => {
-            const statusBadge = row.status === 'ผ่านเกณฑ์' ? 
-                '<span class="badge-pass">ผ่านเกณฑ์</span>' : 
-                '<span class="badge-fail">ยังไม่ผ่าน</span>';
+        tbody.innerHTML = '';
+        if (res.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">ไม่มีข้อมูลผู้ใช้งาน</td></tr>';
+            return;
+        }
+        
+        res.data.forEach(r => {
+            const statusBadge = r.status === 'ผ่านเกณฑ์'
+                ? `<span class="badge" style="background: #10B981; color: white;">ผ่านเกณฑ์</span>`
+                : `<span class="badge" style="background: #EF4444; color: white;">ยังไม่ผ่าน</span>`;
                 
             tbody.innerHTML += `
                 <tr>
-                    <td>${row.name}</td>
-                    <td>${row.department}</td>
-                    <td>${row.internal}</td>
-                    <td>${row.external}</td>
-                    <td>${row.totalHours}</td>
-                    <td><strong>${row.totalDays}</strong></td>
+                    <td><strong>${r.name}</strong><br><small style="color:var(--text-light);">${r.department}</small></td>
+                    <td>${r.internal}</td>
+                    <td>${r.external}</td>
+                    <td><strong>${r.totalHours}</strong></td>
+                    <td><strong>${r.totalDays}</strong></td>
                     <td>${statusBadge}</td>
                 </tr>
             `;
         });
     } else {
-        showAlert('แจ้งเตือน', 'ไม่สามารถโหลดข้อมูลสถิติได้');
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">โหลดข้อมูลผิดพลาด</td></tr>`;
     }
 }
 
