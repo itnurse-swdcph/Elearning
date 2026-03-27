@@ -4,11 +4,11 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbxlfD-5saP7FtUX_YxuBe3g
 window.addEventListener('DOMContentLoaded', async () => {
     const res = await callAPI('getSettings', {});
     if(res.status === 'success') {
-        const selects = document.querySelectorAll('.dynamic-dept');
-        selects.forEach(sel => {
-            sel.innerHTML = '<option value="">-- เลือกหน่วยงาน --</option>';
-            res.data.forEach(d => sel.innerHTML += `<option value="${d}">${d}</option>`);
+        let datalistHtml = '';
+        res.data.forEach(d => {
+            datalistHtml += `<option value="${d}">`;
         });
+        document.getElementById('deptList').innerHTML = datalistHtml;
     }
 });
 
@@ -205,6 +205,7 @@ function switchUserTab(tabId, element) {
     if(tabId === 'profileTab') {
         const user = JSON.parse(localStorage.getItem('swd_user'));
         document.getElementById('pName').value = user.name;
+        document.getElementById('pUsername').value = user.username || '-'; // <--- เพิ่มบรรทัดนี้
         document.getElementById('pDept').value = user.department;
         document.getElementById('pPassword').value = '';
         if(user.profile_img) document.getElementById('profilePreview').src = user.profile_img;
@@ -1198,18 +1199,15 @@ function editAdminUser(userId) {
     document.getElementById('editUserSection').classList.remove('hidden');
     document.getElementById('editUserId').value = user.id;
     document.getElementById('euName').value = user.name;
+    document.getElementById('euUsername').value = user.username || '-'; // <--- เพิ่มดึง Username
     document.getElementById('euPosition').value = user.position;
     
-    // จัดการ Dropdown แผนก (ถ้าใน Sheet มีแผนกที่ไม่อยู่ใน List ให้เพิ่มเข้าไปอัตโนมัติ)
-    const deptSelect = document.getElementById('euDept');
-    if (!Array.from(deptSelect.options).some(opt => opt.value === user.department)) {
-        deptSelect.innerHTML += `<option value="${user.department}">${user.department}</option>`;
-    }
-    deptSelect.value = user.department;
+    // แบบใหม่แค่ยัดค่าใส่ input ได้เลย เพราะเป็น text input + datalist แล้ว
+    document.getElementById('euDept').value = user.department; 
     
     document.getElementById('euRole').value = user.role;
     document.getElementById('euEmail').value = user.email;
-    document.getElementById('euPassword').value = user.password; // โชว์ให้แอดมินเห็นเพื่อแก้ไขได้เลย
+    document.getElementById('euPassword').value = user.password; 
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
