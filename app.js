@@ -966,3 +966,51 @@ function closeQuiz() {
         exitClassroom(); // ทำ Post เสร็จ กลับหน้าหลัก (ถ้าผ่าน ใบประกาศจะเด้งในอนาคต)
     }
 }
+// ================= External Training Logic (อัปโหลดประวัติภายนอก) =================
+document.getElementById('externalTrainingForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const fileInput = document.getElementById('extCertFile');
+    if (fileInput.files.length === 0) return showAlert('แจ้งเตือน', 'กรุณาแนบไฟล์ใบประกาศด้วยครับ');
+    
+    const file = fileInput.files[0];
+    // ตรวจสอบขนาดไฟล์ (จำกัดไม่เกิน 5MB เพื่อไม่ให้ฝั่ง Apps Script ทำงานหนักเกินไป)
+    if (file.size > 5 * 1024 * 1024) return showAlert('แจ้งเตือน', 'ขนาดไฟล์ใหญ่เกินไป (ต้องไม่เกิน 5MB) กรุณาบีบอัดไฟล์ครับ');
+    
+    showLoader();
+    
+    // เทคนิคแปลงไฟล์ (PDF/Image) ให้เป็นข้อมูลแบบ Base64 เพื่อส่งผ่าน JSON
+    const reader = new FileReader();
+    reader.onload = async function(event) {
+        const base64Data = event.target.result;
+        
+        const user = JSON.parse(localStorage.getItem('swd_user'));
+        const hr = parseFloat(document.getElementById('extHours').value) || 0;
+        const min = parseFloat(document.getElementById('extMins').value) || 0;
+        const totalDecimalHours = +(hr + (min / 60)).toFixed(2);
+        
+        const payload = {
+            user_id: user.id,
+            topic: document.getElementById('extTopic').value,
+            organizer: document.getElementById('extOrganizer').value,
+            date: document.getElementById('extDate').value,
+            hours: totalDecimalHours,
+            fileName: user.name + '_ExtCert_' + file.name, // ตั้งชื่อไฟล์ใหม่ให้มีชื่อคนอัปโหลดนำหน้า
+            fileData: base64Data // ข้อมูลไฟล์ที่แปลงแล้ว
+        };
+        
+        const res = await callAPI('addExternalTraining', payload);
+        hideLoader();
+        
+        if (res.status === 'success') {
+            showAlert('สำเร็จ', 'บันทึกประวัติและอัปโหลดไฟล์เรียบร้อยแล้ว (รอแอดมินตรวจสอบเพื่ออนุมัติชั่วโมง)');
+            document.getElementById('externalTrainingForm').reset();
+            // โหลดตารางประวัติใหม่เพื่อให้อัปเดตทันที
+            loadTrainingHistory(); 
+        } else {
+            showAlert('ข้อผิดพลาด', res.message);
+        }
+    };
+    
+    reader.readAsDataURL(file); // เริ่มอ่านไฟล์
+});
