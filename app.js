@@ -284,6 +284,9 @@ function switchAdminTab(tabId) {
     if(tabId === 'approveExtTab') {
         loadAdminExtRequests();
     }
+    if(tabId === 'userMgtTab') {
+        loadAdminUsersTable();
+    }
     // -------------------------
 }
 
@@ -1099,3 +1102,91 @@ async function handleExtReq(extId, status) {
         showAlert('ผิดพลาด', res.message);
     }
 }
+// ================= Admin: User Management Logic =================
+let adminUsersData = [];
+
+async function loadAdminUsersTable() {
+    const tbody = document.getElementById('adminUsersBody');
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
+    
+    const res = await callAPI('getAdminUsers', {});
+    
+    if (res.status === 'success') {
+        adminUsersData = res.data;
+        tbody.innerHTML = '';
+        
+        res.data.forEach(u => {
+            const roleBadge = u.role === 'admin' 
+                ? '<span class="badge" style="background: var(--accent-color); color: white;">Admin</span>' 
+                : '<span class="badge" style="background: #e2e8f0; color: var(--text-main);">User</span>';
+                
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${u.name}</strong></td>
+                    <td>${u.position}<br><small style="color:var(--text-light);">${u.department}</small></td>
+                    <td>${u.email}</td>
+                    <td>${roleBadge}</td>
+                    <td>
+                        <button class="btn btn-outline btn-sm" onclick="editAdminUser('${u.id}')"><i class="fas fa-edit"></i> แก้ไข</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+}
+
+function editAdminUser(userId) {
+    const user = adminUsersData.find(u => u.id === userId);
+    if(!user) return;
+    
+    document.getElementById('editUserSection').classList.remove('hidden');
+    document.getElementById('editUserId').value = user.id;
+    document.getElementById('euName').value = user.name;
+    document.getElementById('euPosition').value = user.position;
+    
+    // จัดการ Dropdown แผนก (ถ้าใน Sheet มีแผนกที่ไม่อยู่ใน List ให้เพิ่มเข้าไปอัตโนมัติ)
+    const deptSelect = document.getElementById('euDept');
+    if (!Array.from(deptSelect.options).some(opt => opt.value === user.department)) {
+        deptSelect.innerHTML += `<option value="${user.department}">${user.department}</option>`;
+    }
+    deptSelect.value = user.department;
+    
+    document.getElementById('euRole').value = user.role;
+    document.getElementById('euEmail').value = user.email;
+    document.getElementById('euPassword').value = user.password; // โชว์ให้แอดมินเห็นเพื่อแก้ไขได้เลย
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelEditUser() {
+    document.getElementById('editUserSection').classList.add('hidden');
+    document.getElementById('editUserForm').reset();
+}
+
+document.getElementById('editUserForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const payload = {
+        id: document.getElementById('editUserId').value,
+        name: document.getElementById('euName').value,
+        position: document.getElementById('euPosition').value,
+        department: document.getElementById('euDept').value,
+        role: document.getElementById('euRole').value,
+        password: document.getElementById('euPassword').value
+    };
+    
+    const isConfirmed = await showConfirm('ยืนยันการแก้ไข', 'คุณต้องการบันทึกการเปลี่ยนแปลงข้อมูลผู้ใช้นี้ใช่หรือไม่?');
+    if(!isConfirmed) return;
+    
+    showLoader();
+    const res = await callAPI('updateUserByAdmin', payload);
+    hideLoader();
+    
+    if(res.status === 'success') {
+        showAlert('สำเร็จ', res.message);
+        cancelEditUser();
+        loadAdminUsersTable(); // โหลดตารางใหม่หลังเซฟเสร็จ
+    } else {
+        showAlert('ผิดพลาด', res.message);
+    }
+});
