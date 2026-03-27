@@ -21,6 +21,32 @@ function showAlert(title, message) {
     document.getElementById('customAlert').classList.remove('hidden');
 }
 function closeAlert() { document.getElementById('customAlert').classList.add('hidden'); }
+// --- ระบบกล่องยืนยัน (Custom Confirm) ---
+function showConfirm(title, message) {
+    return new Promise((resolve) => {
+        document.getElementById('confirmTitle').innerText = title;
+        document.getElementById('confirmMessage').innerText = message;
+        document.getElementById('customConfirm').classList.remove('hidden');
+
+        const btnYes = document.getElementById('btnConfirmYes');
+        
+        // ล้าง Event เดิมทิ้งก่อน ป้องกันการกดเบิ้ล
+        const newBtnYes = btnYes.cloneNode(true);
+        btnYes.parentNode.replaceChild(newBtnYes, btnYes);
+
+        // ถ้ากด "ตกลง"
+        newBtnYes.addEventListener('click', () => {
+            document.getElementById('customConfirm').classList.add('hidden');
+            resolve(true); // ส่งค่ากลับว่า ยืนยัน
+        });
+
+        // ถ้ากด "ยกเลิก"
+        window.cancelConfirm = () => {
+            document.getElementById('customConfirm').classList.add('hidden');
+            resolve(false); // ส่งค่ากลับว่า ไม่ยืนยัน
+        };
+    });
+}
 function toggleAuth() {
     document.getElementById('loginForm').classList.toggle('hidden');
     document.getElementById('registerForm').classList.toggle('hidden');
@@ -1052,9 +1078,16 @@ async function loadAdminExtRequests() {
 }
 
 async function handleExtReq(extId, status) {
-    const confirmMsg = status === 'approved' ? 'ยืนยันการอนุมัติชั่วโมงอบรม?' : 'ปฏิเสธคำขออบรมนี้ (จะไม่อนุมัติชั่วโมง)?';
-    if(!confirm(confirmMsg)) return;
+    const title = status === 'approved' ? 'ยืนยันการอนุมัติ' : 'ยืนยันการปฏิเสธ';
+    const confirmMsg = status === 'approved' ? 'คุณต้องการอนุมัติชั่วโมงอบรมนี้ใช่หรือไม่?' : 'คุณต้องการปฏิเสธคำขออบรมนี้ (จะไม่ได้รับชั่วโมง) ใช่หรือไม่?';
     
+    // เรียกใช้กล่อง Custom Confirm แทน pop-up เบราว์เซอร์
+    const isConfirmed = await showConfirm(title, confirmMsg);
+    
+    // ถ้าผู้ใช้กดยกเลิก ให้หยุดการทำงานทันที
+    if (!isConfirmed) return; 
+    
+    // ถ้ากดยืนยัน ให้โหลด API ต่อไป
     showLoader();
     const res = await callAPI('updateExternalStatus', { ext_id: extId, status: status });
     hideLoader();
