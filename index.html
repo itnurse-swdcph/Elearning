@@ -52,7 +52,7 @@
             <form id="registerForm" class="hidden">
                 <div class="input-group"><input type="text" id="regName" placeholder="ชื่อ-นามสกุล" required></div>
                 <div class="input-group"><input type="text" id="regPosition" placeholder="ตำแหน่ง" required></div>
-                <div class="input-group"><select id="regDept" class="dynamic-dept" required><option value="">-- กำลังโหลดหน่วยงาน --</option></select></div>
+                <div class="input-group"><input type="text" id="regDept" list="deptList" placeholder="พิมพ์ค้นหาหรือเลือกหน่วยงาน" required></div>
                 <div class="input-group"><input type="text" id="regUsername" placeholder="ตั้งชื่อผู้ใช้งาน (Username)" required></div>
                 <div class="input-group"><input type="email" id="regEmail" placeholder="อีเมล (สำหรับติดต่อ)" required></div>
                 <div class="input-group"><input type="password" id="regPassword" placeholder="กำหนดรหัสผ่าน" required></div>
@@ -161,7 +161,8 @@
                                     <input type="hidden" id="pImgUrl">
                                 </div>
                                 <div class="input-group"><label>ชื่อ-นามสกุล</label><input type="text" id="pName" required></div>
-                                <div class="input-group"><label>แผนก/หน่วยงาน</label><select id="pDept" class="dynamic-dept" required></select></div>
+                                <div class="input-group"><label>ชื่อผู้ใช้งาน (Username)</label><input type="text" id="pUsername" readonly style="background: #e2e8f0; cursor: not-allowed;" title="ไม่สามารถเปลี่ยนชื่อผู้ใช้ได้"></div>
+                                <div class="input-group"><label>แผนก/หน่วยงาน</label><input type="text" id="pDept" list="deptList" placeholder="พิมพ์ค้นหาหรือเลือก" required></div>
                                 <div class="input-group"><label>รหัสผ่านใหม่ (เว้นว่างไว้ถ้าไม่เปลี่ยน)</label><input type="text" id="pPassword"></div>
                             </div>
                             <button type="submit" class="btn btn-primary" style="margin-top: 15px;"><i class="fas fa-save"></i> บันทึกข้อมูล</button>
@@ -321,14 +322,11 @@
                                 <input type="hidden" id="editUserId">
                                 <div class="form-grid">
                                     <div class="input-group"><label>ชื่อ-นามสกุล</label><input type="text" id="euName" required></div>
+                                    <div class="input-group"><label>ชื่อผู้ใช้งาน (Username)</label><input type="text" id="euUsername" readonly style="background: #e2e8f0; cursor: not-allowed;"></div>
                                     <div class="input-group"><label>ตำแหน่ง</label><input type="text" id="euPosition" required></div>
                                     <div class="input-group">
                                         <label>แผนก/หอผู้ป่วย</label>
-                                        <select id="euDept" required>
-                                            <option value="OPD">ผู้ป่วยนอก (OPD)</option>
-                                            <option value="IPD">ผู้ป่วยใน (IPD)</option>
-                                            <option value="ER">อุบัติเหตุและฉุกเฉิน (ER)</option>
-                                        </select>
+                                        <input type="text" id="euDept" list="deptList" placeholder="พิมพ์ค้นหาหรือเลือก" required>
                                     </div>
                                     <div class="input-group">
                                         <label>สิทธิ์การใช้งาน</label>
@@ -479,7 +477,8 @@
             </div>
         </div>
     </section>
-
+    
+    <datalist id="deptList"></datalist>
     <script src="https://www.youtube.com/iframe_api"></script>
     <script src="app.js"></script>
 </body>
