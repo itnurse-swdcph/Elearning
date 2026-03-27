@@ -136,9 +136,50 @@ function switchUserTab(tabId, element) {
     }
 }
 
-// ฟังก์ชันจำลองการโหลดประวัติ (เดี๋ยวเราจะเขียนเชื่อม API ภายหลัง)
-function loadTrainingHistory() {
-    // โค้ดส่วนนี้เดี๋ยวเราจะเขียนเพื่อดึงข้อมูลจาก Sheet: Enrollments และ External_Training มาโชว์ครับ
+// ฟังก์ชันโหลดประวัติลงตาราง Portfolio
+async function loadTrainingHistory() {
+    const user = JSON.parse(localStorage.getItem('swd_user'));
+    const tbody = document.getElementById('historyTableBody');
+    
+    // โชว์ข้อความกำลังโหลด
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">กำลังดึงข้อมูลประวัติการอบรม...</td></tr>';
+    
+    // เรียก API ไปดึงข้อมูล
+    const res = await callAPI('getUserHistory', { user_id: user.id });
+    
+    if (res.status === 'success') {
+        tbody.innerHTML = ''; // ล้างตาราง
+        
+        if (res.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">ยังไม่มีประวัติการอบรมในระบบครับ</td></tr>';
+            return;
+        }
+        
+        // วนลูปสร้างแถวในตาราง
+        res.data.forEach(item => {
+            // เช็คว่ามีลิงก์ใบประกาศไหม ถ้ามีให้สร้างปุ่ม ถ้าไม่มีให้ขึ้นข้อความ
+            const certBtn = item.cert_url && item.cert_url.trim() !== '' 
+                ? `<a href="${item.cert_url}" target="_blank" class="btn btn-outline" style="padding: 5px 10px; font-size: 0.85rem;"><i class="fas fa-file-pdf text-danger"></i> ดูใบประกาศ</a>`
+                : '<span style="color: #94a3b8; font-size: 0.85rem;">ไม่มีใบประกาศ</span>';
+                
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.date || '-'}</td>
+                    <td><strong>${item.title}</strong></td>
+                    <td><span class="badge-hours" style="background: #f1f5f9; color: var(--text-light); box-shadow: none;">${item.type}</span></td>
+                    <td>${item.hours}</td>
+                    <td>${certBtn}</td>
+                </tr>
+            `;
+        });
+        
+        // อัปเดตตัวเลขจำนวนใบประกาศในหน้า Dashboard ด้วย (โบนัส)
+        const certCount = res.data.filter(i => i.cert_url).length;
+        document.querySelector('.fa-certificate').nextElementSibling.querySelector('.stat-number').innerText = certCount;
+        
+    } else {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #EF4444;">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่</td></tr>';
+    }
 }
 // เพิ่มตัวแปรนี้ไว้เก็บข้อมูลหลักสูตรชั่วคราว
 let globalCourses = []; 
