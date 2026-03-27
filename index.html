@@ -301,7 +301,60 @@
                         </div>
                     </div>
 
-                    <div id="userMgtTab" class="admin-tab hidden"><h3>ระบบจัดการผู้ใช้งาน (รอการพัฒนาเฟสถัดไป)</h3></div>
+                    <div id="userMgtTab" class="admin-tab hidden">
+                        <div class="tab-header">
+                            <h3><i class="fas fa-users"></i> จัดการข้อมูลผู้ใช้งาน</h3>
+                        </div>
+                        
+                        <div id="editUserSection" class="admin-form hidden" style="margin-bottom: 25px; background: #f8fafc; border: 1px solid #e2e8f0;">
+                            <h4 style="margin-bottom: 15px; color: var(--primary-color);"><i class="fas fa-user-edit"></i> แก้ไขข้อมูลผู้ใช้</h4>
+                            <form id="editUserForm">
+                                <input type="hidden" id="editUserId">
+                                <div class="form-grid">
+                                    <div class="input-group"><label>ชื่อ-นามสกุล</label><input type="text" id="euName" required></div>
+                                    <div class="input-group"><label>ตำแหน่ง</label><input type="text" id="euPosition" required></div>
+                                    <div class="input-group">
+                                        <label>แผนก/หอผู้ป่วย</label>
+                                        <select id="euDept" required>
+                                            <option value="OPD">ผู้ป่วยนอก (OPD)</option>
+                                            <option value="IPD">ผู้ป่วยใน (IPD)</option>
+                                            <option value="ER">อุบัติเหตุและฉุกเฉิน (ER)</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>สิทธิ์การใช้งาน</label>
+                                        <select id="euRole" required>
+                                            <option value="user">ผู้ใช้งานทั่วไป (User)</option>
+                                            <option value="admin">ผู้ดูแลระบบ (Admin)</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group"><label>อีเมล (แก้ไขไม่ได้)</label><input type="email" id="euEmail" readonly style="background: #e2e8f0; cursor: not-allowed;"></div>
+                                    <div class="input-group"><label>รหัสผ่าน (สามารถรีเซ็ตได้)</label><input type="text" id="euPassword" required></div>
+                                </div>
+                                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> บันทึกข้อมูล</button>
+                                    <button type="button" class="btn btn-outline" onclick="cancelEditUser()">ยกเลิก</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>ชื่อ-นามสกุล</th>
+                                        <th>ตำแหน่ง / แผนก</th>
+                                        <th>อีเมล</th>
+                                        <th>สิทธิ์</th>
+                                        <th>จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminUsersBody">
+                                    <tr><td colspan="5" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                     <div id="examMgtTab" class="admin-tab hidden">
                         <div class="tab-header">
                             <h3><i class="fas fa-tasks"></i> จัดการคลังข้อสอบ</h3>
