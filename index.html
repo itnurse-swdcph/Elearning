@@ -190,6 +190,7 @@
                     <li onclick="switchAdminTab('courseMgtTab')"><i class="fas fa-video"></i> จัดการหลักสูตร</li>
                     <li onclick="switchAdminTab('userMgtTab')"><i class="fas fa-users"></i> จัดการผู้ใช้งาน</li>
                     <li onclick="switchAdminTab('examMgtTab')"><i class="fas fa-tasks"></i> คลังข้อสอบ</li>
+                    <li onclick="switchAdminTab('approveExtTab')"><i class="fas fa-check-circle"></i> ตรวจสอบ/อนุมัติอบรมภายนอก</li>
                     <li class="logout-menu" onclick="logout()"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</li>
                 </ul>
             </aside>
@@ -309,6 +310,27 @@
                             <div id="questionsContainer">
                                 </div>
                             <button class="btn btn-primary w-100" style="margin-top: 20px;" onclick="saveExamsToDB()"><i class="fas fa-save"></i> บันทึกชุดข้อสอบ</button>
+                        </div>
+                    </div>
+                    <div id="approveExtTab" class="admin-tab hidden">
+                        <div class="tab-header">
+                            <h3><i class="fas fa-check-circle"></i> ตรวจสอบประวัติอบรมภายนอก (รอดำเนินการ)</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>ชื่อผู้ขออนุมัติ</th>
+                                        <th>หัวข้อ / หน่วยงาน</th>
+                                        <th>วันที่ / ชั่วโมง</th>
+                                        <th>หลักฐาน</th>
+                                        <th>จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminExtReqBody">
+                                    <tr><td colspan="5" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
