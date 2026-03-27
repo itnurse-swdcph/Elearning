@@ -1,5 +1,16 @@
 // เปลี่ยน URL ตรงนี้เป็น Web App URL ที่ได้จาก Google Apps Script
 const API_URL = 'https://script.google.com/macros/s/AKfycbxlfD-5saP7FtUX_YxuBe3gowToA38b0qc0jW5JuWjMN9XotTlqRfc0LuaWtibYNwMp1Q/exec'; 
+// โหลดแผนกเมื่อเปิดเว็บ
+window.addEventListener('DOMContentLoaded', async () => {
+    const res = await callAPI('getSettings', {});
+    if(res.status === 'success') {
+        const selects = document.querySelectorAll('.dynamic-dept');
+        selects.forEach(sel => {
+            sel.innerHTML = '<option value="">-- เลือกหน่วยงาน --</option>';
+            res.data.forEach(d => sel.innerHTML += `<option value="${d}">${d}</option>`);
+        });
+    }
+});
 
 // ================= UI Utilities =================
 function getDriveImageUrl(url) {
@@ -69,41 +80,26 @@ async function callAPI(action, payload) {
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     showLoader();
-    const payload = {
-        email: document.getElementById('loginEmail').value,
-        password: document.getElementById('loginPassword').value
-    };
-    const res = await callAPI('login', payload);
+    const res = await callAPI('login', { username: document.getElementById('loginUsername').value, password: document.getElementById('loginPassword').value });
     hideLoader();
-
     if (res.status === 'success') {
-        // บันทึก Session ลง LocalStorage (จดจำการเข้าสู่ระบบ)
         localStorage.setItem('swd_user', JSON.stringify(res.user));
         initApp();
-    } else {
-        showAlert('ข้อผิดพลาด', res.message);
-    }
+    } else showAlert('ข้อผิดพลาด', res.message);
 });
 
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     showLoader();
     const payload = {
-        name: document.getElementById('regName').value,
-        position: document.getElementById('regPosition').value,
-        department: document.getElementById('regDept').value,
-        email: document.getElementById('regEmail').value,
-        password: document.getElementById('regPassword').value
+        name: document.getElementById('regName').value, position: document.getElementById('regPosition').value,
+        department: document.getElementById('regDept').value, username: document.getElementById('regUsername').value,
+        email: document.getElementById('regEmail').value, password: document.getElementById('regPassword').value
     };
     const res = await callAPI('register', payload);
     hideLoader();
-
-    if (res.status === 'success') {
-        localStorage.setItem('swd_user', JSON.stringify(res.user));
-        initApp();
-    } else {
-        showAlert('ข้อผิดพลาด', res.message);
-    }
+    if (res.status === 'success') { showAlert('สำเร็จ', 'ลงทะเบียนเรียบร้อย กรุณาเข้าสู่ระบบ'); toggleAuth(); } 
+    else showAlert('ข้อผิดพลาด', res.message);
 });
 
 function logout() {
@@ -124,41 +120,94 @@ function checkSession() {
 
 async function initApp() {
     const user = JSON.parse(localStorage.getItem('swd_user'));
-    
     document.getElementById('authSection').classList.add('hidden');
     document.getElementById('appSection').classList.remove('hidden');
     
-    // อัปเดตข้อมูลผู้ใช้ใน Sidebar
     document.getElementById('userNameDisplay').innerText = user.name;
     document.getElementById('userDeptDisplay').innerText = user.department;
-    document.getElementById('totalHoursDisplay').innerText = user.hours || 0;
+    if(user.profile_img) document.querySelector('.user-profile-mini .avatar').innerHTML = `<img src="${user.profile_img}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
 
-    // เช็คสิทธิ์ Admin
-    if (user.role === 'admin') {
-        document.getElementById('adminBtn').classList.remove('hidden');
-    } else {
-        document.getElementById('adminBtn').classList.add('hidden');
+    if (user.role === 'admin') document.getElementById('adminBtn').classList.remove('hidden');
+    
+    // ดึงสถิติ Dashboard ใหม่สุด
+    const statRes = await callAPI('getDashboardStats', { user_id: user.id });
+    if(statRes.status === 'success') {
+        document.querySelectorAll('.stat-number')[0].innerText = statRes.stats.inProgress;
+        document.querySelectorAll('.stat-number')[1].innerText = statRes.stats.certCount;
+        document.getElementById('totalHoursDisplay').innerText = statRes.stats.totalHours;
     }
 
-    // โหลดหลักสูตรเข้า Dashboard
     loadCourses();
 }
+// แนบ Event ให้ช่องอัปโหลดรูปหน้าปกแอดมิน
+document.getElementById('cCoverUpload').addEventListener('change', async function() {
+    if(!this.files[0]) return;
+    document.getElementById('cCoverStatus').innerText = "กำลังอัปโหลด...";
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const res = await callAPI('uploadFile', { fileName: 'Cover_'+Date.now(), fileData: e.target.result });
+        if(res.status === 'success') {
+            document.getElementById('cCover').value = res.url;
+            document.getElementById('cCoverStatus').innerHTML = '<span style="color:green;">✅ อัปโหลดสำเร็จ</span>';
+        }
+    };
+    reader.readAsDataURL(this.files[0]);
+});
+
+// ส่งฟอร์มแก้ไข Profile
+document.getElementById('profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const user = JSON.parse(localStorage.getItem('swd_user'));
+    const file = document.getElementById('pImgUpload').files[0];
+    showLoader();
+    
+    let profileUrl = user.profile_img;
+    // ถ้ามีการเลือกรูปใหม่ ให้อัปโหลดก่อน
+    if(file) {
+        const reader = new FileReader();
+        await new Promise((resolve) => {
+            reader.onload = async (e) => {
+                const uploadRes = await callAPI('uploadFile', { fileName: 'Profile_'+user.id, fileData: e.target.result });
+                if(uploadRes.status === 'success') profileUrl = uploadRes.url;
+                resolve();
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    const res = await callAPI('updateUserProfile', {
+        user_id: user.id, name: document.getElementById('pName').value,
+        department: document.getElementById('pDept').value, password: document.getElementById('pPassword').value,
+        profile_img: profileUrl
+    });
+    hideLoader();
+
+    if(res.status === 'success') {
+        user.name = document.getElementById('pName').value;
+        user.department = document.getElementById('pDept').value;
+        user.profile_img = profileUrl;
+        localStorage.setItem('swd_user', JSON.stringify(user));
+        showAlert('สำเร็จ', 'อัปเดตข้อมูลส่วนตัวเรียบร้อยแล้ว');
+        initApp(); // รีเฟรชหน้าจอ
+    }
+});
+
+// เติมข้อมูลลงฟอร์มเมื่อกดแท็บ Profile
 function switchUserTab(tabId, element) {
-    // 1. ซ่อนทุก Tab
     const tabs = document.querySelectorAll('.user-tab');
     tabs.forEach(tab => tab.classList.add('hidden'));
-    
-    // 2. ลบแถบสี Active ออกจากเมนูทั้งหมด
     const menus = document.querySelectorAll('#userMenu li');
     menus.forEach(menu => menu.classList.remove('active'));
-    
-    // 3. โชว์ Tab ที่เลือก และไฮไลท์เมนู
     document.getElementById(tabId).classList.remove('hidden');
     element.classList.add('active');
 
-    // โหลดข้อมูลเพิ่มถ้ากดเข้าหน้าประวัติ
-    if(tabId === 'historyTab') {
-        loadTrainingHistory();
+    if(tabId === 'historyTab') loadTrainingHistory();
+    if(tabId === 'profileTab') {
+        const user = JSON.parse(localStorage.getItem('swd_user'));
+        document.getElementById('pName').value = user.name;
+        document.getElementById('pDept').value = user.department;
+        document.getElementById('pPassword').value = '';
+        if(user.profile_img) document.getElementById('profilePreview').src = user.profile_img;
     }
 }
 
@@ -213,35 +262,42 @@ let globalCourses = [];
 async function loadCourses() {
     showLoader();
     const res = await callAPI('getCourses', {});
+    const user = JSON.parse(localStorage.getItem('swd_user'));
+    const enrollRes = await callAPI('getUserEnrollments', { user_id: user.id }); // ดึงสถานะมาเทียบ
     hideLoader();
 
     const grid = document.getElementById('courseGrid');
     grid.innerHTML = '';
-
-    if (res.status === 'success' && res.data.length > 0) {
-        // เก็บข้อมูลที่โหลดมาครั้งแรกใส่ตัวแปรไว้ จะได้ไม่ต้องโหลดซ้ำ
+    if (res.status === 'success') {
         globalCourses = res.data; 
-
         res.data.forEach(course => {
-            const imgUrl = getDriveImageUrl(course.image);
-            const html = `
+            const enrollData = enrollRes.data.find(e => e.course_id === course.id);
+            let btnText = "เข้าสู่บทเรียน", btnClass = "btn-primary";
+            
+            if(enrollData) {
+                if(enrollData.status === 'completed') {
+                    btnText = "เข้าสู่บทเรียนอีกครั้ง"; btnClass = "btn-outline";
+                } else {
+                    try {
+                        let prog = JSON.parse(enrollData.progress);
+                        if(prog.completed && prog.completed.length > 0) { btnText = "เรียนต่อ"; btnClass = "btn-success"; }
+                    } catch(e) {}
+                }
+            }
+
+            grid.innerHTML += `
                 <div class="course-card">
-                    <img src="${imgUrl}" alt="Course Cover" class="course-img" onerror="this.src='https://via.placeholder.com/300x180?text=Image+Error'">
+                    <img src="${getDriveImageUrl(course.image)}" class="course-img">
                     <div class="course-info">
-                        <h4 class="course-title">${course.title}</h4>
+                        <h4>${course.title}</h4>
                         <div class="course-meta">
-                            <span><i class="fas fa-hospital"></i> ${course.organizer}</span>
-                            <span><i class="fas fa-clock"></i> ${course.hours} ชั่วโมง</span>
-                            <span><i class="fas fa-users"></i> ลงทะเบียนแล้ว ${course.enrolled} คน</span>
+                            <span><i class="fas fa-clock"></i> ${course.hours} ชม.</span>
                         </div>
-                        <button class="btn btn-primary w-100" onclick="enrollCourse('${course.id}')">ลงทะเบียนเรียน</button>
+                        <button class="btn ${btnClass} w-100" onclick="enrollCourse('${course.id}')">${btnText}</button>
                     </div>
                 </div>
             `;
-            grid.innerHTML += html;
         });
-    } else {
-        grid.innerHTML = '<p>ยังไม่มีหลักสูตรเปิดสอนในขณะนี้</p>';
     }
 }
 
