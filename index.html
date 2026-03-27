@@ -22,6 +22,17 @@
             <button onclick="closeAlert()" class="btn btn-primary">ตกลง</button>
         </div>
     </div>
+    <div id="customConfirm" class="modal hidden">
+        <div class="modal-content" style="text-align: center;">
+            <i class="fas fa-question-circle" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 15px;"></i>
+            <h3 id="confirmTitle" style="margin-bottom: 10px;">ยืนยันการทำรายการ</h3>
+            <p id="confirmMessage" style="margin-bottom: 25px;">คุณแน่ใจหรือไม่?</p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="btnConfirmYes" class="btn btn-success" style="min-width: 100px;">ใช่, ตกลง</button>
+                <button onclick="cancelConfirm()" class="btn btn-outline" style="min-width: 100px;">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
 
     <section id="authSection" class="auth-container">
         <div class="auth-box">
