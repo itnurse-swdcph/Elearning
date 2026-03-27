@@ -11,7 +11,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('deptList').innerHTML = datalistHtml;
     }
 });
-
 // ================= UI Utilities =================
 function getDriveImageUrl(url) {
     if (!url) return 'https://via.placeholder.com/300x180?text=Course+Cover';
