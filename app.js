@@ -252,9 +252,11 @@ function switchAdminTab(tabId) {
         resetCourseForm();
         loadAdminCoursesTable(); 
     }
-    // --- เพิ่ม 3 บรรทัดนี้เข้าไป ---
     if(tabId === 'examMgtTab') {
         initExamAdmin(); // เรียกฟังก์ชันดึงรายชื่อวิชามาใส่ Dropdown
+    }
+    if(tabId === 'approveExtTab') {
+        loadAdminExtRequests();
     }
     // -------------------------
 }
@@ -1014,3 +1016,53 @@ document.getElementById('externalTrainingForm').addEventListener('submit', async
     
     reader.readAsDataURL(file); // เริ่มอ่านไฟล์
 });
+// ================= Admin: Approve External Training =================
+async function loadAdminExtRequests() {
+    const tbody = document.getElementById('adminExtReqBody');
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
+    
+    const res = await callAPI('getAdminExternalReq', {});
+    
+    if (res.status === 'success') {
+        tbody.innerHTML = '';
+        if (res.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">ไม่มีรายการรออนุมัติ</td></tr>';
+            return;
+        }
+        
+        res.data.forEach(req => {
+            // แปลงวันที่ให้อ่านง่าย
+            const dateObj = new Date(req.date);
+            const dateStr = !isNaN(dateObj) ? dateObj.toLocaleDateString('th-TH') : req.date;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${req.user_name}</strong></td>
+                    <td>${req.topic}<br><small style="color:var(--text-light);">${req.organizer}</small></td>
+                    <td>${dateStr}<br><span class="badge-hours">${req.hours} ชม.</span></td>
+                    <td><a href="${req.cert_url}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-file-pdf"></i> ตรวจสอบไฟล์</a></td>
+                    <td>
+                        <button class="btn btn-success btn-sm" onclick="handleExtReq('${req.ext_id}', 'approved')" style="margin-right: 5px;"><i class="fas fa-check"></i> อนุมัติ</button>
+                        <button class="btn btn-sm" style="background:#EF4444; color:white;" onclick="handleExtReq('${req.ext_id}', 'rejected')"><i class="fas fa-times"></i> ปฏิเสธ</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+}
+
+async function handleExtReq(extId, status) {
+    const confirmMsg = status === 'approved' ? 'ยืนยันการอนุมัติชั่วโมงอบรม?' : 'ปฏิเสธคำขออบรมนี้ (จะไม่อนุมัติชั่วโมง)?';
+    if(!confirm(confirmMsg)) return;
+    
+    showLoader();
+    const res = await callAPI('updateExternalStatus', { ext_id: extId, status: status });
+    hideLoader();
+    
+    if (res.status === 'success') {
+        showAlert('สำเร็จ', res.message);
+        loadAdminExtRequests(); // โหลดตารางใหม่
+    } else {
+        showAlert('ผิดพลาด', res.message);
+    }
+}
