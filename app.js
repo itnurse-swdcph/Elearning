@@ -1659,3 +1659,20 @@ async function submitCourseReview() {
     showAlert('ขอบคุณครับ', 'ระบบได้รับผลการประเมินของคุณเรียบร้อยแล้ว');
     closeReviewModal();
 }
+// ฟังก์ชัน เปิด-ปิด แถบ Q&A
+function toggleQA() {
+    const content = document.getElementById('qaContent');
+    const chevron = document.getElementById('qaChevron');
+    
+    if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        chevron.style.transform = 'rotate(180deg)'; // หมุนลูกศรขึ้น
+        // เลื่อนหน้าจอลงมาให้เห็นช่องคำถามชัดเจน
+        setTimeout(() => {
+            content.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+    } else {
+        content.classList.add('hidden');
+        chevron.style.transform = 'rotate(0deg)'; // หมุนลูกศรกลับ
+    }
+}
