@@ -222,43 +222,44 @@ async function loadTrainingHistory() {
     const tbody = document.getElementById('historyTableBody');
     if(!tbody) return;
     
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">กำลังดึงข้อมูลประวัติการอบรม...</td></tr>';
+    // เปลี่ยน colspan เป็น 6 เพราะเราเพิ่มคอลัมน์
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">กำลังดึงข้อมูลประวัติการอบรม...</td></tr>';
     const res = await callAPI('getUserHistory', { user_id: user.id });
     
     if (res.status === 'success') {
         tbody.innerHTML = ''; 
         if (res.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">ยังไม่มีประวัติการอบรมในระบบครับ</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">ยังไม่มีประวัติการอบรมในระบบครับ</td></tr>';
             return;
         }
         
         res.data.forEach(item => {
+            // บังคับไม่ให้ปุ่มตกบรรทัด (white-space: nowrap)
             const certBtn = item.cert_url && item.cert_url.trim() !== '' 
-                ? `<a href="${item.cert_url}" target="_blank" class="btn btn-outline" style="padding: 5px 10px; font-size: 0.85rem;"><i class="fas fa-file-pdf text-danger"></i> หลักฐาน</a>`
-                : '<span style="color: #94a3b8; font-size: 0.85rem;">ไม่มีไฟล์</span>';
+                ? `<a href="${item.cert_url}" target="_blank" class="btn btn-outline" style="padding: 5px 10px; font-size: 0.85rem; white-space: nowrap;"><i class="fas fa-file-pdf text-danger"></i> หลักฐาน</a>`
+                : '<span style="color: #94a3b8; font-size: 0.85rem; white-space: nowrap;">ไม่มีไฟล์</span>';
             
-            // ป้ายกำกับสถานะ (สำหรับอบรมภายนอก)
+            // ป้ายกำกับสถานะสำหรับอบรมภายนอก
             let statusBadge = '';
-            if(item.status === 'pending') statusBadge = '<span class="badge" style="background:#f59e0b; color:white; font-size: 0.7rem;">รอตรวจ</span>';
-            else if(item.status === 'rejected') statusBadge = '<span class="badge" style="background:#ef4444; color:white; font-size: 0.7rem;">ไม่อนุมัติ</span>';
+            if(item.status === 'pending') statusBadge = '<span class="badge" style="background:#f59e0b; color:white; font-size: 0.7rem; white-space: nowrap;">รอตรวจ</span>';
+            else if(item.status === 'rejected') statusBadge = '<span class="badge" style="background:#ef4444; color:white; font-size: 0.7rem; white-space: nowrap;">ไม่อนุมัติ</span>';
                 
             tbody.innerHTML += `
                 <tr>
                     <td style="text-align: center; white-space: nowrap;">${item.date || '-'}</td>
                     <td><strong>${item.title}</strong> ${statusBadge}</td>
-                    <td style="text-align: center;"><span class="badge-hours" style="background: #f1f5f9; color: var(--text-light); box-shadow: none;">${item.type}</span></td>
+                    <td>${item.organizer || '-'}</td> <td style="text-align: center; white-space: nowrap;"><span class="badge-hours" style="background: #f1f5f9; color: var(--text-light); box-shadow: none; white-space: nowrap;">${item.type}</span></td>
                     <td style="text-align: center;"><strong>${item.hours}</strong></td>
-                    <td style="text-align: center;">${certBtn}</td>
+                    <td style="text-align: center; white-space: nowrap;">${certBtn}</td>
                 </tr>
             `;
         });
         
-        // อัปเดตตัวเลขจำนวนใบประกาศในหน้า Dashboard (นับเฉพาะที่อนุมัติ/ผ่านแล้ว)
         const certCount = res.data.filter(i => i.status === 'approved').length;
         document.querySelectorAll('.stat-number')[1].innerText = certCount;
         
     } else {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #EF4444;">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #EF4444;">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่</td></tr>';
     }
 }
 // เพิ่มตัวแปรนี้ไว้เก็บข้อมูลหลักสูตรชั่วคราว
