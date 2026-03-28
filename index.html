@@ -41,6 +41,27 @@
             </div>
         </div>
     </div>
+    <div id="reviewModal" class="modal hidden">
+        <div class="modal-content" style="text-align: center; max-width: 400px;">
+            <h3 style="color: var(--primary-color); margin-bottom: 10px;">ขอบคุณที่เข้าร่วมอบรม!</h3>
+            <p style="color: var(--text-light); margin-bottom: 15px;">กรุณาให้คะแนนความพึงพอใจเพื่อนำไปพัฒนาหลักสูตรครับ</p>
+            
+            <div style="font-size: 2.5rem; color: #cbd5e1; cursor: pointer; margin-bottom: 15px; display: flex; justify-content: center; gap: 5px;">
+                <i class="fas fa-star star-btn" data-val="1"></i>
+                <i class="fas fa-star star-btn" data-val="2"></i>
+                <i class="fas fa-star star-btn" data-val="3"></i>
+                <i class="fas fa-star star-btn" data-val="4"></i>
+                <i class="fas fa-star star-btn" data-val="5"></i>
+            </div>
+            
+            <textarea id="reviewComment" placeholder="ข้อเสนอแนะเพิ่มเติม (ถ้ามี)..." rows="2" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-family: 'Prompt', sans-serif; margin-bottom: 15px; resize: vertical;"></textarea>
+            
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn btn-primary" onclick="submitCourseReview()"><i class="fas fa-save"></i> ส่งแบบประเมิน</button>
+                <button class="btn btn-outline" onclick="closeReviewModal()">ข้าม</button>
+            </div>
+        </div>
+    </div>
 
     <section id="authSection" class="auth-container">
         <div class="auth-box">
@@ -548,6 +569,15 @@
                 <div class="video-info">
                     <h3 id="currentUnitTitle">EP.1 บทนำ</h3>
                     <p class="text-alert" style="color: var(--accent-color);"><i class="fas fa-info-circle"></i> กรุณารับชมวิดีโอให้จบ ระบบล็อกการเลื่อนข้าม (Seek Lock)</p>
+                </div>
+                <div id="qaSection" style="margin-top: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <h3 style="margin-bottom: 15px; color: var(--text-main);"><i class="fas fa-comments"></i> ถาม-ตอบข้อสงสัย (Q&A)</h3>
+                    <div id="qaListContainer" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                        </div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <textarea id="qaInput" placeholder="พิมพ์คำถามหรือข้อสงสัยเกี่ยวกับบทเรียนนี้..." rows="2" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; font-family: 'Prompt', sans-serif; resize: vertical;"></textarea>
+                        <button class="btn btn-primary" onclick="submitQA()" style="margin-top: 10px;"><i class="fas fa-paper-plane"></i> ส่งคำถาม</button>
+                    </div>
                 </div>
             </div>
 
