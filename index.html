@@ -130,18 +130,25 @@
                         <form id="externalTrainingForm" class="admin-form">
                             <div class="form-grid">
                                 <div class="input-group" style="grid-column: 1 / -1;">
-                                    <input type="text" id="extTopic" placeholder="หัวข้อการอบรม / ประชุมวิชาการ" required>
+                                    <label>หัวข้อการอบรม / ประชุมวิชาการ</label>
+                                    <input type="text" id="extTopic" placeholder="เช่น อบรมการช่วยฟื้นคืนชีพ (CPR)" required>
                                 </div>
-                                <div class="input-group"><input type="text" id="extOrganizer" placeholder="หน่วยงานที่จัด" required></div>
-                                <div class="input-group"><input type="date" id="extDate" required title="วันที่จัดอบรม"></div>
+                                <div class="input-group">
+                                    <label>หน่วยงานที่จัด</label>
+                                    <input type="text" id="extOrganizer" placeholder="เช่น สสจ.สกลนคร" required>
+                                </div>
+                                <div class="input-group">
+                                    <label>วันที่จัดอบรม</label>
+                                    <input type="date" id="extDate" required title="วันที่จัดอบรม">
+                                </div>
                                 <div class="input-group time-input-group">
+                                    <label>ระยะเวลา (ชั่วโมง : นาที)</label><br>
                                     <input type="number" id="extHours" placeholder="ชั่วโมง" min="0" required>
                                     <span class="time-separator">:</span>
                                     <input type="number" id="extMins" placeholder="นาที" min="0" max="59" required>
-                                    <small>ระยะเวลา</small>
                                 </div>
                                 <div class="input-group">
-                                    <label style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 5px; display: block;">แนบไฟล์ใบประกาศ (PDF/JPG)</label>
+                                    <label>แนบไฟล์ใบประกาศ / หลักฐาน (PDF หรือ รูปภาพ)</label>
                                     <input type="file" id="extCertFile" accept=".pdf, image/*" required>
                                 </div>
                             </div>
