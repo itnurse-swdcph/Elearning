@@ -22,7 +22,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     } catch (err) {
         console.error("ไม่สามารถโหลดรายการหน่วยงานได้:", err);
     }
-});, async () => {
+});, 
+async () => {
     const res = await callAPI('getSettings', {});
     if(res.status === 'success') {
         let datalistHtml = '';
