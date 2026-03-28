@@ -17,7 +17,8 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
-<body>
+<body
+    <div id="sidebarOverlay" class="sidebar-overlay hidden" onclick="toggleSidebar()"></div>
 
     <div id="loader" class="hidden">
         <div class="spinner"></div>
@@ -114,7 +115,7 @@
             </aside>
 
             <main class="user-content">
-                <header class="user-topbar">
+                <header class="user-topbar"><div class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div></header>
                     <div class="topbar-left" style="display: flex; align-items: center; gap: 15px;">
                         <img src="https://img1.pic.in.th/images/nurselogo128x128.png" alt="Logo Nurse" style="height: 40px; width: auto;">
                         <img src="https://img2.pic.in.th/LINE_ALBUM_442025_251220_1.jpg" alt="Logo Hospital" style="height: 40px; width: auto; border-radius: 50%;">
@@ -268,7 +269,7 @@
             </aside>
 
             <main class="admin-content">
-                <header class="admin-topbar">
+                <header class="admin-topbar"><div class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div></header>
                     <h2><i class="fas fa-cogs"></i> ระบบจัดการหลังบ้าน</h2>
                     <button class="btn btn-outline" onclick="exitAdmin()">กลับหน้าผู้ใช้</button>
                 </header>
