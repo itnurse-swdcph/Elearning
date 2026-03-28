@@ -1685,3 +1685,33 @@ function toggleQA() {
         chevron.style.transform = 'rotate(0deg)'; // หมุนลูกศรกลับ
     }
 }
+// ฟังก์ชัน เปิด-ปิด เมนูแฮมเบอร์เกอร์
+function toggleSidebar() {
+    const body = document.body;
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (body.classList.contains('sidebar-open')) {
+        body.classList.remove('sidebar-open');
+        overlay.classList.add('hidden');
+    } else {
+        body.classList.add('sidebar-open');
+        overlay.classList.remove('hidden');
+    }
+}
+
+// อัปเดตฟังก์ชัน switchTab ทุกตัว ให้ปิด Sidebar อัตโนมัติเมื่อกดเลือกเมนู (ในมือถือ)
+const originalSwitchUserTab = switchUserTab;
+switchUserTab = function(tabId, element) {
+    originalSwitchUserTab(tabId, element); // รันฟังก์ชันเดิม
+    if (window.innerWidth <= 768) {
+        toggleSidebar(); // ปิดเมนูเมื่อเลือกแท็บเสร็จ
+    }
+};
+
+const originalSwitchAdminTab = switchAdminTab;
+switchAdminTab = function(tabId, element) {
+    originalSwitchAdminTab(tabId, element); // รันฟังก์ชันเดิม
+    if (window.innerWidth <= 768) {
+        toggleSidebar(); // ปิดเมนูเมื่อเลือกแท็บเสร็จ
+    }
+};
