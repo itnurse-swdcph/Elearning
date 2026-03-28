@@ -365,19 +365,21 @@
                                     <i class="fas fa-user-edit"></i> แก้ไขข้อมูลผู้ใช้
                                 </h4>
                             </div>
-                        
-                            <form id="editUserForm"> 
+                            <form id="editUserForm">
                                 <input type="hidden" id="editUserId">
                                 <div class="form-grid">
                                     <div class="input-group"><label>ชื่อ-นามสกุล</label><input type="text" id="euName" required></div>
                                     <div class="input-group"><label>Username</label><input type="text" id="euUsername" readonly style="background: #e2e8f0;"></div>
                                     <div class="input-group"><label>ตำแหน่ง</label><input type="text" id="euPosition" required></div>
+                                    <div class="input-group"><label>หน่วยงาน</label><input type="text" id="euDept" list="deptList" required></div>
+                                    
                                     <div class="input-group">
-                                        <label>หน่วยงาน</label>
-                                        <input type="text" id="euDept" list="deptList" required>
+                                        <label>อีเมล</label>
+                                        <input type="email" id="euEmail" readonly style="background: #e2e8f0;" title="อีเมลไม่สามารถแก้ไขได้">
                                     </div>
+                        
                                     <div class="input-group">
-                                        <label>สิทธิ์</label>
+                                        <label>สิทธิ์การใช้งาน</label>
                                         <select id="euRole">
                                             <option value="user">User</option>
                                             <option value="admin">Admin</option>
@@ -385,15 +387,12 @@
                                     </div>
                                     <div class="input-group"><label>รหัสผ่าน</label><input type="text" id="euPassword" required></div>
                                 </div>
-                        
                                 <div style="display: flex; gap: 10px; margin-top: 15px;">
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save"></i> บันทึก
-                                    </button>
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> บันทึกการแก้ไข</button>
                                     <button type="button" onclick="cancelEditUser()" class="btn btn-outline">ยกเลิก</button>
                                 </div>
-                            </form> 
-                            </div>
+                            </form>
+                        </div>
                         <div class="table-responsive">
                             <table class="admin-table">
                                 <thead><tr><th>ชื่อ-นามสกุล</th><th>ตำแหน่ง/หน่วยงาน</th><th>อีเมล</th><th>สิทธิ์</th><th>จัดการ</th></tr></thead>
