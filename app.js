@@ -1358,24 +1358,25 @@ async function loadAdminUsersTable() {
     }
 }
 
-function editAdminUser(userId) {
-    const user = adminUsersData.find(u => u.id === userId);
-    if(!user) return;
-    
-    document.getElementById('editUserSection').classList.remove('hidden');
-    document.getElementById('editUserId').value = user.id;
-    document.getElementById('euName').value = user.name;
-    document.getElementById('euUsername').value = user.username || '-'; // <--- เพิ่มดึง Username
-    document.getElementById('euPosition').value = user.position;
-    
-    // แบบใหม่แค่ยัดค่าใส่ input ได้เลย เพราะเป็น text input + datalist แล้ว
-    document.getElementById('euDept').value = user.department; 
-    
-    document.getElementById('euRole').value = user.role;
-    document.getElementById('euEmail').value = user.email;
-    document.getElementById('euPassword').value = user.password; 
-    
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+async function editAdminUser(userId) {
+    // 1. หาข้อมูลผู้ใช้จาก Array หรือเรียกจาก Server (แล้วแต่ระบบของคุณ)
+    // สมมติว่าตัวแปร users คือที่เก็บข้อมูลพยาบาลทั้งหมด
+    const user = allUsers.find(u => u.id === userId); 
+
+    if (user) {
+        // 2. แสดง Section แก้ไข
+        document.getElementById('editUserSection').classList.remove('hidden');
+
+        // 3. ส่งค่าข้อมูลเดิมไปใส่ในแต่ละช่อง Input
+        document.getElementById('editUserId').value = user.id;
+        document.getElementById('euName').value = user.name;
+        document.getElementById('euUsername').value = user.username;
+        document.getElementById('euPosition').value = user.position;
+        document.getElementById('euDept').value = user.dept;
+        document.getElementById('euEmail').value = user.email || ''; 
+        document.getElementById('euPassword').value = user.password; 
+        document.getElementById('editUserSection').scrollIntoView({ behavior: 'smooth' });
+    }
 }
 
 function cancelEditUser() {
