@@ -238,8 +238,9 @@
                 <ul class="sidebar-menu">
                     <li class="active" onclick="switchAdminTab('reportTab', this)"><i class="fas fa-chart-bar"></i> รายงานสถิติ (10วัน/ปี)</li>
                     <li onclick="switchAdminTab('courseMgtTab')"><i class="fas fa-video"></i> จัดการหลักสูตร</li>
-                    <li onclick="switchAdminTab('userMgtTab')"><i class="fas fa-users"></i> จัดการผู้ใช้งาน</li>
                     <li onclick="switchAdminTab('examMgtTab')"><i class="fas fa-tasks"></i> คลังข้อสอบ</li>
+                    <li onclick="switchAdminTab('courseReportTab', this)"><i class="fas fa-chart-line"></i> รายงานผลรายหลักสูตร</li>
+                    <li onclick="switchAdminTab('userMgtTab')"><i class="fas fa-users"></i> จัดการผู้ใช้งาน</li>
                     <li onclick="switchAdminTab('approveExtTab')"><i class="fas fa-check-circle"></i> ตรวจสอบ/อนุมัติอบรมภายนอก</li>
                     <li class="logout-menu" onclick="logout()"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</li>
                 </ul>
@@ -282,6 +283,55 @@
                                     </tr>
                                 </thead>
                                 <tbody id="reportTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="courseReportTab" class="admin-tab hidden">
+                        <div class="tab-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <h3><i class="fas fa-chart-line"></i> รายงานผลการอบรมรายหลักสูตร</h3>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <select id="reportCourseSelect" onchange="loadCourseReport()" style="padding: 8px 15px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; font-family: 'Prompt', sans-serif; min-width: 250px;">
+                                    <option value="">-- เลือกหลักสูตร --</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="exportCourseReportToExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
+                            </div>
+                        </div>
+                    
+                        <div id="courseReportSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;" class="hidden">
+                            <div class="stat-card" style="padding: 15px; text-align: center; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                <h4 style="color: var(--text-light); margin-bottom: 5px; font-size: 0.9rem;">ผู้ลงทะเบียนเรียน</h4>
+                                <div style="font-size: 1.5rem; font-weight: bold; color: var(--text-main);" id="crTotal">0</div>
+                            </div>
+                            <div class="stat-card" style="padding: 15px; text-align: center; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                <h4 style="color: var(--text-light); margin-bottom: 5px; font-size: 0.9rem;">เรียนจบ/สอบผ่าน</h4>
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #10B981;" id="crPassed">0</div>
+                            </div>
+                            <div class="stat-card" style="padding: 15px; text-align: center; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                <h4 style="color: var(--text-light); margin-bottom: 5px; font-size: 0.9rem;">ร้อยละผู้สอบผ่าน</h4>
+                                <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);" id="crPassRate">0%</div>
+                            </div>
+                            <div class="stat-card" style="padding: 15px; text-align: center; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                <h4 style="color: var(--text-light); margin-bottom: 5px; font-size: 0.9rem;">คะแนนเฉลี่ยหลังเรียน</h4>
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #f59e0b;" id="crAvgScore">-</div>
+                            </div>
+                        </div>
+                    
+                        <div class="table-responsive" style="background: white; padding: 15px; border-radius: 8px;">
+                            <table class="admin-table" id="courseReportTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%; text-align: center;">ลำดับ</th>
+                                        <th style="width: 20%;">ชื่อ-สกุล</th>
+                                        <th style="width: 20%;">ตำแหน่ง</th>
+                                        <th style="width: 20%;">หน่วยงาน</th>
+                                        <th style="width: 10%; text-align: center;">ก่อนเรียน</th>
+                                        <th style="width: 10%; text-align: center;">หลังเรียน</th>
+                                        <th style="width: 15%; text-align: center;">สถานะ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="courseReportBody">
+                                    <tr><td colspan="7" style="text-align: center; color: var(--text-light);">กรุณาเลือกหลักสูตรจากด้านบนเพื่อดูรายงาน</td></tr>
+                                </tbody>
                             </table>
                         </div>
                     </div>
