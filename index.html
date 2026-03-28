@@ -77,7 +77,7 @@
                     <div class="avatar"><i class="fas fa-user-nurse"></i></div>
                     <div class="info">
                         <strong id="userNameDisplay">ชื่อผู้ใช้งาน</strong>
-                        <span id="userDeptDisplay">แผนก</span>
+                        <span id="userDeptDisplay">หน่วยงาน</span>
                     </div>
                 </div>
                 <ul class="sidebar-menu" id="userMenu">
@@ -176,8 +176,9 @@
                                     <input type="hidden" id="pImgUrl">
                                 </div>
                                 <div class="input-group"><label>ชื่อ-นามสกุล</label><input type="text" id="pName" required></div>
+                                <div class="input-group"><label>ตำแหน่ง</label><input type="text" id="pPosition" placeholder="เช่น พยาบาลวิชาชีพชำนาญการ" required></div>
                                 <div class="input-group"><label>ชื่อผู้ใช้งาน (Username)</label><input type="text" id="pUsername" readonly style="background: #e2e8f0; cursor: not-allowed;" title="ไม่สามารถเปลี่ยนชื่อผู้ใช้ได้"></div>
-                                <div class="input-group"><label>แผนก/หน่วยงาน</label><input type="text" id="pDept" list="deptList" placeholder="พิมพ์ค้นหาหรือเลือก" required></div>
+                                <div class="input-group"><label>หน่วยงาน</label><input type="text" id="pDept" list="deptList" placeholder="พิมพ์ค้นหาหรือเลือก" required></div>
                                 <div class="input-group"><label>รหัสผ่านใหม่ (เว้นว่างไว้ถ้าไม่เปลี่ยน)</label><input type="text" id="pPassword"></div>
                             </div>
                             <button type="submit" class="btn btn-primary" style="margin-top: 15px;"><i class="fas fa-save"></i> บันทึกข้อมูล</button>
@@ -234,18 +235,24 @@
                 </header>
 
                 <div class="admin-body">
-                    <div id="reportTab" class="admin-tab">
-                        <div class="tab-header">
+                    <div id="reportTab" class="admin-tab hidden">
+                        <div class="tab-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                             <h3>สถิติการอบรม (เกณฑ์ 10 วัน/คน/ปี)</h3>
-                            <button class="btn btn-primary" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <select id="adminReportDeptFilter" onchange="filterAdminReport()" style="padding: 8px 15px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; font-family: 'Prompt', sans-serif;">
+                                    <option value="all">-- ทุกหน่วยงาน --</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
+                            </div>
                         </div>
-
+                    
                         <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                             <h4 style="text-align: center; margin-bottom: 15px; color: var(--text-main);">สัดส่วนการผ่านเกณฑ์ (แยกตามหน่วยงาน)</h4>
                             <div style="position: relative; height: 300px; width: 100%;">
                                 <canvas id="passRateChart"></canvas>
                             </div>
                         </div>
+                    
                         <div class="table-responsive">
                             <table class="admin-table">
                                 <thead>
@@ -259,8 +266,7 @@
                                         <th>สถานะ (10วัน)</th>
                                     </tr>
                                 </thead>
-                                <tbody id="reportTableBody">
-                                    </tbody>
+                                <tbody id="reportTableBody"></tbody>
                             </table>
                         </div>
                     </div>
@@ -344,7 +350,7 @@
                                     <div class="input-group"><label>ชื่อผู้ใช้งาน (Username)</label><input type="text" id="euUsername" readonly style="background: #e2e8f0; cursor: not-allowed;"></div>
                                     <div class="input-group"><label>ตำแหน่ง</label><input type="text" id="euPosition" required></div>
                                     <div class="input-group">
-                                        <label>แผนก/หอผู้ป่วย</label>
+                                        <label>หน่วยงาน</label>
                                         <input type="text" id="euDept" list="deptList" placeholder="พิมพ์ค้นหาหรือเลือก" required>
                                     </div>
                                     <div class="input-group">
@@ -369,7 +375,7 @@
                                 <thead>
                                     <tr>
                                         <th>ชื่อ-นามสกุล</th>
-                                        <th>ตำแหน่ง / แผนก</th>
+                                        <th>ตำแหน่ง / หน่วยงาน</th>
                                         <th>อีเมล</th>
                                         <th>สิทธิ์</th>
                                         <th>จัดการ</th>
