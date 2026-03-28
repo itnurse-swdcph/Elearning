@@ -138,6 +138,20 @@ async function initApp() {
 
     loadCourses();
 }
+// ================= Navigation Helper =================
+// ฟังก์ชันสำหรับกลับมาหน้าหลัก และรีเฟรชข้อมูลให้เป็นปัจจุบัน
+function returnToDashboard() {
+    // ปิดหน้าต่างอื่นๆ ทั้งหมด
+    document.getElementById('adminSection').classList.add('hidden');
+    document.getElementById('classroomSection').classList.add('hidden');
+    
+    // เปิดหน้าแอปผู้ใช้
+    document.getElementById('appSection').classList.remove('hidden');
+
+    // สลับไปที่แท็บ Dashboard และดึงเมนูแรก (หน้าหลัก) มาทำเป็น Active
+    const dashboardMenuBtn = document.querySelector('#userMenu li:first-child');
+    switchUserTab('dashboardTab', dashboardMenuBtn);
+}
 // แนบ Event ให้ช่องอัปโหลดรูปหน้าปกแอดมิน
 document.getElementById('cCoverUpload').addEventListener('change', async function() {
     if(!this.files[0]) return;
@@ -195,16 +209,28 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
     }
 });
 
-// เติมข้อมูลลงฟอร์มเมื่อกดแท็บ Profile
+// เติมข้อมูลลงฟอร์มและรีโหลดข้อมูลเมื่อเปลี่ยนแท็บ
 function switchUserTab(tabId, element) {
     const tabs = document.querySelectorAll('.user-tab');
     tabs.forEach(tab => tab.classList.add('hidden'));
+    
     const menus = document.querySelectorAll('#userMenu li');
     menus.forEach(menu => menu.classList.remove('active'));
+    
     document.getElementById(tabId).classList.remove('hidden');
-    element.classList.add('active');
+    
+    // ป้องกัน Error ถ้าหา element ไม่เจอ
+    if (element) {
+        element.classList.add('active');
+    }
 
-    if(tabId === 'historyTab') loadTrainingHistory();
+    // --- ส่วนรีโหลดข้อมูลตามแท็บที่กด ---
+    if(tabId === 'dashboardTab') {
+        initApp(); // สั่งดึงสถิติแดชบอร์ดและการ์ดหลักสูตรใหม่ทุกครั้งที่กลับมาหน้านี้
+    }
+    if(tabId === 'historyTab') {
+        loadTrainingHistory();
+    }
     if(tabId === 'profileTab') {
         const user = JSON.parse(localStorage.getItem('swd_user'));
         document.getElementById('pName').value = user.name;
@@ -344,9 +370,10 @@ function goToAdminPanel() {
     loadAdminReport(); // โหลดข้อมูลตารางสถิติทันทีที่เข้าหน้าแอดมิน
 }
 
+// ออกจากระบบแอดมิน (กลับหน้าผู้ใช้งานและรีเฟรช)
 function exitAdmin() {
-    document.getElementById('adminSection').classList.add('hidden');
-    document.getElementById('appSection').classList.remove('hidden');
+    // เรียกใช้ระบบกลับหน้าหลักแบบรีเฟรชข้อมูล
+    returnToDashboard();
 }
 
 function switchAdminTab(tabId, element = null) {
@@ -750,14 +777,15 @@ function enterClassroom() {
     loadVideo(nextUnfinishedUnit);
 }
 
-// 3. ปิดหน้าห้องเรียน (ส่งข้อมูลเวลาไปบันทึก)
+// ออกจากห้องเรียน (กลับหน้าหลักและรีเฟรช)
 function exitClassroom() {
     clearInterval(trackerInterval);
     saveProgressToDB(); // บันทึกเวลาที่ดูค้างไว้ลง Google Sheets ทันที
-    
+
     if(ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
-    document.getElementById('classroomSection').classList.add('hidden');
-    document.getElementById('appSection').classList.remove('hidden');
+    
+    // เรียกใช้ระบบกลับหน้าหลักแบบรีเฟรชข้อมูล
+    returnToDashboard(); 
 }
 
 function renderPlaylist() {
