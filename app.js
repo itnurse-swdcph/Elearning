@@ -411,6 +411,9 @@ function switchAdminTab(tabId, element = null) {
     if(tabId === 'userMgtTab') {
         loadAdminUsersTable();
     }
+    if(tabId === 'courseReportTab') {
+        initCourseReportAdmin(); // โหลดรายชื่อวิชาใส่ Dropdown
+    }
 }
 
 // ================= Admin: Report & Stats (พร้อมระบบกรอง) =================
@@ -1418,4 +1421,116 @@ function exportPortfolioPDF() {
         document.getElementById('pdfHeader').style.display = 'none'; // ซ่อนหัวกระดาษกลับ
         hideLoader();
     });
+}
+// ================= Admin: Course Detail Report =================
+
+// ดึงรายชื่อหลักสูตรใส่ Dropdown ในหน้ารายงาน
+async function initCourseReportAdmin() {
+    const select = document.getElementById('reportCourseSelect');
+    select.innerHTML = '<option value="">-- กำลังโหลดหลักสูตร... --</option>';
+    const res = await callAPI('getAdminCourses', {});
+    
+    if (res.status === 'success') {
+        select.innerHTML = '<option value="">-- กรุณาเลือกหลักสูตรที่ต้องการดูรายงาน --</option>';
+        res.data.forEach(c => {
+            select.innerHTML += `<option value="${c.course_id}">${c.title}</option>`;
+        });
+    }
+}
+
+// ฟังก์ชันโหลดรายงานเมื่อเปลี่ยน Dropdown
+async function loadCourseReport() {
+    const courseId = document.getElementById('reportCourseSelect').value;
+    const tbody = document.getElementById('courseReportBody');
+    const summaryCard = document.getElementById('courseReportSummary');
+
+    if(!courseId) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-light);">กรุณาเลือกหลักสูตรจากด้านบนเพื่อดูรายงาน</td></tr>';
+        summaryCard.classList.add('hidden');
+        return;
+    }
+
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">กำลังคำนวณและโหลดข้อมูล...</td></tr>';
+    const res = await callAPI('getCourseReport', { course_id: courseId });
+
+    if(res.status === 'success') {
+        summaryCard.classList.remove('hidden');
+        tbody.innerHTML = '';
+
+        if(res.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">ยังไม่มีผู้ลงทะเบียนในหลักสูตรนี้</td></tr>';
+            document.getElementById('crTotal').innerText = 0;
+            document.getElementById('crPassed').innerText = 0;
+            document.getElementById('crPassRate').innerText = '0%';
+            document.getElementById('crAvgScore').innerText = '-';
+            return;
+        }
+
+        let totalEnrolled = res.data.length;
+        let totalPassed = 0; 
+        let sumPostScore = 0;
+        let postScoreCount = 0;
+
+        res.data.forEach((r, index) => {
+            let statusText = '';
+            let statusBadge = '';
+            
+            // ในระบบนี้ status 'completed' หมายถึงเรียนจบและสอบผ่านแล้ว
+            if(r.status === 'completed') {
+                statusText = 'ผ่านการอบรม';
+                statusBadge = `<span class="badge" style="background: #10B981; color: white;">ผ่าน</span>`;
+                totalPassed++;
+            } else {
+                statusText = 'กำลังเรียน/ยังไม่ผ่าน';
+                statusBadge = `<span class="badge" style="background: #f59e0b; color: white;">รอดำเนินการ</span>`;
+            }
+
+            // รวมคะแนนเพื่อหาค่าเฉลี่ย
+            if(r.post_score !== '-') {
+                sumPostScore += parseFloat(r.post_score);
+                postScoreCount++;
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td style="text-align: center;">${index + 1}</td>
+                    <td>${r.name}</td>
+                    <td>${r.position}</td>
+                    <td>${r.department}</td>
+                    <td style="text-align: center; color: #64748b;">${r.pre_score}</td>
+                    <td style="text-align: center; font-weight: bold; color: #0f172a;">${r.post_score}</td>
+                    <td style="text-align: center;">${statusBadge}</td>
+                </tr>
+            `;
+        });
+
+        // อัปเดตตัวเลขสรุปบนการ์ด
+        document.getElementById('crTotal').innerText = totalEnrolled;
+        document.getElementById('crPassed').innerText = totalPassed;
+
+        let passRate = totalEnrolled > 0 ? ((totalPassed / totalEnrolled) * 100).toFixed(2) : 0;
+        document.getElementById('crPassRate').innerText = `${passRate}%`;
+
+        let avgScore = postScoreCount > 0 ? (sumPostScore / postScoreCount).toFixed(2) : '-';
+        document.getElementById('crAvgScore').innerText = avgScore;
+
+    } else {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">โหลดข้อมูลผิดพลาด</td></tr>';
+    }
+}
+
+// โหลดตารางหลักสูตรนี้ออกเป็น Excel
+function exportCourseReportToExcel() {
+    let table = document.getElementById("courseReportTable");
+    let html = table.outerHTML.replace(/ /g, '%20');
+    let a = document.createElement('a');
+    a.href = 'data:application/vnd.ms-excel;charset=utf-8,\uFEFF' + html;
+    
+    // ตั้งชื่อไฟล์ตามชื่อวิชา
+    const select = document.getElementById('reportCourseSelect');
+    let courseName = select.options[select.selectedIndex].text;
+    if(select.value === "") courseName = "สรุปรายวิชา";
+    
+    a.download = `รายงานผลอบรม_${courseName}.xls`;
+    a.click();
 }
