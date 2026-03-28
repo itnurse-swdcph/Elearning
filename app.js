@@ -244,11 +244,11 @@ async function loadTrainingHistory() {
                 
             tbody.innerHTML += `
                 <tr>
-                    <td>${item.date || '-'}</td>
+                    <td style="text-align: center; white-space: nowrap;">${item.date || '-'}</td>
                     <td><strong>${item.title}</strong> ${statusBadge}</td>
-                    <td><span class="badge-hours" style="background: #f1f5f9; color: var(--text-light); box-shadow: none;">${item.type}</span></td>
-                    <td>${item.hours}</td>
-                    <td>${certBtn}</td>
+                    <td style="text-align: center;"><span class="badge-hours" style="background: #f1f5f9; color: var(--text-light); box-shadow: none;">${item.type}</span></td>
+                    <td style="text-align: center;"><strong>${item.hours}</strong></td>
+                    <td style="text-align: center;">${certBtn}</td>
                 </tr>
             `;
         });
@@ -371,33 +371,25 @@ async function loadAdminReport() {
     const res = await callAPI('getAdminReport', {});
     
     if (res.status === 'success') {
-        globalAdminReportData = res.data; // เก็บข้อมูลลงตัวแปร
+        globalAdminReportData = res.data; 
         
-        // 1. ดึงรายชื่อแผนกที่มีคนอยู่จริงๆ มาใส่ใน Dropdown อัตโนมัติ
-        const deptFilter = document.getElementById('adminReportDeptFilter');
-        const uniqueDepts = [...new Set(res.data.map(item => item.department))].filter(d => d && d.trim() !== '');
-        
-        deptFilter.innerHTML = '<option value="all">-- ทุกหน่วยงาน --</option>';
-        uniqueDepts.sort().forEach(dept => {
-            deptFilter.innerHTML += `<option value="${dept}">${dept}</option>`;
-        });
-
-        // 2. สั่งวาดตารางและกราฟ (แสดงทั้งหมด)
+        // ลบโค้ดสร้าง option ออก เพราะเราใช้ list="deptList" ที่โหลดไว้ตั้งแต่เปิดเว็บแล้ว
+        // สั่งวาดตารางและกราฟ (แสดงทั้งหมด)
         renderReportTableAndChart(globalAdminReportData);
-
     } else {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">โหลดข้อมูลผิดพลาด</td></tr>`;
     }
 }
 
-// ฟังก์ชันกรองข้อมูลเมื่อเปลี่ยน Dropdown
 function filterAdminReport() {
-    const selectedDept = document.getElementById('adminReportDeptFilter').value;
+    // อ่านค่าที่พิมพ์ และตัดช่องว่างซ้ายขวา
+    const selectedDept = document.getElementById('adminReportDeptFilter').value.trim();
     
-    if (selectedDept === 'all') {
-        renderReportTableAndChart(globalAdminReportData); // โชว์ทั้งหมด
+    // ถ้าช่องค้นหาว่างเปล่า ให้โชว์ข้อมูลทั้งหมด
+    if (selectedDept === '') {
+        renderReportTableAndChart(globalAdminReportData); 
     } else {
-        // กรองเอาเฉพาะข้อมูลที่ตรงกับแผนกที่เลือก
+        // กรองเอาเฉพาะข้อมูลที่แผนกตรงกับคำค้นหา
         const filteredData = globalAdminReportData.filter(item => item.department === selectedDept);
         renderReportTableAndChart(filteredData);
     }
@@ -1345,26 +1337,29 @@ document.getElementById('editUserForm').addEventListener('submit', async (e) => 
 });
 // ================= Export Portfolio to PDF =================
 function exportPortfolioPDF() {
-    const user = JSON.parse(localStorage.getItem('swd_user'));
-    document.getElementById('pdfUserName').innerText = `ชื่อ-นามสกุล: ${user.name} | ตำแหน่ง/หน่วยงาน: ${user.department}`;
+    const user = JSON.parse(localStorage.getItem('swd_user')) || {};
+    
+    // ดักข้อมูลเผื่อหาไม่เจอ จะได้ไม่ขึ้น undefined
+    const name = user.name || '-';
+    const position = user.position || '-';
+    const dept = user.department || '-';
+
+    document.getElementById('pdfUserName').innerHTML = `<strong>ชื่อ-นามสกุล:</strong> ${name} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>ตำแหน่ง:</strong> ${position} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>หน่วยงาน:</strong> ${dept}`;
     
     const element = document.getElementById('printablePortfolio');
-    
-    // โชว์ Header ตอนปริ้น
-    document.getElementById('pdfHeader').style.display = 'block';
+    document.getElementById('pdfHeader').style.display = 'block'; // โชว์หัวกระดาษ
     
     const opt = {
         margin:       10,
-        filename:     `Portfolio_${user.name}.pdf`,
+        filename:     `Portfolio_${name}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' } // เปลี่ยนเป็นแนวนอน
     };
 
     showLoader();
     html2pdf().set(opt).from(element).save().then(() => {
-        // ซ่อน Header กลับไปเหมือนเดิมหลังปริ้นเสร็จ
-        document.getElementById('pdfHeader').style.display = 'none';
+        document.getElementById('pdfHeader').style.display = 'none'; // ซ่อนหัวกระดาษกลับ
         hideLoader();
     });
 }
