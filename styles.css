@@ -530,3 +530,89 @@ body { background-color: var(--bg-color); color: var(--text-main); }
         padding: 40px 15px 100px; /* เว้นล่างเยอะหน่อยเผื่อเมนูมือถือ */
     }
 }
+/* ================= Mobile Optimization ================= */
+
+@media (max-width: 768px) {
+    /* 1. ปรับขนาดตัวอักษรและคอนเทนเนอร์หลัก */
+    body { font-size: 14px; }
+    .container { padding: 10px; }
+
+    /* 2. ปรับ Dashboard Stats (การ์ดสถิติ) ให้แสดงแถวละ 2 ตัว หรือเรียงเดี่ยว */
+    .stat-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+    .stat-card { padding: 15px 10px; }
+    .stat-number { font-size: 1.5rem; }
+
+    /* 3. ปรับการ์ดหลักสูตร (Course Grid) */
+    #courseGrid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+        gap: 15px !important;
+    }
+    .course-card img { height: 100px; }
+    .course-info h4 { font-size: 0.95rem; height: 2.8em; overflow: hidden; }
+
+    /* 4. ปรับเมนู Sidebar (Admin & User) ให้เป็นแนวนอนด้านบน */
+    .admin-container, .app-layout { 
+        flex-direction: column !important; 
+    }
+    .sidebar-menu, .admin-sidebar {
+        width: 100% !important;
+        display: flex !important;
+        overflow-x: auto;
+        white-space: nowrap;
+        background: white;
+        padding: 10px;
+        border-right: none;
+        border-bottom: 1px solid #e2e8f0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    .sidebar-menu li, .admin-sidebar li {
+        margin-bottom: 0 !important;
+        padding: 8px 15px !important;
+        font-size: 0.85rem;
+    }
+
+    /* 5. หน้าห้องเรียน (Classroom) */
+    .classroom-container {
+        grid-template-columns: 1fr !important; /* วิดีโออยู่บน Playlist อยู่ล่าง */
+    }
+    .video-section {
+        position: sticky;
+        top: 50px; /* ต่อจากเมนู */
+        z-index: 90;
+    }
+    .video-wrapper {
+        aspect-ratio: 16 / 9;
+        height: auto !important;
+    }
+
+    /* 6. ตารางข้อมูล (หัวใจสำคัญ!) */
+    .table-responsive {
+        margin: 0 -15px; /* ขยายให้ชนขอบจอ */
+        width: calc(100% + 30px);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .admin-table {
+        min-width: 600px; /* บังคับความกว้างขั้นต่ำเพื่อให้เลื่อนซ้ายขวาได้ไม่เบียด */
+    }
+
+    /* 7. ปรับ Modal/Popup ให้ใหญ่ขึ้นในมือถือ */
+    .modal-content {
+        width: 95% !important;
+        padding: 20px 15px;
+        margin: 10% auto;
+    }
+}
+
+/* ปรับปุ่มให้กดง่ายด้วยนิ้วมือ */
+.btn {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
