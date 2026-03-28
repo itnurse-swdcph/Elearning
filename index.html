@@ -8,6 +8,14 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="E-Learning SWD">
+    <meta name="theme-color" content="#2563eb"> <link rel="apple-touch-icon" href="https://img.freepik.com/free-vector/e-learning-global-community_24877-60109.jpg?semt=ais_incoming&w=740&q=80">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
@@ -177,27 +185,24 @@
                     </div>
 
                     <div id="historyTab" class="user-tab hidden">
-                        <div class="tab-header">
-                            <h3><i class="fas fa-history"></i> ประวัติการเรียนรู้ (Training History)</h3>
-                            <button class="btn btn-outline"><i class="fas fa-print"></i> พิมพ์รายงาน</button>
+                        <div class="tab-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <h3><i class="fas fa-history"></i> ประวัติการอบรม (Portfolio)</h3>
+                            <button class="btn btn-primary" onclick="exportPortfolioPDF()"><i class="fas fa-file-pdf"></i> บันทึกเป็น PDF</button>
                         </div>
-                        <div class="table-responsive">
-                            <table class="admin-table">
-                                <thead>
-                                    <tr>
-                                        <th>วันที่</th>
-                                        <th>หัวข้อ / หลักสูตร</th>
-                                        <th>ประเภท</th>
-                                        <th>หน่วยกิต (ชม.)</th>
-                                        <th>สถานะ / ใบประกาศ</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="historyTableBody">
-                                    <tr>
-                                        <td colspan="5" style="text-align: center; color: var(--text-light);">กำลังโหลดข้อมูลประวัติ...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        
+                        <div id="printablePortfolio" style="background: white; padding: 20px; border-radius: 8px;">
+                            <div style="text-align: center; margin-bottom: 20px; display: none;" id="pdfHeader">
+                                <h2>ประวัติการฝึกอบรม (Portfolio)</h2>
+                                <p id="pdfUserName">ชื่อ-สกุล: ...</p>
+                                <p>โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</p>
+                                <hr>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="admin-table">
+                                    <tbody id="historyTableBody"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
@@ -233,6 +238,13 @@
                         <div class="tab-header">
                             <h3>สถิติการอบรม (เกณฑ์ 10 วัน/คน/ปี)</h3>
                             <button class="btn btn-primary" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
+                        </div>
+
+                        <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <h4 style="text-align: center; margin-bottom: 15px; color: var(--text-main);">สัดส่วนการผ่านเกณฑ์ (แยกตามหน่วยงาน)</h4>
+                            <div style="position: relative; height: 300px; width: 100%;">
+                                <canvas id="passRateChart"></canvas>
+                            </div>
                         </div>
                         <div class="table-responsive">
                             <table class="admin-table">
