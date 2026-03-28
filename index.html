@@ -570,13 +570,21 @@
                     <h3 id="currentUnitTitle">EP.1 บทนำ</h3>
                     <p class="text-alert" style="color: var(--accent-color);"><i class="fas fa-info-circle"></i> กรุณารับชมวิดีโอให้จบ ระบบล็อกการเลื่อนข้าม (Seek Lock)</p>
                 </div>
-                <div id="qaSection" style="margin-top: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    <h3 style="margin-bottom: 15px; color: var(--text-main);"><i class="fas fa-comments"></i> ถาม-ตอบข้อสงสัย (Q&A)</h3>
-                    <div id="qaListContainer" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                <div id="qaSection" style="margin-top: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid #e2e8f0;">
+                    <div onclick="toggleQA()" style="padding: 12px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+                        <h3 style="margin: 0; color: var(--text-main); font-size: 1rem;">
+                            <i class="fas fa-comments" style="color: var(--primary-color);"></i> ถาม-ตอบข้อสงสัย (Q&A)
+                        </h3>
+                        <i id="qaChevron" class="fas fa-chevron-down" style="transition: transform 0.3s;"></i>
+                    </div>
+                
+                    <div id="qaContent" class="hidden" style="padding: 20px; border-top: 1px solid #e2e8f0;">
+                        <div id="qaListContainer" style="max-height: 250px; overflow-y: auto; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                            </div>
+                        <div class="input-group" style="margin-bottom: 0;">
+                            <textarea id="qaInput" placeholder="พิมพ์คำถามหรือข้อสงสัย..." rows="2" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; font-family: 'Prompt', sans-serif; resize: none; font-size: 0.9rem;"></textarea>
+                            <button class="btn btn-primary" onclick="submitQA()" style="margin-top: 10px; width: 100%;"><i class="fas fa-paper-plane"></i> ส่งคำถาม</button>
                         </div>
-                    <div class="input-group" style="margin-bottom: 0;">
-                        <textarea id="qaInput" placeholder="พิมพ์คำถามหรือข้อสงสัยเกี่ยวกับบทเรียนนี้..." rows="2" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; font-family: 'Prompt', sans-serif; resize: vertical;"></textarea>
-                        <button class="btn btn-primary" onclick="submitQA()" style="margin-top: 10px;"><i class="fas fa-paper-plane"></i> ส่งคำถาม</button>
                     </div>
                 </div>
             </div>
