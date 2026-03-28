@@ -1,6 +1,6 @@
 // เปลี่ยน URL ตรงนี้เป็น Web App URL ที่ได้จาก Google Apps Script
 const API_URL = 'https://script.google.com/macros/s/AKfycbxlfD-5saP7FtUX_YxuBe3gowToA38b0qc0jW5JuWjMN9XotTlqRfc0LuaWtibYNwMp1Q/exec'; 
-// โหลดหน่วยงานเมื่อเปิดเว็บ
+
 // โหลดข้อมูลเมื่อเปิดเว็บ
 window.addEventListener('DOMContentLoaded', async () => {
     // 1. ส่วนอัปเดตปีใน Footer (ให้ทำงานทันที ไม่ต้องรอ API)
@@ -22,67 +22,48 @@ window.addEventListener('DOMContentLoaded', async () => {
     } catch (err) {
         console.error("ไม่สามารถโหลดรายการหน่วยงานได้:", err);
     }
-});, 
-async () => {
-    const res = await callAPI('getSettings', {});
-    if(res.status === 'success') {
-        let datalistHtml = '';
-        res.data.forEach(d => {
-            datalistHtml += `<option value="${d}">`;
-        });
-        document.getElementById('deptList').innerHTML = datalistHtml;
-        // อัปเดตปีใน Footer ทุกจุดที่ใช้คลาส current-year
-        const years = document.querySelectorAll('.current-year');
-        const thisYear = new Date().getFullYear();
-        years.forEach(el => el.innerText = thisYear);
-    }
 });
+
 // ================= UI Utilities =================
 function getDriveImageUrl(url) {
     if (!url) return 'https://via.placeholder.com/300x180?text=Course+Cover';
-    
-    // ตรวจสอบว่าเป็นลิงก์ Drive หรือไม่
     const match = url.match(/drive\.google\.com\/file\/d\/([^\/]+)/);
     if (match && match[1]) {
-        // ใช้ thumbnail endpoint ของ Google ซึ่งจะดึงรูปมาโชว์ได้ 100%
         return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
     }
     return url;
 }
+
 function showLoader() { document.getElementById('loader').classList.remove('hidden'); }
 function hideLoader() { document.getElementById('loader').classList.add('hidden'); }
+
 function showAlert(title, message) {
     document.getElementById('alertTitle').innerText = title;
     document.getElementById('alertMessage').innerText = message;
     document.getElementById('customAlert').classList.remove('hidden');
 }
+
 function closeAlert() { document.getElementById('customAlert').classList.add('hidden'); }
-// --- ระบบกล่องยืนยัน (Custom Confirm) ---
+
 function showConfirm(title, message) {
     return new Promise((resolve) => {
         document.getElementById('confirmTitle').innerText = title;
         document.getElementById('confirmMessage').innerText = message;
         document.getElementById('customConfirm').classList.remove('hidden');
-
         const btnYes = document.getElementById('btnConfirmYes');
-        
-        // ล้าง Event เดิมทิ้งก่อน ป้องกันการกดเบิ้ล
         const newBtnYes = btnYes.cloneNode(true);
         btnYes.parentNode.replaceChild(newBtnYes, btnYes);
-
-        // ถ้ากด "ตกลง"
         newBtnYes.addEventListener('click', () => {
             document.getElementById('customConfirm').classList.add('hidden');
-            resolve(true); // ส่งค่ากลับว่า ยืนยัน
+            resolve(true);
         });
-
-        // ถ้ากด "ยกเลิก"
         window.cancelConfirm = () => {
             document.getElementById('customConfirm').classList.add('hidden');
-            resolve(false); // ส่งค่ากลับว่า ไม่ยืนยัน
+            resolve(false);
         };
     });
 }
+
 function toggleAuth() {
     document.getElementById('loginForm').classList.toggle('hidden');
     document.getElementById('registerForm').classList.toggle('hidden');
@@ -117,14 +98,19 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     e.preventDefault();
     showLoader();
     const payload = {
-        name: document.getElementById('regName').value, position: document.getElementById('regPosition').value,
-        department: document.getElementById('regDept').value, username: document.getElementById('regUsername').value,
-        email: document.getElementById('regEmail').value, password: document.getElementById('regPassword').value
+        name: document.getElementById('regName').value, 
+        position: document.getElementById('regPosition').value,
+        department: document.getElementById('regDept').value, 
+        username: document.getElementById('regUsername').value,
+        email: document.getElementById('regEmail').value, 
+        password: document.getElementById('regPassword').value
     };
     const res = await callAPI('register', payload);
     hideLoader();
-    if (res.status === 'success') { showAlert('สำเร็จ', 'ลงทะเบียนเรียบร้อย กรุณาเข้าสู่ระบบ'); toggleAuth(); } 
-    else showAlert('ข้อผิดพลาด', res.message);
+    if (res.status === 'success') { 
+        showAlert('สำเร็จ', 'ลงทะเบียนเรียบร้อย กรุณาเข้าสู่ระบบ'); 
+        toggleAuth(); 
+    } else showAlert('ข้อผิดพลาด', res.message);
 });
 
 function logout() {
@@ -150,31 +136,25 @@ async function initApp() {
     
     document.getElementById('userNameDisplay').innerText = user.name;
     document.getElementById('userDeptDisplay').innerText = user.department;
-    if(user.profile_img) document.querySelector('.user-profile-mini .avatar').innerHTML = `<img src="${user.profile_img}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+    if(user.profile_img) {
+        document.querySelector('.user-profile-mini .avatar').innerHTML = `<img src="${user.profile_img}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+    }
 
     if (user.role === 'admin') document.getElementById('adminBtn').classList.remove('hidden');
     
-    // ดึงสถิติ Dashboard ใหม่สุด
     const statRes = await callAPI('getDashboardStats', { user_id: user.id });
     if(statRes.status === 'success') {
         document.querySelectorAll('.stat-number')[0].innerText = statRes.stats.inProgress;
         document.querySelectorAll('.stat-number')[1].innerText = statRes.stats.certCount;
         document.getElementById('totalHoursDisplay').innerText = statRes.stats.totalHours;
     }
-
     loadCourses();
 }
-// ================= Navigation Helper =================
-// ฟังก์ชันสำหรับกลับมาหน้าหลัก และรีเฟรชข้อมูลให้เป็นปัจจุบัน
+
 function returnToDashboard() {
-    // ปิดหน้าต่างอื่นๆ ทั้งหมด
     document.getElementById('adminSection').classList.add('hidden');
     document.getElementById('classroomSection').classList.add('hidden');
-    
-    // เปิดหน้าแอปผู้ใช้
     document.getElementById('appSection').classList.remove('hidden');
-
-    // สลับไปที่แท็บ Dashboard และดึงเมนูแรก (หน้าหลัก) มาทำเป็น Active
     const dashboardMenuBtn = document.querySelector('#userMenu li:first-child');
     switchUserTab('dashboardTab', dashboardMenuBtn);
 }
