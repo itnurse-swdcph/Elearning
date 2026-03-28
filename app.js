@@ -778,6 +778,7 @@ function enterClassroom() {
         }
     }
     loadVideo(nextUnfinishedUnit);
+    loadQA();
 }
 
 // ออกจากห้องเรียน (กลับหน้าหลักและรีเฟรช)
@@ -1201,7 +1202,13 @@ function closeQuiz() {
     if(activeQuizType === 'pre') {
         enterClassroom(); // ทำ Pre เสร็จ เข้าเรียนต่อ
     } else {
-        exitClassroom(); // ทำ Post เสร็จ กลับหน้าหลัก (ถ้าผ่าน ใบประกาศจะเด้งในอนาคต)
+        // เช็คว่าผ่านไหม (ดูจาก class ของไอคอน)
+        const isPassed = document.getElementById('resultIcon').classList.contains('fa-check-circle');
+        if (isPassed) {
+            openReviewModal(); // ถ้าสอบผ่าน ให้เด้งหน้าประเมินดาว ⭐️
+        } else {
+            exitClassroom(); // ถ้าตก ให้กลับหน้าหลัก
+        }
     }
 }
 // ================= External Training Logic (อัปโหลดประวัติภายนอก) =================
@@ -1533,4 +1540,122 @@ function exportCourseReportToExcel() {
     
     a.download = `รายงานผลอบรม_${courseName}.xls`;
     a.click();
+}
+// ================= Q&A Logic =================
+async function loadQA() {
+    const container = document.getElementById('qaListContainer');
+    container.innerHTML = '<div style="text-align: center; color: var(--text-light);"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดคำถาม...</div>';
+    const res = await callAPI('getQA', { course_id: currentClassCourse.id });
+    
+    if(res.status === 'success') {
+        container.innerHTML = '';
+        if(res.data.length === 0) {
+            container.innerHTML = '<div style="text-align: center; color: var(--text-light); padding: 15px;">ยังไม่มีคำถามในบทเรียนนี้ เป็นคนแรกที่เริ่มถามเลย!</div>';
+            return;
+        }
+        
+        const user = JSON.parse(localStorage.getItem('swd_user'));
+        
+        res.data.forEach(qa => {
+            let adminReplyHtml = '';
+            if(qa.answer) {
+                // ถ้ามีคนตอบแล้ว โชว์คำตอบ
+                adminReplyHtml = `
+                    <div style="margin-top: 10px; background: #f0fdf4; padding: 10px; border-radius: 6px; border-left: 3px solid #10b981; font-size: 0.9rem;">
+                        <strong style="color: #10b981;"><i class="fas fa-user-md"></i> ${qa.ans_by} (ผู้ตอบ):</strong> ${qa.answer}
+                    </div>
+                `;
+            } else if (user.role === 'admin') {
+                // ถ้าแอดมินดูอยู่ และยังไม่มีคนตอบ จะเห็นช่องให้พิมพ์ตอบ
+                adminReplyHtml = `
+                    <div style="margin-top: 10px; display: flex; gap: 5px;">
+                        <input type="text" id="reply_${qa.id}" placeholder="พิมพ์คำตอบในฐานะผู้ดูแล..." style="width: 100%; padding: 5px 10px; border-radius: 4px; border: 1px solid #cbd5e1; font-family: 'Prompt'; font-size: 0.85rem;">
+                        <button class="btn btn-sm btn-success" onclick="replyQA('${qa.id}')" style="white-space: nowrap;"><i class="fas fa-reply"></i> ตอบ</button>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML += `
+                <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #e2e8f0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <strong><i class="fas fa-user-circle" style="color: var(--primary-color);"></i> ${qa.user_name}</strong>
+                        <small style="color: #94a3b8;">${qa.date}</small>
+                    </div>
+                    <p style="margin: 0; color: var(--text-main); line-height: 1.5;">${qa.question}</p>
+                    ${adminReplyHtml}
+                </div>
+            `;
+        });
+        container.scrollTop = container.scrollHeight; // เลื่อนให้เห็นข้อความล่าสุด
+    }
+}
+
+async function submitQA() {
+    const text = document.getElementById('qaInput').value.trim();
+    if(!text) return;
+    
+    const user = JSON.parse(localStorage.getItem('swd_user'));
+    showLoader();
+    await callAPI('askQuestion', {
+        course_id: currentClassCourse.id, user_id: user.id, user_name: user.name, question: text
+    });
+    hideLoader();
+    
+    document.getElementById('qaInput').value = '';
+    loadQA(); // โหลดกระดานใหม่
+}
+
+async function replyQA(qaId) {
+    const text = document.getElementById('reply_' + qaId).value.trim();
+    if(!text) return;
+    
+    const user = JSON.parse(localStorage.getItem('swd_user'));
+    showLoader();
+    await callAPI('answerQuestion', { qa_id: qaId, answer: text, admin_name: user.name });
+    hideLoader();
+    loadQA();
+}
+
+// ================= Star Rating Logic =================
+let selectedRating = 0;
+
+// แนบ Event ให้ดาวเปลี่ยนสีตอนกด
+document.querySelectorAll('.star-btn').forEach(star => {
+    star.addEventListener('click', function() {
+        selectedRating = this.getAttribute('data-val');
+        document.querySelectorAll('.star-btn').forEach(s => {
+            if(s.getAttribute('data-val') <= selectedRating) {
+                s.style.color = '#fbbf24'; // สีทอง
+            } else {
+                s.style.color = '#cbd5e1'; // สีเทา
+            }
+        });
+    });
+});
+
+function openReviewModal() {
+    selectedRating = 0;
+    document.querySelectorAll('.star-btn').forEach(s => s.style.color = '#cbd5e1'); // ล้างสี
+    document.getElementById('reviewComment').value = '';
+    document.getElementById('reviewModal').classList.remove('hidden');
+}
+
+function closeReviewModal() {
+    document.getElementById('reviewModal').classList.add('hidden');
+    exitClassroom(); // ประเมินเสร็จ ให้ออกจากห้องเรียนกลับหน้าหลัก
+}
+
+async function submitCourseReview() {
+    if(selectedRating === 0) return showAlert('แจ้งเตือน', 'กรุณากดให้คะแนนดาวก่อนส่งครับ ⭐️');
+    
+    const user = JSON.parse(localStorage.getItem('swd_user'));
+    showLoader();
+    await callAPI('submitReview', {
+        course_id: currentClassCourse.id, user_id: user.id, user_name: user.name, 
+        rating: selectedRating, comment: document.getElementById('reviewComment').value
+    });
+    hideLoader();
+    
+    showAlert('ขอบคุณครับ', 'ระบบได้รับผลการประเมินของคุณเรียบร้อยแล้ว');
+    closeReviewModal();
 }
