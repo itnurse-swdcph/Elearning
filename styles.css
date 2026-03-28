@@ -450,3 +450,34 @@ body { background-color: var(--bg-color); color: var(--text-main); }
     from { transform: translateY(50px) scale(0.95); opacity: 0; }
     to { transform: translateY(0) scale(1); opacity: 1; }
 }
+.main-footer {
+    background-color: #f8fafc;
+    color: #64748b;
+    padding: 30px 20px;
+    text-align: center;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.85rem;
+    margin-top: 50px;
+}
+
+.footer-content p {
+    margin: 5px 0;
+}
+
+.footer-content strong {
+    color: var(--primary-color); /* ใช้สีหลักของระบบคุณ */
+}
+
+.footer-version {
+    margin-top: 10px;
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+/* ปรับให้ดูดีบนมือถือ */
+@media (max-width: 768px) {
+    .main-footer {
+        padding: 20px 10px;
+        margin-bottom: 70px; /* เว้นที่เผื่อแถบเมนูด้านล่างบนมือถือถ้ามี */
+    }
+}
