@@ -450,34 +450,83 @@ body { background-color: var(--bg-color); color: var(--text-main); }
     from { transform: translateY(50px) scale(0.95); opacity: 0; }
     to { transform: translateY(0) scale(1); opacity: 1; }
 }
+/* ส่วนท้ายของหน้า (Footer) */
 .main-footer {
-    background-color: #f8fafc;
-    color: #64748b;
-    padding: 30px 20px;
+    background: linear-gradient(to bottom, #ffffff, #f8fafc); /* ไล่เฉดสีนุ่มนวล */
+    color: #475569;
+    padding: 50px 20px;
     text-align: center;
+    position: relative;
     border-top: 1px solid #e2e8f0;
-    font-size: 0.85rem;
-    margin-top: 50px;
+    margin-top: 60px;
+}
+
+/* เส้นสายหรูหราด้านบนสุด */
+.main-footer::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 150px;
+    height: 3px;
+    background: linear-gradient(to right, transparent, #fbbf24, transparent); /* เส้นสีทองหรู */
+    border-radius: 10px;
+}
+
+.footer-content {
+    max-width: 1000px;
+    margin: 0 auto;
 }
 
 .footer-content p {
-    margin: 5px 0;
+    margin: 8px 0;
+    line-height: 1.6;
+    letter-spacing: 0.3px;
 }
 
+/* เน้นชื่อระบบด้วยสีทองหรู */
 .footer-content strong {
-    color: var(--primary-color); /* ใช้สีหลักของระบบคุณ */
+    color: #b45309; /* สีทองเข้มโทนคลาสสิก */
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
+/* สไตล์ชื่อผู้พัฒนา */
+.dev-credit {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-top: 15px !important;
+}
+
+.dev-name {
+    color: #6366f1; /* สีม่วงน้ำเงินสื่อถึงเทคโนโลยี */
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.dev-name:hover {
+    color: #fbbf24; /* เปลี่ยนเป็นสีทองเวลาเอาเมาส์ชี้ */
+}
+
+/* เลขเวอร์ชันแบบแคปซูล */
 .footer-version {
-    margin-top: 10px;
+    display: inline-block;
+    margin-top: 20px;
+    padding: 4px 15px;
+    background: #f1f5f9;
+    border-radius: 20px;
     font-size: 0.75rem;
-    opacity: 0.7;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    font-weight: 500;
 }
 
-/* ปรับให้ดูดีบนมือถือ */
+/* ปรับปรุงบนมือถือ */
 @media (max-width: 768px) {
     .main-footer {
-        padding: 20px 10px;
-        margin-bottom: 70px; /* เว้นที่เผื่อแถบเมนูด้านล่างบนมือถือถ้ามี */
+        padding: 40px 15px 100px; /* เว้นล่างเยอะหน่อยเผื่อเมนูมือถือ */
     }
 }
