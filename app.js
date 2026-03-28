@@ -355,16 +355,18 @@ function switchAdminTab(tabId, element = null) {
 
 // ================= Admin: Report & Stats =================
 async function loadAdminReport() {
-    const tbody = document.getElementById('adminReportBody'); // เช็คให้ตรงกับ id ของ tbody ในหน้า index.html (หน้าสถิติ)
+    // แก้ ID ให้ตรงกับ HTML ที่คุณตั้งไว้คือ reportTableBody
+    const tbody = document.getElementById('reportTableBody'); 
     if(!tbody) return;
     
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">กำลังโหลดข้อมูลสถิติ...</td></tr>';
+    // ปรับ colspan เป็น 7 ให้ตรงกับจำนวนหัวตาราง
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">กำลังโหลดข้อมูลสถิติ...</td></tr>';
     const res = await callAPI('getAdminReport', {});
     
     if (res.status === 'success') {
         tbody.innerHTML = '';
         if (res.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">ไม่มีข้อมูลผู้ใช้งาน</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">ไม่มีข้อมูลผู้ใช้งาน</td></tr>';
             return;
         }
         
@@ -373,9 +375,11 @@ async function loadAdminReport() {
                 ? `<span class="badge" style="background: #10B981; color: white;">ผ่านเกณฑ์</span>`
                 : `<span class="badge" style="background: #EF4444; color: white;">ยังไม่ผ่าน</span>`;
                 
+            // แยกชื่อและแผนกออกเป็น 2 คอลัมน์ให้ตรงกับ HTML ของคุณ
             tbody.innerHTML += `
                 <tr>
-                    <td><strong>${r.name}</strong><br><small style="color:var(--text-light);">${r.department}</small></td>
+                    <td><strong>${r.name}</strong></td>
+                    <td>${r.department}</td>
                     <td>${r.internal}</td>
                     <td>${r.external}</td>
                     <td><strong>${r.totalHours}</strong></td>
@@ -385,7 +389,7 @@ async function loadAdminReport() {
             `;
         });
     } else {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">โหลดข้อมูลผิดพลาด</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">โหลดข้อมูลผิดพลาด</td></tr>`;
     }
 }
 
