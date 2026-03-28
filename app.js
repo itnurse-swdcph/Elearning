@@ -1,7 +1,28 @@
 // เปลี่ยน URL ตรงนี้เป็น Web App URL ที่ได้จาก Google Apps Script
 const API_URL = 'https://script.google.com/macros/s/AKfycbxlfD-5saP7FtUX_YxuBe3gowToA38b0qc0jW5JuWjMN9XotTlqRfc0LuaWtibYNwMp1Q/exec'; 
 // โหลดหน่วยงานเมื่อเปิดเว็บ
+// โหลดข้อมูลเมื่อเปิดเว็บ
 window.addEventListener('DOMContentLoaded', async () => {
+    // 1. ส่วนอัปเดตปีใน Footer (ให้ทำงานทันที ไม่ต้องรอ API)
+    const years = document.querySelectorAll('.current-year');
+    const thisYear = new Date().getFullYear();
+    years.forEach(el => el.innerText = thisYear);
+
+    // 2. ส่วนโหลดหน่วยงานจาก API
+    try {
+        const res = await callAPI('getSettings', {});
+        if(res && res.status === 'success') {
+            let datalistHtml = '';
+            res.data.forEach(d => {
+                datalistHtml += `<option value="${d}">`;
+            });
+            const deptList = document.getElementById('deptList');
+            if(deptList) deptList.innerHTML = datalistHtml;
+        }
+    } catch (err) {
+        console.error("ไม่สามารถโหลดรายการหน่วยงานได้:", err);
+    }
+});, async () => {
     const res = await callAPI('getSettings', {});
     if(res.status === 'success') {
         let datalistHtml = '';
@@ -9,6 +30,10 @@ window.addEventListener('DOMContentLoaded', async () => {
             datalistHtml += `<option value="${d}">`;
         });
         document.getElementById('deptList').innerHTML = datalistHtml;
+        // อัปเดตปีใน Footer ทุกจุดที่ใช้คลาส current-year
+        const years = document.querySelectorAll('.current-year');
+        const thisYear = new Date().getFullYear();
+        years.forEach(el => el.innerText = thisYear);
     }
 });
 // ================= UI Utilities =================
