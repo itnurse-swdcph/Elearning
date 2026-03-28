@@ -354,28 +354,32 @@ function switchAdminTab(tabId, element = null) {
 }
 
 // ================= Admin: Report & Stats =================
+let adminChartInstance = null; // ตัวแปรเก็บกราฟ
+
 async function loadAdminReport() {
-    // แก้ ID ให้ตรงกับ HTML ที่คุณตั้งไว้คือ reportTableBody
     const tbody = document.getElementById('reportTableBody'); 
     if(!tbody) return;
     
-    // ปรับ colspan เป็น 7 ให้ตรงกับจำนวนหัวตาราง
     tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">กำลังโหลดข้อมูลสถิติ...</td></tr>';
     const res = await callAPI('getAdminReport', {});
     
     if (res.status === 'success') {
         tbody.innerHTML = '';
-        if (res.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">ไม่มีข้อมูลผู้ใช้งาน</td></tr>';
-            return;
-        }
+        if (res.data.length === 0) return tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">ไม่มีข้อมูล</td></tr>';
+        
+        let deptStats = {}; // เก็บข้อมูลทำกราฟ
         
         res.data.forEach(r => {
+            // นับสถิติทำกราฟ
+            if (!deptStats[r.department]) deptStats[r.department] = { passed: 0, failed: 0 };
+            if (r.status === 'ผ่านเกณฑ์') deptStats[r.department].passed++;
+            else deptStats[r.department].failed++;
+
+            // สร้างตาราง
             const statusBadge = r.status === 'ผ่านเกณฑ์'
                 ? `<span class="badge" style="background: #10B981; color: white;">ผ่านเกณฑ์</span>`
                 : `<span class="badge" style="background: #EF4444; color: white;">ยังไม่ผ่าน</span>`;
                 
-            // แยกชื่อและแผนกออกเป็น 2 คอลัมน์ให้ตรงกับ HTML ของคุณ
             tbody.innerHTML += `
                 <tr>
                     <td><strong>${r.name}</strong></td>
@@ -388,9 +392,41 @@ async function loadAdminReport() {
                 </tr>
             `;
         });
+
+        // วาดกราฟ Chart.js
+        renderAdminChart(deptStats);
+
     } else {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">โหลดข้อมูลผิดพลาด</td></tr>`;
     }
+}
+
+function renderAdminChart(deptStats) {
+    const ctx = document.getElementById('passRateChart').getContext('2d');
+    
+    // ลบกราฟเก่าทิ้งก่อนวาดใหม่ (ป้องกันบั๊กกราฟซ้อนกัน)
+    if (adminChartInstance) adminChartInstance.destroy();
+
+    const labels = Object.keys(deptStats);
+    const passedData = labels.map(dept => deptStats[dept].passed);
+    const failedData = labels.map(dept => deptStats[dept].failed);
+
+    adminChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'ผ่านเกณฑ์ (คน)', data: passedData, backgroundColor: '#10B981' },
+                { label: 'ยังไม่ผ่าน (คน)', data: failedData, backgroundColor: '#EF4444' }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } },
+            plugins: { legend: { position: 'top' } }
+        }
+    });
 }
 
 // ฟังก์ชัน Export Excel อย่างง่ายด้วย JS
@@ -1259,3 +1295,28 @@ document.getElementById('editUserForm').addEventListener('submit', async (e) => 
         showAlert('ผิดพลาด', res.message);
     }
 });
+// ================= Export Portfolio to PDF =================
+function exportPortfolioPDF() {
+    const user = JSON.parse(localStorage.getItem('swd_user'));
+    document.getElementById('pdfUserName').innerText = `ชื่อ-นามสกุล: ${user.name} | ตำแหน่ง/แผนก: ${user.department}`;
+    
+    const element = document.getElementById('printablePortfolio');
+    
+    // โชว์ Header ตอนปริ้น
+    document.getElementById('pdfHeader').style.display = 'block';
+    
+    const opt = {
+        margin:       10,
+        filename:     `Portfolio_${user.name}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    showLoader();
+    html2pdf().set(opt).from(element).save().then(() => {
+        // ซ่อน Header กลับไปเหมือนเดิมหลังปริ้นเสร็จ
+        document.getElementById('pdfHeader').style.display = 'none';
+        hideLoader();
+    });
+}
