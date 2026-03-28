@@ -1,14 +1,14 @@
 // เปลี่ยน URL ตรงนี้เป็น Web App URL ที่ได้จาก Google Apps Script
 const API_URL = 'https://script.google.com/macros/s/AKfycbxlfD-5saP7FtUX_YxuBe3gowToA38b0qc0jW5JuWjMN9XotTlqRfc0LuaWtibYNwMp1Q/exec'; 
 
-// โหลดข้อมูลเมื่อเปิดเว็บ
+// โหลดข้อมูลพื้นฐานเมื่อเปิดเว็บ
 window.addEventListener('DOMContentLoaded', async () => {
-    // 1. ส่วนอัปเดตปีใน Footer (ให้ทำงานทันที ไม่ต้องรอ API)
+    // 1. อัปเดตปีใน Footer ทันที (ทุกจุดที่ใช้คลาส current-year)
     const years = document.querySelectorAll('.current-year');
     const thisYear = new Date().getFullYear();
     years.forEach(el => el.innerText = thisYear);
 
-    // 2. ส่วนโหลดหน่วยงานจาก API
+    // 2. โหลดรายชื่อหน่วยงานใส่ Datalist (สำหรับหน้าสมัครเรียนและหน้าแก้ไขโปรไฟล์)
     try {
         const res = await callAPI('getSettings', {});
         if(res && res.status === 'success') {
@@ -20,9 +20,12 @@ window.addEventListener('DOMContentLoaded', async () => {
             if(deptList) deptList.innerHTML = datalistHtml;
         }
     } catch (err) {
-        console.error("ไม่สามารถโหลดรายการหน่วยงานได้:", err);
+        console.error("ระบบไม่สามารถโหลดรายการหน่วยงานได้:", err);
     }
 });
+
+// ตรวจสอบสถานะการล็อกอินเมื่อเปิดหน้าเว็บ
+window.onload = checkSession;
 
 // ================= UI Utilities =================
 function getDriveImageUrl(url) {
