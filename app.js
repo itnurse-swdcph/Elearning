@@ -262,49 +262,76 @@ async function loadTrainingHistory() {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #EF4444;">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่</td></tr>';
     }
 }
-// เพิ่มตัวแปรนี้ไว้เก็บข้อมูลหลักสูตรชั่วคราว
+// ================= Course Display & Search Logic =================
 let globalCourses = []; 
+let cachedUserEnrollments = []; // เก็บสถานะการเรียนไว้ในเครื่อง จะได้ไม่ต้องโหลดซ้ำตอนค้นหา
 
 async function loadCourses() {
     showLoader();
     const res = await callAPI('getCourses', {});
     const user = JSON.parse(localStorage.getItem('swd_user'));
-    const enrollRes = await callAPI('getUserEnrollments', { user_id: user.id }); // ดึงสถานะมาเทียบ
+    const enrollRes = await callAPI('getUserEnrollments', { user_id: user.id }); 
     hideLoader();
 
-    const grid = document.getElementById('courseGrid');
-    grid.innerHTML = '';
     if (res.status === 'success') {
         globalCourses = res.data; 
-        res.data.forEach(course => {
-            const enrollData = enrollRes.data.find(e => e.course_id === course.id);
-            let btnText = "เข้าสู่บทเรียน", btnClass = "btn-primary";
-            
-            if(enrollData) {
-                if(enrollData.status === 'completed') {
-                    btnText = "เข้าสู่บทเรียนอีกครั้ง"; btnClass = "btn-outline";
-                } else {
-                    try {
-                        let prog = JSON.parse(enrollData.progress);
-                        if(prog.completed && prog.completed.length > 0) { btnText = "เรียนต่อ"; btnClass = "btn-success"; }
-                    } catch(e) {}
-                }
-            }
-
-            grid.innerHTML += `
-                <div class="course-card">
-                    <img src="${getDriveImageUrl(course.image)}" class="course-img">
-                    <div class="course-info">
-                        <h4>${course.title}</h4>
-                        <div class="course-meta">
-                            <span><i class="fas fa-clock"></i> ${course.hours} ชม.</span>
-                        </div>
-                        <button class="btn ${btnClass} w-100" onclick="enrollCourse('${course.id}')">${btnText}</button>
-                    </div>
-                </div>
-            `;
-        });
+        cachedUserEnrollments = enrollRes.data || [];
+        renderCourseGrid(globalCourses); // สั่งวาดการ์ดทั้งหมดครั้งแรก
     }
+}
+
+// ฟังก์ชันค้นหาหลักสูตร (ทำงานเมื่อพิมพ์ข้อความ)
+function filterCourses() {
+    const searchText = document.getElementById('courseSearchInput').value.trim().toLowerCase();
+    
+    if (searchText === '') {
+        renderCourseGrid(globalCourses); // โชว์ทั้งหมด
+    } else {
+        const filtered = globalCourses.filter(course => 
+            course.title.toLowerCase().includes(searchText)
+        );
+        renderCourseGrid(filtered); // โชว์เฉพาะที่ค้นเจอ
+    }
+}
+
+// ฟังก์ชันวาดการ์ดหลักสูตรลงหน้าจอ
+function renderCourseGrid(coursesToRender) {
+    const grid = document.getElementById('courseGrid');
+    grid.innerHTML = '';
+    
+    if (coursesToRender.length === 0) {
+        grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-light); padding: 30px; background: #f8fafc; border-radius: 8px;">ไม่พบหลักสูตรที่ค้นหาครับ</div>';
+        return;
+    }
+
+    coursesToRender.forEach(course => {
+        const enrollData = cachedUserEnrollments.find(e => e.course_id === course.id);
+        let btnText = "เข้าสู่บทเรียน", btnClass = "btn-primary";
+        
+        if(enrollData) {
+            if(enrollData.status === 'completed') {
+                btnText = "เข้าสู่บทเรียนอีกครั้ง"; btnClass = "btn-outline";
+            } else {
+                try {
+                    let prog = JSON.parse(enrollData.progress);
+                    if(prog.completed && prog.completed.length > 0) { btnText = "เรียนต่อ"; btnClass = "btn-success"; }
+                } catch(e) {}
+            }
+        }
+
+        grid.innerHTML += `
+            <div class="course-card">
+                <img src="${getDriveImageUrl(course.image)}" class="course-img">
+                <div class="course-info">
+                    <h4>${course.title}</h4>
+                    <div class="course-meta">
+                        <span><i class="fas fa-clock"></i> ${course.hours} ชม.</span>
+                    </div>
+                    <button class="btn ${btnClass} w-100" onclick="enrollCourse('${course.id}')">${btnText}</button>
+                </div>
+            </div>
+        `;
+    });
 }
 
 // ตรวจสอบสถานะการล็อกอินเมื่อเปิดหน้าเว็บ
