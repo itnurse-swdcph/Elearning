@@ -1,6 +1,6 @@
 // เปลี่ยน URL ตรงนี้เป็น Web App URL ที่ได้จาก Google Apps Script
 const API_URL = 'https://script.google.com/macros/s/AKfycbxlfD-5saP7FtUX_YxuBe3gowToA38b0qc0jW5JuWjMN9XotTlqRfc0LuaWtibYNwMp1Q/exec'; 
-// โหลดแผนกเมื่อเปิดเว็บ
+// โหลดหน่วยงานเมื่อเปิดเว็บ
 window.addEventListener('DOMContentLoaded', async () => {
     const res = await callAPI('getSettings', {});
     if(res.status === 'success') {
@@ -175,14 +175,18 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
     }
 
     const res = await callAPI('updateUserProfile', {
-        user_id: user.id, name: document.getElementById('pName').value,
-        department: document.getElementById('pDept').value, password: document.getElementById('pPassword').value,
+        user_id: user.id, 
+        name: document.getElementById('pName').value,
+        position: document.getElementById('pPosition').value,
+        department: document.getElementById('pDept').value, 
+        password: document.getElementById('pPassword').value,
         profile_img: profileUrl
     });
     hideLoader();
 
     if(res.status === 'success') {
         user.name = document.getElementById('pName').value;
+        user.position = document.getElementById('pPosition').value;
         user.department = document.getElementById('pDept').value;
         user.profile_img = profileUrl;
         localStorage.setItem('swd_user', JSON.stringify(user));
@@ -204,7 +208,8 @@ function switchUserTab(tabId, element) {
     if(tabId === 'profileTab') {
         const user = JSON.parse(localStorage.getItem('swd_user'));
         document.getElementById('pName').value = user.name;
-        document.getElementById('pUsername').value = user.username || '-'; // <--- เพิ่มบรรทัดนี้
+        document.getElementById('pPosition').value = user.position || '';
+        document.getElementById('pUsername').value = user.username || '-';
         document.getElementById('pDept').value = user.department;
         document.getElementById('pPassword').value = '';
         if(user.profile_img) document.getElementById('profilePreview').src = user.profile_img;
@@ -353,9 +358,11 @@ function switchAdminTab(tabId, element = null) {
     }
 }
 
-// ================= Admin: Report & Stats =================
-let adminChartInstance = null; // ตัวแปรเก็บกราฟ
+// ================= Admin: Report & Stats (พร้อมระบบกรอง) =================
+let globalAdminReportData = []; // สร้างตัวแปรเก็บข้อมูลสถิติไว้ในเครื่อง จะได้ไม่ต้องโหลดใหม่ตอนเปลี่ยน Dropdown
+let adminChartInstance = null;  // ตัวแปรเก็บกราฟ
 
+// ฟังก์ชันดึงข้อมูลจาก API (ทำงานครั้งแรกตอนเปิดแท็บ)
 async function loadAdminReport() {
     const tbody = document.getElementById('reportTableBody'); 
     if(!tbody) return;
@@ -364,47 +371,84 @@ async function loadAdminReport() {
     const res = await callAPI('getAdminReport', {});
     
     if (res.status === 'success') {
-        tbody.innerHTML = '';
-        if (res.data.length === 0) return tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">ไม่มีข้อมูล</td></tr>';
+        globalAdminReportData = res.data; // เก็บข้อมูลลงตัวแปร
         
-        let deptStats = {}; // เก็บข้อมูลทำกราฟ
+        // 1. ดึงรายชื่อแผนกที่มีคนอยู่จริงๆ มาใส่ใน Dropdown อัตโนมัติ
+        const deptFilter = document.getElementById('adminReportDeptFilter');
+        const uniqueDepts = [...new Set(res.data.map(item => item.department))].filter(d => d && d.trim() !== '');
         
-        res.data.forEach(r => {
-            // นับสถิติทำกราฟ
-            if (!deptStats[r.department]) deptStats[r.department] = { passed: 0, failed: 0 };
-            if (r.status === 'ผ่านเกณฑ์') deptStats[r.department].passed++;
-            else deptStats[r.department].failed++;
-
-            // สร้างตาราง
-            const statusBadge = r.status === 'ผ่านเกณฑ์'
-                ? `<span class="badge" style="background: #10B981; color: white;">ผ่านเกณฑ์</span>`
-                : `<span class="badge" style="background: #EF4444; color: white;">ยังไม่ผ่าน</span>`;
-                
-            tbody.innerHTML += `
-                <tr>
-                    <td><strong>${r.name}</strong></td>
-                    <td>${r.department}</td>
-                    <td>${r.internal}</td>
-                    <td>${r.external}</td>
-                    <td><strong>${r.totalHours}</strong></td>
-                    <td><strong>${r.totalDays}</strong></td>
-                    <td>${statusBadge}</td>
-                </tr>
-            `;
+        deptFilter.innerHTML = '<option value="all">-- ทุกหน่วยงาน --</option>';
+        uniqueDepts.sort().forEach(dept => {
+            deptFilter.innerHTML += `<option value="${dept}">${dept}</option>`;
         });
 
-        // วาดกราฟ Chart.js
-        renderAdminChart(deptStats);
+        // 2. สั่งวาดตารางและกราฟ (แสดงทั้งหมด)
+        renderReportTableAndChart(globalAdminReportData);
 
     } else {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">โหลดข้อมูลผิดพลาด</td></tr>`;
     }
 }
 
+// ฟังก์ชันกรองข้อมูลเมื่อเปลี่ยน Dropdown
+function filterAdminReport() {
+    const selectedDept = document.getElementById('adminReportDeptFilter').value;
+    
+    if (selectedDept === 'all') {
+        renderReportTableAndChart(globalAdminReportData); // โชว์ทั้งหมด
+    } else {
+        // กรองเอาเฉพาะข้อมูลที่ตรงกับแผนกที่เลือก
+        const filteredData = globalAdminReportData.filter(item => item.department === selectedDept);
+        renderReportTableAndChart(filteredData);
+    }
+}
+
+// ฟังก์ชันจัดการวาดตารางและกราฟ
+function renderReportTableAndChart(dataToShow) {
+    const tbody = document.getElementById('reportTableBody');
+    tbody.innerHTML = '';
+    
+    if (dataToShow.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">ไม่มีข้อมูลผู้ใช้งาน</td></tr>';
+        renderAdminChart({}); // วาดกราฟเปล่า
+        return;
+    }
+    
+    let deptStats = {}; // เก็บสถิติทำกราฟ
+    
+    dataToShow.forEach(r => {
+        // เก็บสถิติสำหรับกราฟ
+        if (!deptStats[r.department]) deptStats[r.department] = { passed: 0, failed: 0 };
+        if (r.status === 'ผ่านเกณฑ์') deptStats[r.department].passed++;
+        else deptStats[r.department].failed++;
+
+        // วาดตาราง
+        const statusBadge = r.status === 'ผ่านเกณฑ์'
+            ? `<span class="badge" style="background: #10B981; color: white;">ผ่านเกณฑ์</span>`
+            : `<span class="badge" style="background: #EF4444; color: white;">ยังไม่ผ่าน</span>`;
+            
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>${r.name}</strong></td>
+                <td>${r.department}</td>
+                <td>${r.internal}</td>
+                <td>${r.external}</td>
+                <td><strong>${r.totalHours}</strong></td>
+                <td><strong>${r.totalDays}</strong></td>
+                <td>${statusBadge}</td>
+            </tr>
+        `;
+    });
+
+    // วาดกราฟ
+    renderAdminChart(deptStats);
+}
+
+// ฟังก์ชันวาดกราฟ Chart.js
 function renderAdminChart(deptStats) {
     const ctx = document.getElementById('passRateChart').getContext('2d');
     
-    // ลบกราฟเก่าทิ้งก่อนวาดใหม่ (ป้องกันบั๊กกราฟซ้อนกัน)
+    // ลบกราฟเก่าทิ้งก่อน (ถ้ามี) ป้องกันบั๊กกราฟกระพริบซ้อนกัน
     if (adminChartInstance) adminChartInstance.destroy();
 
     const labels = Object.keys(deptStats);
@@ -416,19 +460,23 @@ function renderAdminChart(deptStats) {
         data: {
             labels: labels,
             datasets: [
-                { label: 'ผ่านเกณฑ์ (คน)', data: passedData, backgroundColor: '#10B981' },
-                { label: 'ยังไม่ผ่าน (คน)', data: failedData, backgroundColor: '#EF4444' }
+                { label: 'ผ่านเกณฑ์ (คน)', data: passedData, backgroundColor: '#10B981', borderRadius: 4 },
+                { label: 'ยังไม่ผ่าน (คน)', data: failedData, backgroundColor: '#EF4444', borderRadius: 4 }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } },
-            plugins: { legend: { position: 'top' } }
+            scales: { 
+                x: { stacked: true }, 
+                y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } // บังคับให้กราฟแนวตั้งเป็นเลขจำนวนเต็ม (คน)
+            },
+            plugins: { 
+                legend: { position: 'top' } 
+            }
         }
     });
 }
-
 // ฟังก์ชัน Export Excel อย่างง่ายด้วย JS
 function exportToExcel() {
     let table = document.querySelector(".admin-table");
@@ -1298,7 +1346,7 @@ document.getElementById('editUserForm').addEventListener('submit', async (e) => 
 // ================= Export Portfolio to PDF =================
 function exportPortfolioPDF() {
     const user = JSON.parse(localStorage.getItem('swd_user'));
-    document.getElementById('pdfUserName').innerText = `ชื่อ-นามสกุล: ${user.name} | ตำแหน่ง/แผนก: ${user.department}`;
+    document.getElementById('pdfUserName').innerText = `ชื่อ-นามสกุล: ${user.name} | ตำแหน่ง/หน่วยงาน: ${user.department}`;
     
     const element = document.getElementById('printablePortfolio');
     
