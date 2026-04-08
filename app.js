@@ -1,5 +1,15 @@
 // เปลี่ยน URL ตรงนี้เป็น Web App URL ที่ได้จาก Google Apps Script
 const API_URL = 'https://script.google.com/macros/s/AKfycbxlfD-5saP7FtUX_YxuBe3gowToA38b0qc0jW5JuWjMN9XotTlqRfc0LuaWtibYNwMp1Q/exec'; 
+const appState = {
+    user: null,
+    dashboardNeedsRefresh: true,
+    dashboardStats: null,
+    externalRecommendationsLoaded: false
+};
+
+let loaderCount = 0;
+let courseRequestToken = 0;
+let externalRecommendationRequestToken = 0;
 
 // โหลดข้อมูลพื้นฐานเมื่อเปิดเว็บ
 window.addEventListener('DOMContentLoaded', async () => {
@@ -25,7 +35,20 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ตรวจสอบสถานะการล็อกอินเมื่อเปิดหน้าเว็บ
-window.onload = checkSession;
+
+window.addEventListener('DOMContentLoaded', () => {
+    checkSession();
+});
+
+function getCurrentUser() {
+    try {
+        const rawUser = localStorage.getItem('swd_user');
+        return rawUser ? JSON.parse(rawUser) : null;
+    } catch (error) {
+        localStorage.removeItem('swd_user');
+        return null;
+    }
+}
 
 // ================= UI Utilities =================
 function getDriveImageUrl(url) {
@@ -37,8 +60,17 @@ function getDriveImageUrl(url) {
     return url;
 }
 
-function showLoader() { document.getElementById('loader').classList.remove('hidden'); }
-function hideLoader() { document.getElementById('loader').classList.add('hidden'); }
+function showLoader() {
+    loaderCount += 1;
+    document.getElementById('loader').classList.remove('hidden');
+}
+
+function hideLoader(force = false) {
+    loaderCount = force ? 0 : Math.max(0, loaderCount - 1);
+    if (loaderCount === 0) {
+        document.getElementById('loader').classList.add('hidden');
+    }
+}
 
 function showAlert(title, message) {
     document.getElementById('alertTitle').innerText = title;
@@ -93,7 +125,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     hideLoader();
     if (res.status === 'success') {
         localStorage.setItem('swd_user', JSON.stringify(res.user));
-        initApp();
+        await initApp({ forceDashboardRefresh: true });
     } else showAlert('ข้อผิดพลาด', res.message);
 });
 
@@ -118,68 +150,171 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
 
 function logout() {
     localStorage.removeItem('swd_user');
+    appState.user = null;
+    appState.dashboardStats = null;
+    appState.dashboardNeedsRefresh = true;
+    appState.coursesLoaded = false;
+    appState.externalRecommendationsLoaded = false;
+    globalCourses = [];
+    cachedUserEnrollments = [];
     checkSession();
 }
 
 // ================= App Logic =================
 function checkSession() {
-    const user = localStorage.getItem('swd_user');
+    const user = getCurrentUser();
+    appState.user = user;
     if (user) {
-        initApp();
+        initApp({ forceDashboardRefresh: !appState.dashboardStats || appState.dashboardNeedsRefresh });
     } else {
         document.getElementById('authSection').classList.remove('hidden');
         document.getElementById('appSection').classList.add('hidden');
+        document.getElementById('adminSection').classList.add('hidden');
+        document.getElementById('classroomSection').classList.add('hidden');
+        document.getElementById('adminBtn').classList.add('hidden');
+        hideLoader(true);
     }
 }
 
-async function initApp() {
-    const user = JSON.parse(localStorage.getItem('swd_user'));
-    document.getElementById('authSection').classList.add('hidden');
-    document.getElementById('appSection').classList.remove('hidden');
-    
+function setDashboardRefreshNeeded() {
+    appState.dashboardNeedsRefresh = true;
+}
+
+function renderCurrentUser(user) {
     document.getElementById('userNameDisplay').innerText = user.name;
     document.getElementById('userDeptDisplay').innerText = user.department;
-    if(user.profile_img) {
-        document.querySelector('.user-profile-mini .avatar').innerHTML = `<img src="${user.profile_img}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+
+    const avatar = document.querySelector('.user-profile-mini .avatar');
+    if (user.profile_img) {
+        avatar.innerHTML = `<img src="${user.profile_img}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+    } else {
+        avatar.innerHTML = '<i class="fas fa-user-nurse"></i>';
     }
 
     if (user.role === 'admin') document.getElementById('adminBtn').classList.remove('hidden');
-    
-    const statRes = await callAPI('getDashboardStats', { user_id: user.id });
-    if(statRes.status === 'success') {
-        document.querySelectorAll('.stat-number')[0].innerText = statRes.stats.inProgress;
-        document.querySelectorAll('.stat-number')[1].innerText = statRes.stats.certCount;
-        document.getElementById('totalHoursDisplay').innerText = statRes.stats.totalHours;
+    else document.getElementById('adminBtn').classList.add('hidden');
+}
+
+function renderDashboardStats(stats) {
+    if (!stats) return;
+    document.querySelectorAll('.stat-number')[0].innerText = stats.inProgress;
+    document.querySelectorAll('.stat-number')[1].innerText = stats.certCount;
+    document.getElementById('totalHoursDisplay').innerText = stats.totalHours;
+}
+
+async function loadDashboardStats(force = false) {
+    const user = appState.user || getCurrentUser();
+    if (!user) return null;
+
+    if (!force && appState.dashboardStats) {
+        renderDashboardStats(appState.dashboardStats);
+        return appState.dashboardStats;
     }
-    loadCourses();
+
+    showLoader();
+    try {
+        const statRes = await callAPI('getDashboardStats', { user_id: user.id });
+        if (statRes.status === 'success') {
+            appState.dashboardStats = statRes.stats;
+            renderDashboardStats(statRes.stats);
+            return statRes.stats;
+        }
+        showAlert('ข้อผิดพลาด', statRes.message || 'ไม่สามารถโหลดสถิติได้');
+    } finally {
+        hideLoader();
+    }
+
+    return null;
+}
+
+async function refreshDashboardData(force = false) {
+    const shouldRefresh = force || appState.dashboardNeedsRefresh || !appState.dashboardStats || globalCourses.length === 0 || !appState.externalRecommendationsLoaded;
+    if (!shouldRefresh) {
+        filterCourses();
+        renderExternalRecommendationGrid(externalRecommendationCourses);
+        return;
+    }
+
+    const refreshMode = force || appState.dashboardNeedsRefresh;
+    await Promise.all([
+        loadDashboardStats(refreshMode),
+        loadCourses(refreshMode),
+        loadExternalRecommendations(refreshMode)
+    ]);
+    appState.dashboardNeedsRefresh = false;
+}
+
+async function initApp(options = {}) {
+    const user = getCurrentUser();
+    if (!user) return checkSession();
+
+    appState.user = user;
+    document.getElementById('authSection').classList.add('hidden');
+    document.getElementById('adminSection').classList.add('hidden');
+    document.getElementById('classroomSection').classList.add('hidden');
+    document.getElementById('appSection').classList.remove('hidden');
+
+    renderCurrentUser(user);
+    if (options.forceDashboardRefresh) {
+        setDashboardRefreshNeeded();
+    }
+    await refreshDashboardData(!!options.forceDashboardRefresh);
 }
 
 function returnToDashboard() {
     document.getElementById('adminSection').classList.add('hidden');
     document.getElementById('classroomSection').classList.add('hidden');
     document.getElementById('appSection').classList.remove('hidden');
+    setDashboardRefreshNeeded();
     const dashboardMenuBtn = document.querySelector('#userMenu li:first-child');
     switchUserTab('dashboardTab', dashboardMenuBtn);
 }
 // แนบ Event ให้ช่องอัปโหลดรูปหน้าปกแอดมิน
+async function uploadImageFile(file, filePrefix) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const res = await callAPI('uploadFile', { fileName: `${filePrefix}_${Date.now()}`, fileData: e.target.result });
+            resolve(res);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
 document.getElementById('cCoverUpload').addEventListener('change', async function() {
     if(!this.files[0]) return;
     document.getElementById('cCoverStatus').innerText = "กำลังอัปโหลด...";
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        const res = await callAPI('uploadFile', { fileName: 'Cover_'+Date.now(), fileData: e.target.result });
+    const res = await uploadImageFile(this.files[0], 'Cover');
+/*
         if(res.status === 'success') {
             document.getElementById('cCover').value = res.url;
             document.getElementById('cCoverStatus').innerHTML = '<span style="color:green;">✅ อัปโหลดสำเร็จ</span>';
         }
-    };
-    reader.readAsDataURL(this.files[0]);
+*/
+    if (res.status === 'success') {
+        document.getElementById('cCover').value = res.url;
+        document.getElementById('cCoverStatus').innerHTML = '<span style="color:green;">อัปโหลดสำเร็จ</span>';
+    } else {
+        document.getElementById('cCoverStatus').innerHTML = '<span style="color:#ef4444;">อัปโหลดไม่สำเร็จ</span>';
+    }
 });
 
 // ส่งฟอร์มแก้ไข Profile
+document.getElementById('extRecCoverUpload').addEventListener('change', async function() {
+    if(!this.files[0]) return;
+    document.getElementById('extRecCoverStatus').innerText = 'กำลังอัปโหลด...';
+    const res = await uploadImageFile(this.files[0], 'ExternalRecCover');
+    if (res.status === 'success') {
+        document.getElementById('extRecCover').value = res.url;
+        document.getElementById('extRecCoverStatus').innerHTML = '<span style="color:green;">อัปโหลดสำเร็จ</span>';
+    } else {
+        document.getElementById('extRecCoverStatus').innerHTML = '<span style="color:#ef4444;">อัปโหลดไม่สำเร็จ</span>';
+    }
+});
+
 document.getElementById('profileForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const user = JSON.parse(localStorage.getItem('swd_user'));
+    const user = getCurrentUser();
     const file = document.getElementById('pImgUpload').files[0];
     showLoader();
     
@@ -300,6 +435,7 @@ async function loadTrainingHistory() {
 // ================= Course Display & Search Logic =================
 let globalCourses = []; 
 let cachedUserEnrollments = []; // เก็บสถานะการเรียนไว้ในเครื่อง จะได้ไม่ต้องโหลดซ้ำตอนค้นหา
+let externalRecommendationCourses = [];
 
 async function loadCourses() {
     showLoader();
@@ -370,7 +506,6 @@ function renderCourseGrid(coursesToRender) {
 }
 
 // ตรวจสอบสถานะการล็อกอินเมื่อเปิดหน้าเว็บ
-window.onload = checkSession;
 // ================= Admin Logic =================
 
 function goToAdminPanel() {
@@ -1361,7 +1496,7 @@ async function loadAdminUsersTable() {
 async function editAdminUser(userId) {
     // 1. หาข้อมูลผู้ใช้จาก Array หรือเรียกจาก Server (แล้วแต่ระบบของคุณ)
     // สมมติว่าตัวแปร users คือที่เก็บข้อมูลพยาบาลทั้งหมด
-    const user = allUsers.find(u => u.id === userId); 
+    const user = adminUsersData.find(u => u.id === userId); 
 
     if (user) {
         // 2. แสดง Section แก้ไข
@@ -1372,7 +1507,7 @@ async function editAdminUser(userId) {
         document.getElementById('euName').value = user.name;
         document.getElementById('euUsername').value = user.username;
         document.getElementById('euPosition').value = user.position;
-        document.getElementById('euDept').value = user.dept;
+        document.getElementById('euDept').value = user.department || '';
         document.getElementById('euEmail').value = user.email || ''; 
         document.getElementById('euPassword').value = user.password; 
         document.getElementById('editUserSection').scrollIntoView({ behavior: 'smooth' });
@@ -1715,4 +1850,362 @@ switchAdminTab = function(tabId, element) {
     if (window.innerWidth <= 768) {
         toggleSidebar(); // ปิดเมนูเมื่อเลือกแท็บเสร็จ
     }
+};
+let adminExternalRecommendationsData = [];
+
+function normalizeExternalUrl(url) {
+    if (!url) return '';
+    if (/^https?:\/\//i.test(url)) return url;
+    return `https://${url}`;
+}
+
+function formatHoursLabel(hours) {
+    const numericHours = parseFloat(hours) || 0;
+    const hr = Math.floor(numericHours);
+    const min = Math.round((numericHours - hr) * 60);
+    if (hr === 0 && min === 0) return '0 ชม.';
+    if (min === 0) return `${hr} ชม.`;
+    return `${hr} ชม. ${min} นาที`;
+}
+
+function renderEmptyGrid(gridId, message) {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    grid.innerHTML = `<div class="empty-grid">${message}</div>`;
+}
+
+async function loadCourses(force = false) {
+    const user = appState.user || getCurrentUser();
+    if (!user) return [];
+
+    if (!force && appState.coursesLoaded) {
+        filterCourses();
+        return globalCourses;
+    }
+
+    const requestToken = ++courseRequestToken;
+    showLoader();
+
+    try {
+        const [res, enrollRes] = await Promise.all([
+            callAPI('getCourses', {}),
+            callAPI('getUserEnrollments', { user_id: user.id })
+        ]);
+
+        if (requestToken !== courseRequestToken) return globalCourses;
+
+        if (res.status === 'success' && enrollRes.status === 'success') {
+            globalCourses = res.data || [];
+            cachedUserEnrollments = enrollRes.data || [];
+            appState.coursesLoaded = true;
+            filterCourses();
+            return globalCourses;
+        }
+
+        renderCourseGrid([]);
+        showAlert('ข้อผิดพลาด', (res.message || enrollRes.message || 'ไม่สามารถโหลดหลักสูตรได้'));
+    } finally {
+        hideLoader();
+    }
+
+    return [];
+}
+
+function renderCourseGrid(coursesToRender) {
+    const grid = document.getElementById('courseGrid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+    if (!coursesToRender || coursesToRender.length === 0) {
+        renderEmptyGrid('courseGrid', 'ไม่พบหลักสูตรที่ค้นหา');
+        return;
+    }
+
+    coursesToRender.forEach(course => {
+        const enrollData = cachedUserEnrollments.find(e => e.course_id === course.id);
+        let btnText = 'เข้าสู่บทเรียน';
+        let btnClass = 'btn-primary';
+
+        if (enrollData) {
+            if (enrollData.status === 'completed') {
+                btnText = 'เข้าเรียนอีกครั้ง';
+                btnClass = 'btn-outline';
+            } else {
+                try {
+                    const prog = JSON.parse(enrollData.progress || '{}');
+                    if (prog.completed && prog.completed.length > 0) {
+                        btnText = 'เรียนต่อ';
+                        btnClass = 'btn-success';
+                    }
+                } catch (error) {}
+            }
+        }
+
+        grid.innerHTML += `
+            <div class="course-card">
+                <img src="${getDriveImageUrl(course.image)}" class="course-img" alt="${course.title}">
+                <div class="course-info">
+                    <h4 class="course-title">${course.title}</h4>
+                    <div class="course-meta">
+                        <span><i class="fas fa-building"></i> ${course.organizer || '-'}</span>
+                        <span><i class="fas fa-clock"></i> ${formatHoursLabel(course.hours)}</span>
+                    </div>
+                    <button class="btn ${btnClass} w-100" onclick="enrollCourse('${course.id}')">${btnText}</button>
+                </div>
+            </div>
+        `;
+    });
+}
+
+async function loadExternalRecommendations(force = false) {
+    if (!force && appState.externalRecommendationsLoaded) {
+        renderExternalRecommendationGrid(externalRecommendationCourses);
+        return externalRecommendationCourses;
+    }
+
+    const requestToken = ++externalRecommendationRequestToken;
+    showLoader();
+
+    try {
+        const res = await callAPI('getExternalRecommendations', {});
+        if (requestToken !== externalRecommendationRequestToken) return externalRecommendationCourses;
+
+        if (res.status === 'success') {
+            externalRecommendationCourses = res.data || [];
+            appState.externalRecommendationsLoaded = true;
+            renderExternalRecommendationGrid(externalRecommendationCourses);
+            return externalRecommendationCourses;
+        }
+
+        renderExternalRecommendationGrid([]);
+        showAlert('ข้อผิดพลาด', res.message || 'ไม่สามารถโหลดหลักสูตรภายนอกได้');
+    } finally {
+        hideLoader();
+    }
+
+    return [];
+}
+
+function renderExternalRecommendationGrid(recommendations) {
+    const grid = document.getElementById('externalRecommendationGrid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+    if (!recommendations || recommendations.length === 0) {
+        renderEmptyGrid('externalRecommendationGrid', 'ยังไม่มีหลักสูตรภายนอกแนะนำ');
+        return;
+    }
+
+    recommendations.forEach(course => {
+        grid.innerHTML += `
+            <div class="course-card course-card-external">
+                <img src="${getDriveImageUrl(course.cover_image)}" class="course-img" alt="${course.title}">
+                <div class="course-info">
+                    <div class="course-badge">ภายนอก</div>
+                    <h4 class="course-title">${course.title}</h4>
+                    <div class="course-meta">
+                        <span><i class="fas fa-building"></i> ${course.organizer || '-'}</span>
+                        <span><i class="fas fa-clock"></i> ${formatHoursLabel(course.hours)}</span>
+                    </div>
+                    <button class="btn btn-primary w-100" onclick="openExternalRegistration('${normalizeExternalUrl(course.register_url)}')">ลงทะเบียน</button>
+                </div>
+            </div>
+        `;
+    });
+}
+
+function openExternalRegistration(url) {
+    const normalizedUrl = normalizeExternalUrl(url);
+    if (!normalizedUrl) {
+        showAlert('แจ้งเตือน', 'ยังไม่ได้ระบุ URL สำหรับลงทะเบียน');
+        return;
+    }
+    window.open(normalizedUrl, '_blank', 'noopener,noreferrer');
+}
+
+switchUserTab = function(tabId, element) {
+    const tabs = document.querySelectorAll('.user-tab');
+    tabs.forEach(tab => tab.classList.add('hidden'));
+
+    const menus = document.querySelectorAll('#userMenu li');
+    menus.forEach(menu => menu.classList.remove('active'));
+
+    const targetTab = document.getElementById(tabId);
+    if (targetTab) targetTab.classList.remove('hidden');
+    if (element) element.classList.add('active');
+
+    if (tabId === 'dashboardTab') refreshDashboardData();
+    if (tabId === 'historyTab') loadTrainingHistory();
+    if (tabId === 'profileTab') {
+        const user = getCurrentUser();
+        if (user) {
+            document.getElementById('pName').value = user.name;
+            document.getElementById('pPosition').value = user.position || '';
+            document.getElementById('pUsername').value = user.username || '-';
+            document.getElementById('pDept').value = user.department;
+            document.getElementById('pPassword').value = '';
+            document.getElementById('profilePreview').src = user.profile_img || 'https://via.placeholder.com/150';
+        }
+    }
+
+    if (window.innerWidth <= 768 && document.body.classList.contains('sidebar-open')) {
+        toggleSidebar();
+    }
+};
+
+goToAdminPanel = function() {
+    document.getElementById('appSection').classList.add('hidden');
+    document.getElementById('classroomSection').classList.add('hidden');
+    document.getElementById('adminSection').classList.remove('hidden');
+    const reportMenu = document.querySelector('.admin-sidebar .sidebar-menu li');
+    switchAdminTab('reportTab', reportMenu);
+};
+
+switchAdminTab = function(tabId, element = null) {
+    const tabs = document.querySelectorAll('.admin-tab');
+    tabs.forEach(tab => tab.classList.add('hidden'));
+
+    const menus = document.querySelectorAll('.admin-sidebar .sidebar-menu li');
+    menus.forEach(menu => menu.classList.remove('active'));
+
+    const targetTab = document.getElementById(tabId);
+    if (targetTab) targetTab.classList.remove('hidden');
+
+    if (element) {
+        element.classList.add('active');
+    } else {
+        const fallback = Array.from(menus).find(menu => menu.getAttribute('onclick') && menu.getAttribute('onclick').includes(`'${tabId}'`));
+        if (fallback) fallback.classList.add('active');
+    }
+
+    if (tabId === 'reportTab') loadAdminReport();
+    if (tabId === 'courseMgtTab') {
+        resetCourseForm();
+        resetExternalRecommendationForm();
+        loadAdminCoursesTable();
+        loadAdminExternalRecommendationsTable();
+    }
+    if (tabId === 'examMgtTab') initExamAdmin();
+    if (tabId === 'approveExtTab') loadAdminExtRequests();
+    if (tabId === 'userMgtTab') loadAdminUsersTable();
+    if (tabId === 'courseReportTab') initCourseReportAdmin();
+
+    if (window.innerWidth <= 768 && document.body.classList.contains('sidebar-open')) {
+        toggleSidebar();
+    }
+};
+
+async function loadAdminExternalRecommendationsTable() {
+    const tbody = document.getElementById('adminExternalCourseListBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
+    const res = await callAPI('getExternalRecommendations', { admin_view: true });
+
+    if (res.status !== 'success') {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">โหลดข้อมูลไม่สำเร็จ</td></tr>';
+        return;
+    }
+
+    adminExternalRecommendationsData = res.data || [];
+    if (adminExternalRecommendationsData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">ยังไม่มีหลักสูตรภายนอกแนะนำ</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = '';
+    adminExternalRecommendationsData.forEach(course => {
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>${course.title}</strong></td>
+                <td>${course.organizer || '-'}</td>
+                <td>${formatHoursLabel(course.hours)}</td>
+                <td><a href="${normalizeExternalUrl(course.register_url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">เปิดลิงก์</a></td>
+                <td><button class="btn btn-action btn-edit" onclick="editExternalRecommendation('${course.rec_id}')"><i class="fas fa-edit"></i> แก้ไข</button></td>
+            </tr>
+        `;
+    });
+}
+
+function resetExternalRecommendationForm() {
+    const form = document.getElementById('externalRecommendationForm');
+    if (!form) return;
+
+    form.reset();
+    document.getElementById('editExtRecId').value = '';
+    document.getElementById('extRecCover').value = '';
+    document.getElementById('extRecCoverStatus').innerText = '';
+    document.getElementById('externalRecFormTitle').innerHTML = '<i class="fas fa-link"></i> เพิ่มหลักสูตรภายนอกแนะนำ';
+    document.getElementById('btnSubmitExternalRec').innerHTML = '<i class="fas fa-save"></i> บันทึกหลักสูตรภายนอก';
+    document.getElementById('btnCancelExternalRecEdit').classList.add('hidden');
+}
+
+function editExternalRecommendation(recId) {
+    const course = adminExternalRecommendationsData.find(item => item.rec_id === recId);
+    if (!course) return;
+
+    document.getElementById('editExtRecId').value = course.rec_id;
+    document.getElementById('extRecTitle').value = course.title || '';
+    document.getElementById('extRecOrganizer').value = course.organizer || '';
+    document.getElementById('extRecHours').value = course.hours || 0;
+    document.getElementById('extRecCover').value = course.cover_image || '';
+    document.getElementById('extRecUrl').value = course.register_url || '';
+    document.getElementById('externalRecFormTitle').innerHTML = '<i class="fas fa-edit"></i> แก้ไขหลักสูตรภายนอกแนะนำ';
+    document.getElementById('btnSubmitExternalRec').innerHTML = '<i class="fas fa-save"></i> บันทึกการแก้ไข';
+    document.getElementById('btnCancelExternalRecEdit').classList.remove('hidden');
+    document.getElementById('externalRecommendationForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+const externalRecommendationForm = document.getElementById('externalRecommendationForm');
+if (externalRecommendationForm) {
+    externalRecommendationForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const payload = {
+            title: document.getElementById('extRecTitle').value.trim(),
+            organizer: document.getElementById('extRecOrganizer').value.trim(),
+            hours: parseFloat(document.getElementById('extRecHours').value) || 0,
+            cover_image: document.getElementById('extRecCover').value.trim(),
+            register_url: normalizeExternalUrl(document.getElementById('extRecUrl').value.trim()),
+            status: 'active'
+        };
+
+        if (!payload.title || !payload.organizer || !payload.cover_image || !payload.register_url) {
+            return showAlert('แจ้งเตือน', 'กรุณากรอกข้อมูลหลักสูตรภายนอกให้ครบทุกช่อง');
+        }
+
+        const editId = document.getElementById('editExtRecId').value;
+        const action = editId ? 'updateExternalRecommendation' : 'addExternalRecommendation';
+        if (editId) payload.rec_id = editId;
+
+        showLoader();
+        const res = await callAPI(action, payload);
+        hideLoader();
+
+        if (res.status === 'success') {
+            appState.externalRecommendationsLoaded = false;
+            setDashboardRefreshNeeded();
+            showAlert('สำเร็จ', res.message);
+            resetExternalRecommendationForm();
+            loadAdminExternalRecommendationsTable();
+        } else {
+            showAlert('ข้อผิดพลาด', res.message || 'ไม่สามารถบันทึกหลักสูตรภายนอกได้');
+        }
+    });
+}
+
+editAdminUser = function(userId) {
+    const user = adminUsersData.find(u => u.id === userId);
+    if (!user) return;
+
+    document.getElementById('editUserSection').classList.remove('hidden');
+    document.getElementById('editUserId').value = user.id;
+    document.getElementById('euName').value = user.name;
+    document.getElementById('euUsername').value = user.username;
+    document.getElementById('euPosition').value = user.position || '';
+    document.getElementById('euDept').value = user.department || '';
+    document.getElementById('euEmail').value = user.email || '';
+    document.getElementById('euPassword').value = user.password || '';
+    document.getElementById('euRole').value = user.role || 'user';
+    document.getElementById('editUserSection').scrollIntoView({ behavior: 'smooth' });
 };
