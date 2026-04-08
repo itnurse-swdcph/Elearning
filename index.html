@@ -274,6 +274,7 @@
                                 <tbody id="reportTableBody"></tbody>
                             </table>
                         </div>
+                    </div>
                     <div id="courseReportTab" class="admin-tab hidden">
                         <div class="tab-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                             <h3>รายงานผลการอบรมรายหลักสูตร</h3>
@@ -337,7 +338,7 @@
                         </form>
                         <div class="table-responsive" style="margin-top: 30px;">
                             <table class="admin-table">
-                                <thead><tr><th>ชื่อหลักสูตร</th><th>ผู้จัด</th><th>หน่วยกิต</th><th>จัดการ</th></tr></thead>
+                                <thead><tr><th>ชื่อหลักสูตร</th><th>ผู้จัด</th><th>หน่วยกิต</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
                                 <tbody id="adminCourseListBody"></tbody>
                             </table>
                         </div>
@@ -350,7 +351,11 @@
                             <div class="form-grid">
                                 <div class="input-group"><label>ชื่อหลักสูตร</label><input type="text" id="extRecTitle" required></div>
                                 <div class="input-group"><label>ชื่อหน่วยงานที่จัด</label><input type="text" id="extRecOrganizer" required></div>
-                                <div class="input-group"><label>ชั่วโมงที่ได้</label><input type="number" id="extRecHours" min="0" step="0.25" required></div>
+                                <div class="input-group time-input-group">
+                                    <label>ชั่วโมงที่ได้ (ชั่วโมง : นาที)</label><br>
+                                    <input type="number" id="extRecHours" placeholder="ชม." min="0" required> :
+                                    <input type="number" id="extRecMins" placeholder="นาที" min="0" max="59" required>
+                                </div>
                                 <div class="input-group" style="grid-column: 1 / -1;">
                                     <label>ภาพหน้าปก</label>
                                     <input type="file" id="extRecCoverUpload" accept="image/*">
@@ -363,7 +368,7 @@
                         </form>
                         <div class="table-responsive" style="margin-top: 30px;">
                             <table class="admin-table">
-                                <thead><tr><th>ชื่อหลักสูตร</th><th>หน่วยงานที่จัด</th><th>ชั่วโมง</th><th>URL</th><th>จัดการ</th></tr></thead>
+                                <thead><tr><th>ชื่อหลักสูตร</th><th>หน่วยงานที่จัด</th><th>ชั่วโมง</th><th>URL</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
                                 <tbody id="adminExternalCourseListBody"></tbody>
                             </table>
                         </div>
