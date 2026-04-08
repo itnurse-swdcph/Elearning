@@ -493,6 +493,484 @@ body { background-color: var(--bg-color); color: var(--text-main); }
 .user-body { padding: 30px; max-width: 1200px; margin: 0 auto; width: 100%; }
 .stat-number { font-size: 1.8rem; font-weight: 700; color: var(--primary-color); margin-top: 5px; }
 .text-success { color: #10B981 !important; }
+.guide-hero {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    padding: 28px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 55%, #fff7ed 100%);
+    border: 1px solid rgba(30, 64, 175, 0.08);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 20px;
+}
+.guide-kicker {
+    display: inline-flex;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(30, 64, 175, 0.08);
+    color: var(--primary-color);
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+.guide-hero h3 {
+    color: var(--primary-color);
+    font-size: 1.9rem;
+    margin-bottom: 10px;
+}
+.guide-hero p {
+    color: var(--text-light);
+    line-height: 1.75;
+}
+.guide-hero-stats {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+}
+.guide-stat {
+    padding: 18px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.78);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+}
+.guide-stat strong {
+    display: block;
+    color: var(--primary-color);
+    font-size: 1.35rem;
+    margin-bottom: 4px;
+}
+.guide-stat span {
+    color: var(--text-light);
+    font-size: 0.92rem;
+}
+.guide-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+.guide-nav-btn {
+    border: 1px solid rgba(30, 64, 175, 0.14);
+    background: white;
+    color: var(--primary-color);
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-family: 'Prompt', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.guide-nav-btn:hover {
+    background: var(--primary-color);
+    color: white;
+}
+.guide-section {
+    background: white;
+    border-radius: 22px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid #eef2f7;
+}
+.guide-section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.guide-section-no {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #1d4ed8, #0f766e);
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.guide-section-header h4 {
+    color: var(--primary-color);
+    font-size: 1.3rem;
+    margin-bottom: 6px;
+}
+.guide-section-header p {
+    color: var(--text-light);
+    line-height: 1.7;
+}
+.guide-section-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 20px;
+    align-items: start;
+}
+.guide-copy-card,
+.guide-preview-card {
+    background: #f8fafc;
+    border-radius: 18px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+}
+.guide-preview-stack {
+    display: grid;
+    gap: 16px;
+}
+.guide-steps {
+    margin: 0;
+    padding-left: 22px;
+    color: var(--text-main);
+}
+.guide-steps li {
+    line-height: 1.8;
+    margin-bottom: 10px;
+}
+.guide-tip {
+    margin-top: 16px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+}
+.guide-tip strong {
+    display: block;
+    color: #b45309;
+    margin-bottom: 6px;
+}
+.guide-tip p {
+    color: #7c2d12;
+    line-height: 1.7;
+}
+.guide-preview-window {
+    background: white;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid #dbe4f0;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+.guide-preview-top {
+    height: 42px;
+    background: #eaf0fb;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    color: var(--primary-color);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+.guide-preview-top span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #94a3b8;
+}
+.guide-preview-top span:nth-child(1) { background: #f87171; }
+.guide-preview-top span:nth-child(2) { background: #fbbf24; }
+.guide-preview-top span:nth-child(3) { background: #34d399; }
+.guide-auth-preview,
+.guide-form-preview,
+.guide-profile-preview,
+.guide-quiz-preview,
+.guide-table-preview,
+.guide-app-preview,
+.guide-classroom-preview {
+    padding: 18px;
+}
+.guide-auth-preview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    background: linear-gradient(135deg, #f8fafc, #eff6ff);
+}
+.guide-auth-panel {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 16px;
+}
+.guide-auth-panel.muted {
+    background: #f8fafc;
+}
+.guide-auth-logo,
+.guide-avatar-mock {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1d4ed8, #0f766e);
+    color: white;
+    margin-bottom: 14px;
+}
+.guide-line,
+.guide-input-mock,
+.guide-option,
+.guide-playlist-item,
+.guide-mini-stat,
+.guide-mini-user,
+.guide-mini-menu,
+.guide-course-mock,
+.guide-video-mock,
+.guide-table-row {
+    border-radius: 12px;
+}
+.guide-line {
+    height: 12px;
+    background: #dbeafe;
+    margin-bottom: 10px;
+}
+.guide-line.long { width: 88%; }
+.guide-line.small { width: 60%; }
+.guide-input-mock {
+    height: 40px;
+    background: #f1f5f9;
+    border: 1px solid #dbe4f0;
+    margin-bottom: 10px;
+}
+.guide-input-mock.wide { width: 100%; }
+.guide-input-mock.short { width: 100%; }
+.guide-input-mock.muted { background: #e2e8f0; }
+.guide-switch-mock {
+    color: var(--primary-color);
+    font-size: 0.85rem;
+    text-align: center;
+    margin-top: 10px;
+}
+.guide-button-mock {
+    height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-top: 10px;
+}
+.guide-button-mock.small {
+    height: 36px;
+    font-size: 0.82rem;
+}
+.guide-button-mock.success {
+    background: linear-gradient(135deg, #059669, #10b981);
+}
+.guide-app-preview {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    min-height: 320px;
+}
+.guide-mini-sidebar {
+    background: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    padding: 16px;
+}
+.guide-mini-user {
+    height: 60px;
+    background: linear-gradient(135deg, #dbeafe, #f8fafc);
+    margin-bottom: 14px;
+}
+.guide-mini-menu {
+    height: 36px;
+    background: #f8fafc;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    color: #64748b;
+    font-size: 0.84rem;
+}
+.guide-mini-menu.active {
+    background: #dbeafe;
+    color: var(--primary-color);
+}
+.guide-mini-main {
+    background: #f8fafc;
+    padding: 16px;
+}
+.guide-mini-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.guide-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: #dbeafe;
+    color: var(--primary-color);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+.guide-pill.gold {
+    background: #fef3c7;
+    color: #92400e;
+}
+.guide-mini-stats,
+.guide-mini-courses,
+.guide-feature-grid,
+.guide-two-cols {
+    display: grid;
+    gap: 12px;
+}
+.guide-mini-stats {
+    grid-template-columns: repeat(2, 1fr);
+    margin-bottom: 14px;
+}
+.guide-mini-stat {
+    height: 86px;
+    background: white;
+    border: 1px solid #e2e8f0;
+}
+.guide-mini-courses {
+    grid-template-columns: repeat(3, 1fr);
+}
+.guide-course-mock {
+    min-height: 170px;
+    background: linear-gradient(180deg, #bfdbfe 0%, #ffffff 48%);
+    border: 1px solid #dbe4f0;
+    position: relative;
+}
+.guide-course-mock.external {
+    background: linear-gradient(180deg, #fde68a 0%, #ffffff 48%);
+}
+.guide-course-badge {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    background: white;
+    color: #b45309;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+.guide-quiz-preview {
+    background: #f8fafc;
+}
+.guide-option {
+    height: 42px;
+    background: white;
+    border: 1px solid #dbe4f0;
+    margin-top: 10px;
+}
+.guide-button-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 14px;
+}
+.guide-classroom-preview {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 14px;
+    background: #0f172a;
+}
+.guide-video-mock {
+    min-height: 190px;
+    background: linear-gradient(135deg, #1e293b, #334155);
+    border-radius: 16px;
+    position: relative;
+}
+.guide-video-mock::after {
+    content: "\f04b";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    color: rgba(255,255,255,0.9);
+    font-size: 2rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+.guide-playlist-mock {
+    background: white;
+    border-radius: 16px;
+    padding: 14px;
+}
+.guide-progress-mock {
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+.guide-progress-fill {
+    width: 72%;
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #3b82f6);
+}
+.guide-playlist-item {
+    height: 38px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 10px;
+}
+.guide-playlist-item.active {
+    background: #dbeafe;
+    border-color: #93c5fd;
+}
+.guide-form-preview,
+.guide-profile-preview,
+.guide-table-preview {
+    background: #f8fafc;
+}
+.guide-two-cols {
+    grid-template-columns: repeat(2, 1fr);
+}
+.guide-table-head {
+    display: grid;
+    grid-template-columns: 0.8fr 1.5fr 1fr 0.8fr 0.4fr;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #dbeafe;
+    color: var(--primary-color);
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+.guide-table-row {
+    height: 42px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 10px;
+}
+.guide-profile-preview {
+    text-align: center;
+}
+.guide-avatar-mock {
+    margin: 0 auto 14px;
+}
+.guide-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.guide-feature-card {
+    padding: 18px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #ffffff, #f8fafc);
+    border: 1px solid #e2e8f0;
+}
+.guide-feature-card h5 {
+    color: var(--primary-color);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.guide-feature-card p {
+    color: var(--text-light);
+    line-height: 1.7;
+}
 /* ================= Quiz UI ================= */
 .exam-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 15px; position: relative; }
 .exam-box .btn-remove { position: absolute; top: 15px; right: 15px; color: #EF4444; background: #FEF2F2; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
@@ -648,6 +1126,33 @@ body { background-color: var(--bg-color); color: var(--text-main); }
         padding: 15px !important; 
         margin-left: 0 !important;
         width: 100% !important;
+    }
+    .guide-hero,
+    .guide-section-grid,
+    .guide-auth-preview,
+    .guide-app-preview,
+    .guide-classroom-preview,
+    .guide-feature-grid,
+    .guide-two-cols {
+        grid-template-columns: 1fr !important;
+    }
+    .guide-mini-courses {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .guide-section,
+    .guide-copy-card,
+    .guide-preview-card {
+        padding: 16px;
+    }
+    .guide-hero h3 {
+        font-size: 1.5rem;
+    }
+    .guide-nav {
+        gap: 8px;
+    }
+    .guide-nav-btn {
+        width: 100%;
+        text-align: center;
     }
 
     /* ปรับ Topbar ให้จัดวางปุ่มแฮมเบอร์เกอร์สวยงาม */
