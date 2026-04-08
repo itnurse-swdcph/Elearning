@@ -2061,6 +2061,12 @@ function openExternalRegistration(url) {
     window.open(normalizedUrl, '_blank', 'noopener,noreferrer');
 }
 
+function scrollGuideTo(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 switchUserTab = function(tabId, element) {
     const tabs = document.querySelectorAll('.user-tab');
     tabs.forEach(tab => tab.classList.add('hidden'));
@@ -2084,6 +2090,10 @@ switchUserTab = function(tabId, element) {
             document.getElementById('pPassword').value = '';
             document.getElementById('profilePreview').src = user.profile_img || 'https://via.placeholder.com/150';
         }
+    }
+    if (tabId === 'guideTab') {
+        const userContent = document.querySelector('.user-content');
+        if (userContent) userContent.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     if (window.innerWidth <= 768 && document.body.classList.contains('sidebar-open')) {
