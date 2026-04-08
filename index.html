@@ -104,6 +104,7 @@
                 </div>
                 <ul class="sidebar-menu" id="userMenu">
                     <li class="active" onclick="switchUserTab('dashboardTab', this)"><i class="fas fa-home"></i> หน้าหลัก (Dashboard)</li>
+                    <li onclick="switchUserTab('guideTab', this)"><i class="fas fa-book-open"></i> คู่มือผู้ใช้งาน</li>
                     <li onclick="switchUserTab('externalTab', this)"><i class="fas fa-file-upload"></i> บันทึกอบรมภายนอก</li>
                     <li onclick="switchUserTab('historyTab', this)"><i class="fas fa-history"></i> ประวัติการอบรม (Portfolio)</li>
                     <li onclick="switchUserTab('profileTab', this)"><i class="fas fa-user-cog"></i> แก้ไขข้อมูลส่วนตัว</li>
@@ -154,6 +155,427 @@
                             <span style="color: var(--text-light);">คลิกเพื่อลงทะเบียนกับหน่วยงานภายนอก</span>
                         </div>
                         <div class="course-grid" id="externalRecommendationGrid"></div>
+                    </div>
+
+                    <div id="guideTab" class="user-tab hidden">
+                        <div class="guide-hero">
+                            <div class="guide-hero-copy">
+                                <span class="guide-kicker">คู่มือผู้ใช้งาน</span>
+                                <h3>คู่มือการใช้งาน Learning SWD แบบละเอียด</h3>
+                                <p>คู่มือนี้อธิบายการใช้งานระบบตั้งแต่การสมัครสมาชิก การเข้าใช้งานหน้าหลัก การลงทะเบียนเรียนภายใน การเรียนจนจบและรับใบประกาศ การลงทะเบียนอบรมภายนอกที่แนะนำ การบันทึกประวัติอบรมภายนอก ไปจนถึงเมนูประวัติการอบรมและการแก้ไขข้อมูลส่วนตัว พร้อมภาพจำลอง UI ของแต่ละส่วนเพื่อให้ผู้ใช้เข้าใจได้ทันที</p>
+                            </div>
+                            <div class="guide-hero-stats">
+                                <div class="guide-stat">
+                                    <strong>8</strong>
+                                    <span>หัวข้อหลัก</span>
+                                </div>
+                                <div class="guide-stat">
+                                    <strong>ครบทุกเมนู</strong>
+                                    <span>ผู้ใช้งานทั่วไป</span>
+                                </div>
+                                <div class="guide-stat">
+                                    <strong>มีภาพ UI</strong>
+                                    <span>ทุกส่วนสำคัญ</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="guide-nav">
+                            <button type="button" class="guide-nav-btn" onclick="scrollGuideTo('guide-register')">สมัครและเข้าสู่ระบบ</button>
+                            <button type="button" class="guide-nav-btn" onclick="scrollGuideTo('guide-dashboard')">หน้าหลัก</button>
+                            <button type="button" class="guide-nav-btn" onclick="scrollGuideTo('guide-internal')">เรียนภายใน</button>
+                            <button type="button" class="guide-nav-btn" onclick="scrollGuideTo('guide-external-recommend')">หลักสูตรภายนอกแนะนำ</button>
+                            <button type="button" class="guide-nav-btn" onclick="scrollGuideTo('guide-external-record')">บันทึกอบรมภายนอก</button>
+                            <button type="button" class="guide-nav-btn" onclick="scrollGuideTo('guide-history')">ประวัติการอบรม</button>
+                            <button type="button" class="guide-nav-btn" onclick="scrollGuideTo('guide-profile')">ข้อมูลส่วนตัว</button>
+                            <button type="button" class="guide-nav-btn" onclick="scrollGuideTo('guide-other')">ฟังก์ชันอื่นๆ</button>
+                        </div>
+
+                        <section id="guide-register" class="guide-section">
+                            <div class="guide-section-header">
+                                <span class="guide-section-no">01</span>
+                                <div>
+                                    <h4>การสมัครสมาชิกและเข้าสู่ระบบ</h4>
+                                    <p>เริ่มต้นใช้งานระบบสำหรับผู้ใช้ใหม่ และขั้นตอนการกลับเข้ามาใช้งานสำหรับผู้ที่มีบัญชีแล้ว</p>
+                                </div>
+                            </div>
+                            <div class="guide-section-grid">
+                                <div class="guide-copy-card">
+                                    <ol class="guide-steps">
+                                        <li>เมื่อเปิดเว็บครั้งแรก ระบบจะแสดงหน้าล็อกอิน ให้กรอก `ชื่อผู้ใช้งาน` และ `รหัสผ่าน` หากมีบัญชีอยู่แล้ว</li>
+                                        <li>หากยังไม่เคยใช้งาน ให้กด `ลงทะเบียนที่นี่` เพื่อเปิดแบบฟอร์มสมัครสมาชิก</li>
+                                        <li>กรอกข้อมูลให้ครบ ได้แก่ ชื่อ-นามสกุล, ตำแหน่ง, หน่วยงาน, Username, อีเมล และรหัสผ่าน</li>
+                                        <li>กด `ลงทะเบียน` แล้วเข้าสู่ระบบด้วยบัญชีที่สร้างไว้</li>
+                                        <li>เมื่อเข้าสู่ระบบสำเร็จ ระบบจะพาเข้าสู่หน้าหลักของผู้ใช้โดยอัตโนมัติ</li>
+                                    </ol>
+                                    <div class="guide-tip">
+                                        <strong>ข้อแนะนำ</strong>
+                                        <p>ควรใช้ Username ที่จำง่าย และกรอกหน่วยงานให้ตรงกับข้อมูลจริง เพื่อให้รายงานและสถิติการอบรมถูกต้อง</p>
+                                    </div>
+                                </div>
+                                <div class="guide-preview-card">
+                                    <div class="guide-preview-window">
+                                        <div class="guide-preview-top">
+                                            <span></span><span></span><span></span>
+                                            <strong>หน้าสมัคร / เข้าสู่ระบบ</strong>
+                                        </div>
+                                        <div class="guide-auth-preview">
+                                            <div class="guide-auth-panel">
+                                                <div class="guide-auth-logo"><i class="fas fa-graduation-cap"></i></div>
+                                                <div class="guide-line long"></div>
+                                                <div class="guide-line"></div>
+                                                <div class="guide-input-mock"></div>
+                                                <div class="guide-input-mock"></div>
+                                                <div class="guide-button-mock">เข้าสู่ระบบ</div>
+                                                <div class="guide-switch-mock">ลงทะเบียนที่นี่</div>
+                                            </div>
+                                            <div class="guide-auth-panel muted">
+                                                <div class="guide-input-mock"></div>
+                                                <div class="guide-input-mock"></div>
+                                                <div class="guide-input-mock"></div>
+                                                <div class="guide-input-mock"></div>
+                                                <div class="guide-input-mock"></div>
+                                                <div class="guide-button-mock">ลงทะเบียน</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="guide-dashboard" class="guide-section">
+                            <div class="guide-section-header">
+                                <span class="guide-section-no">02</span>
+                                <div>
+                                    <h4>เมนูหน้าหลักและภาพรวมของระบบ</h4>
+                                    <p>ทำความเข้าใจองค์ประกอบหลักของหน้า Dashboard ซึ่งเป็นหน้าที่ใช้งานบ่อยที่สุด</p>
+                                </div>
+                            </div>
+                            <div class="guide-section-grid">
+                                <div class="guide-copy-card">
+                                    <ol class="guide-steps">
+                                        <li>แถบเมนูด้านซ้ายใช้สำหรับสลับไปยัง `หน้าหลัก`, `คู่มือผู้ใช้งาน`, `บันทึกอบรมภายนอก`, `ประวัติการอบรม`, และ `แก้ไขข้อมูลส่วนตัว`</li>
+                                        <li>กล่องข้อมูลด้านบนแสดงชื่อผู้ใช้และหน่วยงาน เพื่อยืนยันว่าคุณล็อกอินด้วยบัญชีที่ถูกต้อง</li>
+                                        <li>แถบด้านบนของเนื้อหาจะแสดง `ชั่วโมงสะสมรวม` ที่รวบรวมจากการอบรมของคุณ</li>
+                                        <li>การ์ดสถิติแสดงจำนวนหลักสูตรที่กำลังเรียน และจำนวนใบประกาศที่ได้รับ</li>
+                                        <li>ส่วน `หลักสูตรอบรมทั้งหมด` ใช้ค้นหาและเลือกเรียนหลักสูตรภายในระบบ</li>
+                                        <li>ส่วน `หลักสูตรภายนอกแนะนำ` ใช้เปิดลิงก์ลงทะเบียนกับหน่วยงานภายนอกโดยตรง</li>
+                                    </ol>
+                                </div>
+                                <div class="guide-preview-card">
+                                    <div class="guide-preview-window">
+                                        <div class="guide-preview-top">
+                                            <span></span><span></span><span></span>
+                                            <strong>หน้าหลัก (Dashboard)</strong>
+                                        </div>
+                                        <div class="guide-app-preview">
+                                            <div class="guide-mini-sidebar">
+                                                <div class="guide-mini-user"></div>
+                                                <div class="guide-mini-menu active">หน้าหลัก</div>
+                                                <div class="guide-mini-menu">คู่มือผู้ใช้งาน</div>
+                                                <div class="guide-mini-menu">บันทึกอบรมภายนอก</div>
+                                                <div class="guide-mini-menu">ประวัติการอบรม</div>
+                                                <div class="guide-mini-menu">ข้อมูลส่วนตัว</div>
+                                            </div>
+                                            <div class="guide-mini-main">
+                                                <div class="guide-mini-topbar">
+                                                    <div class="guide-line"></div>
+                                                    <div class="guide-pill gold">ชั่วโมงสะสมรวม</div>
+                                                </div>
+                                                <div class="guide-mini-stats">
+                                                    <div class="guide-mini-stat"></div>
+                                                    <div class="guide-mini-stat"></div>
+                                                </div>
+                                                <div class="guide-line long"></div>
+                                                <div class="guide-mini-courses">
+                                                    <div class="guide-course-mock"></div>
+                                                    <div class="guide-course-mock"></div>
+                                                    <div class="guide-course-mock"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="guide-internal" class="guide-section">
+                            <div class="guide-section-header">
+                                <span class="guide-section-no">03</span>
+                                <div>
+                                    <h4>การลงทะเบียนเรียนภายในและ Flow การเข้าเรียนจนได้รับใบประกาศ</h4>
+                                    <p>อธิบายตั้งแต่การเลือกหลักสูตร การเข้าห้องเรียน การทำแบบทดสอบ ไปจนถึงการได้รับใบประกาศ</p>
+                                </div>
+                            </div>
+                            <div class="guide-section-grid">
+                                <div class="guide-copy-card">
+                                    <ol class="guide-steps">
+                                        <li>ที่หน้า Dashboard เลือกหลักสูตรจากบล็อก `หลักสูตรอบรมทั้งหมด` แล้วกดปุ่ม `เข้าสู่บทเรียน`</li>
+                                        <li>เมื่อเข้าครั้งแรก ระบบจะตรวจสอบสถานะการเรียน และถ้ายังไม่เคยทำแบบทดสอบก่อนเรียน ระบบจะเปิด `Pre-test` ก่อน</li>
+                                        <li>หลังทำ Pre-test เสร็จ ระบบจะพาเข้าสู่ห้องเรียน ซึ่งประกอบด้วยวิดีโอ เนื้อหารายหน่วย แถบความคืบหน้า และรายการบทเรียนด้านข้าง</li>
+                                        <li>ผู้ใช้ต้องเรียนให้ครบทุกหน่วย ความคืบหน้าจะเพิ่มตามการรับชมจริง และระบบจำตำแหน่งที่ดูค้างไว้ให้อัตโนมัติ</li>
+                                        <li>ในห้องเรียนมีเมนู `ถาม-ตอบ (Q&A)` สำหรับส่งคำถามเกี่ยวกับเนื้อหาหลักสูตร</li>
+                                        <li>เมื่อเรียนครบ 100% ปุ่ม `ทำแบบทดสอบหลังเรียน` จะปรากฏขึ้น</li>
+                                        <li>หากสอบผ่านเกณฑ์ของหลักสูตร ระบบจะสร้างใบประกาศให้ดาวน์โหลด และหลังจากนั้นจะมีหน้าประเมินความพึงพอใจ</li>
+                                        <li>เมื่อทำทุกขั้นตอนครบ ข้อมูลชั่วโมงและใบประกาศจะสะสมในหน้าหลักและประวัติการอบรมของคุณ</li>
+                                    </ol>
+                                    <div class="guide-tip">
+                                        <strong>สิ่งที่ควรทราบ</strong>
+                                        <p>หากออกจากห้องเรียนก่อน ระบบจะบันทึกความคืบหน้าและเวลาที่ดูค้างไว้ เพื่อให้กลับมาเรียนต่อได้ในครั้งถัดไป</p>
+                                    </div>
+                                </div>
+                                <div class="guide-preview-stack">
+                                    <div class="guide-preview-window">
+                                        <div class="guide-preview-top">
+                                            <span></span><span></span><span></span>
+                                            <strong>หน้าทำแบบทดสอบ</strong>
+                                        </div>
+                                        <div class="guide-quiz-preview">
+                                            <div class="guide-pill">Pre-test / Post-test</div>
+                                            <div class="guide-line long"></div>
+                                            <div class="guide-option"></div>
+                                            <div class="guide-option"></div>
+                                            <div class="guide-option"></div>
+                                            <div class="guide-option"></div>
+                                            <div class="guide-button-row">
+                                                <div class="guide-button-mock small">ข้อถัดไป</div>
+                                                <div class="guide-button-mock small success">ส่งคำตอบ</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="guide-preview-window">
+                                        <div class="guide-preview-top">
+                                            <span></span><span></span><span></span>
+                                            <strong>หน้าห้องเรียน</strong>
+                                        </div>
+                                        <div class="guide-classroom-preview">
+                                            <div class="guide-video-mock"></div>
+                                            <div class="guide-playlist-mock">
+                                                <div class="guide-progress-mock">
+                                                    <div class="guide-progress-fill"></div>
+                                                </div>
+                                                <div class="guide-line small"></div>
+                                                <div class="guide-playlist-item active"></div>
+                                                <div class="guide-playlist-item"></div>
+                                                <div class="guide-playlist-item"></div>
+                                                <div class="guide-button-mock small">ทำแบบทดสอบหลังเรียน</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="guide-external-recommend" class="guide-section">
+                            <div class="guide-section-header">
+                                <span class="guide-section-no">04</span>
+                                <div>
+                                    <h4>การลงทะเบียนอบรมภายนอกที่แนะนำ</h4>
+                                    <p>ใช้สำหรับหลักสูตรที่แอดมินแนะนำจากหน่วยงานภายนอก และเปิดให้ลงทะเบียนผ่าน URL ภายนอก</p>
+                                </div>
+                            </div>
+                            <div class="guide-section-grid">
+                                <div class="guide-copy-card">
+                                    <ol class="guide-steps">
+                                        <li>ที่หน้า Dashboard ให้เลื่อนมาที่บล็อก `หลักสูตรภายนอกแนะนำ`</li>
+                                        <li>แต่ละการ์ดจะแสดงชื่อหลักสูตร หน่วยงานที่จัด และจำนวนชั่วโมงที่คาดว่าจะได้รับ</li>
+                                        <li>กดปุ่ม `ลงทะเบียน` เพื่อเปิดหน้าเว็บไซต์ของหน่วยงานภายนอกในแท็บใหม่</li>
+                                        <li>ระบบนี้ทำหน้าที่เป็นช่องทางแนะนำหลักสูตรและพาไปลงทะเบียน ไม่ได้บันทึกผลการเข้าอบรมภายนอกให้อัตโนมัติ</li>
+                                        <li>หลังอบรมภายนอกเสร็จแล้ว ให้กลับมาที่เมนู `บันทึกอบรมภายนอก` เพื่อบันทึกหลักฐานเข้าระบบ</li>
+                                    </ol>
+                                </div>
+                                <div class="guide-preview-card">
+                                    <div class="guide-preview-window">
+                                        <div class="guide-preview-top">
+                                            <span></span><span></span><span></span>
+                                            <strong>บล็อกหลักสูตรภายนอกแนะนำ</strong>
+                                        </div>
+                                        <div class="guide-mini-courses">
+                                            <div class="guide-course-mock external">
+                                                <div class="guide-course-badge">ภายนอก</div>
+                                            </div>
+                                            <div class="guide-course-mock external">
+                                                <div class="guide-course-badge">ภายนอก</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="guide-external-record" class="guide-section">
+                            <div class="guide-section-header">
+                                <span class="guide-section-no">05</span>
+                                <div>
+                                    <h4>ขั้นตอนการบันทึกอบรมภายนอก</h4>
+                                    <p>สำหรับนำผลการอบรมจากภายนอกเข้ามาเก็บใน Portfolio ของคุณ พร้อมแนบหลักฐาน</p>
+                                </div>
+                            </div>
+                            <div class="guide-section-grid">
+                                <div class="guide-copy-card">
+                                    <ol class="guide-steps">
+                                        <li>เปิดเมนู `บันทึกอบรมภายนอก` จากแถบด้านซ้าย</li>
+                                        <li>กรอก `หัวข้อการอบรม`, `หน่วยงานที่จัด`, `วันที่`, และ `ระยะเวลา` เป็นชั่วโมงและนาที</li>
+                                        <li>แนบไฟล์หลักฐาน เช่น ใบประกาศ, หนังสือรับรอง หรือรูปภาพที่เกี่ยวข้อง</li>
+                                        <li>กด `บันทึกข้อมูลเข้า Portfolio` เพื่อส่งข้อมูลเข้าระบบ</li>
+                                        <li>ข้อมูลที่บันทึกแล้วจะถูกส่งเข้าสู่กระบวนการตรวจสอบ/อนุมัติ ก่อนนำไปรวมในประวัติการอบรมอย่างเป็นทางการ</li>
+                                    </ol>
+                                    <div class="guide-tip">
+                                        <strong>คำแนะนำ</strong>
+                                        <p>ควรแนบไฟล์หลักฐานที่อ่านข้อมูลได้ชัดเจน โดยเฉพาะชื่อหลักสูตร วันที่ และจำนวนชั่วโมง เพื่อให้การอนุมัติเป็นไปอย่างรวดเร็ว</p>
+                                    </div>
+                                </div>
+                                <div class="guide-preview-card">
+                                    <div class="guide-preview-window">
+                                        <div class="guide-preview-top">
+                                            <span></span><span></span><span></span>
+                                            <strong>ฟอร์มบันทึกอบรมภายนอก</strong>
+                                        </div>
+                                        <div class="guide-form-preview">
+                                            <div class="guide-input-mock wide"></div>
+                                            <div class="guide-two-cols">
+                                                <div class="guide-input-mock"></div>
+                                                <div class="guide-input-mock"></div>
+                                            </div>
+                                            <div class="guide-two-cols">
+                                                <div class="guide-input-mock short"></div>
+                                                <div class="guide-input-mock short"></div>
+                                            </div>
+                                            <div class="guide-input-mock"></div>
+                                            <div class="guide-button-mock">บันทึกข้อมูลเข้า Portfolio</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="guide-history" class="guide-section">
+                            <div class="guide-section-header">
+                                <span class="guide-section-no">06</span>
+                                <div>
+                                    <h4>เมนูประวัติการอบรม (Portfolio)</h4>
+                                    <p>ศูนย์รวมประวัติการอบรมทั้งหมด ทั้งจากการเรียนภายในระบบและอบรมภายนอกที่ได้รับอนุมัติแล้ว</p>
+                                </div>
+                            </div>
+                            <div class="guide-section-grid">
+                                <div class="guide-copy-card">
+                                    <ol class="guide-steps">
+                                        <li>เปิดเมนู `ประวัติการอบรม (Portfolio)` เพื่อดูรายการอบรมทั้งหมดของคุณ</li>
+                                        <li>ตารางจะแสดงวันที่, ชื่อหลักสูตร/หัวข้ออบรม, หน่วยงานที่จัด, รูปแบบการอบรม, ชั่วโมง และหลักฐาน</li>
+                                        <li>ประวัติจากหลักสูตรภายในระบบจะถูกเพิ่มให้อัตโนมัติเมื่อเรียนและผ่านกระบวนการครบถ้วน</li>
+                                        <li>ประวัติจากภายนอกจะปรากฏเมื่อรายการที่ส่งบันทึกได้รับการอนุมัติจากแอดมินแล้ว</li>
+                                        <li>กดปุ่ม `บันทึกเป็น PDF` เพื่อสร้างเอกสารสรุป Portfolio สำหรับใช้งานต่อหรือเก็บเป็นหลักฐาน</li>
+                                    </ol>
+                                </div>
+                                <div class="guide-preview-card">
+                                    <div class="guide-preview-window">
+                                        <div class="guide-preview-top">
+                                            <span></span><span></span><span></span>
+                                            <strong>ตารางประวัติการอบรม</strong>
+                                        </div>
+                                        <div class="guide-table-preview">
+                                            <div class="guide-table-head">
+                                                <span>วันที่</span>
+                                                <span>หลักสูตร</span>
+                                                <span>หน่วยงาน</span>
+                                                <span>รูปแบบ</span>
+                                                <span>ชม.</span>
+                                            </div>
+                                            <div class="guide-table-row"></div>
+                                            <div class="guide-table-row"></div>
+                                            <div class="guide-table-row"></div>
+                                            <div class="guide-button-mock small">บันทึกเป็น PDF</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="guide-profile" class="guide-section">
+                            <div class="guide-section-header">
+                                <span class="guide-section-no">07</span>
+                                <div>
+                                    <h4>เมนูแก้ไขข้อมูลส่วนตัว</h4>
+                                    <p>ใช้ปรับปรุงข้อมูลผู้ใช้งานให้เป็นปัจจุบัน เพื่อให้รายงานและใบประกาศของคุณถูกต้อง</p>
+                                </div>
+                            </div>
+                            <div class="guide-section-grid">
+                                <div class="guide-copy-card">
+                                    <ol class="guide-steps">
+                                        <li>เปิดเมนู `แก้ไขข้อมูลส่วนตัว`</li>
+                                        <li>คุณสามารถอัปโหลดรูปโปรไฟล์ใหม่ และแก้ไขชื่อ-นามสกุล, ตำแหน่ง, หน่วยงาน และรหัสผ่านใหม่ได้</li>
+                                        <li>ช่อง `Username` เป็นแบบอ่านอย่างเดียว ไม่สามารถแก้ไขได้จากหน้านี้</li>
+                                        <li>หากไม่ต้องการเปลี่ยนรหัสผ่าน ให้เว้นช่องรหัสผ่านใหม่ว่างไว้</li>
+                                        <li>กด `บันทึกข้อมูล` เพื่ออัปเดตข้อมูลในระบบ</li>
+                                    </ol>
+                                </div>
+                                <div class="guide-preview-card">
+                                    <div class="guide-preview-window">
+                                        <div class="guide-preview-top">
+                                            <span></span><span></span><span></span>
+                                            <strong>ฟอร์มแก้ไขข้อมูลส่วนตัว</strong>
+                                        </div>
+                                        <div class="guide-profile-preview">
+                                            <div class="guide-avatar-mock"><i class="fas fa-user"></i></div>
+                                            <div class="guide-two-cols">
+                                                <div class="guide-input-mock"></div>
+                                                <div class="guide-input-mock"></div>
+                                            </div>
+                                            <div class="guide-two-cols">
+                                                <div class="guide-input-mock muted"></div>
+                                                <div class="guide-input-mock"></div>
+                                            </div>
+                                            <div class="guide-input-mock"></div>
+                                            <div class="guide-button-mock">บันทึกข้อมูล</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="guide-other" class="guide-section">
+                            <div class="guide-section-header">
+                                <span class="guide-section-no">08</span>
+                                <div>
+                                    <h4>ฟังก์ชันอื่นๆ ที่ควรรู้</h4>
+                                    <p>รวมฟังก์ชันประกอบที่ช่วยให้ใช้งานระบบได้สะดวกและครบถ้วนยิ่งขึ้น</p>
+                                </div>
+                            </div>
+                            <div class="guide-feature-grid">
+                                <div class="guide-feature-card">
+                                    <h5><i class="fas fa-search"></i> ค้นหาหลักสูตร</h5>
+                                    <p>บนหน้า Dashboard มีช่องค้นหาชื่อหลักสูตร เพื่อช่วยกรองรายการหลักสูตรภายในระบบได้รวดเร็ว</p>
+                                </div>
+                                <div class="guide-feature-card">
+                                    <h5><i class="fas fa-clock"></i> ชั่วโมงสะสมรวม</h5>
+                                    <p>แสดงบนแถบบนของหน้าผู้ใช้ เพื่อสรุปชั่วโมงการอบรมสะสมของคุณจากข้อมูลในระบบ</p>
+                                </div>
+                                <div class="guide-feature-card">
+                                    <h5><i class="fas fa-comments"></i> Q&amp;A ในห้องเรียน</h5>
+                                    <p>ใช้ถามคำถามระหว่างเรียน โดยกดขยายส่วน `ถาม-ตอบ` ในหน้าห้องเรียน แล้วพิมพ์คำถามส่งได้ทันที</p>
+                                </div>
+                                <div class="guide-feature-card">
+                                    <h5><i class="fas fa-play-circle"></i> เรียนต่อจากจุดเดิม</h5>
+                                    <p>ระบบจำตำแหน่งวิดีโอที่ดูค้างไว้และความคืบหน้าของแต่ละหน่วย เพื่อให้กลับมาเรียนต่อได้สะดวก</p>
+                                </div>
+                                <div class="guide-feature-card">
+                                    <h5><i class="fas fa-star"></i> แบบประเมินหลังเรียน</h5>
+                                    <p>หลังสอบผ่านและรับใบประกาศ ระบบจะเปิดหน้าประเมินความพึงพอใจ เพื่อใช้พัฒนาหลักสูตรต่อไป</p>
+                                </div>
+                                <div class="guide-feature-card">
+                                    <h5><i class="fas fa-user-shield"></i> เมนูแอดมิน</h5>
+                                    <p>เมนู `จัดการระบบ (Admin)` จะแสดงเฉพาะผู้ที่มีสิทธิ์แอดมินเท่านั้น ผู้ใช้ทั่วไปจะไม่เห็นเมนูนี้</p>
+                                </div>
+                                <div class="guide-feature-card">
+                                    <h5><i class="fas fa-mobile-alt"></i> การใช้งานบนมือถือ</h5>
+                                    <p>บนหน้าจอเล็กสามารถกดปุ่มเมนูมุมบนซ้ายเพื่อเปิดหรือปิดแถบเมนูด้านข้างได้</p>
+                                </div>
+                                <div class="guide-feature-card">
+                                    <h5><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</h5>
+                                    <p>หากใช้งานบนเครื่องสาธารณะ ควรกด `ออกจากระบบ` ทุกครั้งเพื่อป้องกันผู้อื่นเข้าถึงข้อมูลของคุณ</p>
+                                </div>
+                            </div>
+                        </section>
                     </div>
 
                     <div id="externalTab" class="user-tab hidden">
