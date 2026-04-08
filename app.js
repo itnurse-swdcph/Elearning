@@ -543,6 +543,8 @@ function switchAdminTab(tabId, element = null) {
     // โหลดข้อมูลตามหน้า Tab ที่เลือก
     if(tabId === 'reportTab') loadAdminReport();
     if(tabId === 'courseMgtTab') {
+        appState.coursesLoaded = false;
+        setDashboardRefreshNeeded();
         resetCourseForm();
         loadAdminCoursesTable(); 
     }
@@ -1868,6 +1870,42 @@ function formatHoursLabel(hours) {
     return `${hr} ชม. ${min} นาที`;
 }
 
+function splitHoursAndMinutes(hours) {
+    const numericHours = parseFloat(hours) || 0;
+    const hr = Math.floor(numericHours);
+    const min = Math.round((numericHours - hr) * 60);
+    return { hours: hr, minutes: min };
+}
+
+function getStatusText(status) {
+    if (status === 'inactive') return 'ปิดลงทะเบียน';
+    if (status === 'deleted') return 'ลบแล้ว';
+    return 'เปิดลงทะเบียน';
+}
+
+function getStatusBadge(status) {
+    const normalizedStatus = status || 'active';
+    return `<span class="table-status-badge ${normalizedStatus}">${getStatusText(normalizedStatus)}</span>`;
+}
+
+function getToggleRegistrationAction(status) {
+    if (status === 'inactive') {
+        return {
+            nextStatus: 'active',
+            label: 'เปิดลงทะเบียน',
+            className: 'btn-success',
+            icon: 'fa-lock-open'
+        };
+    }
+
+    return {
+        nextStatus: 'inactive',
+        label: 'ปิดลงทะเบียน',
+        className: 'btn-warning',
+        icon: 'fa-user-lock'
+    };
+}
+
 function renderEmptyGrid(gridId, message) {
     const grid = document.getElementById(gridId);
     if (!grid) return;
@@ -2135,6 +2173,8 @@ function resetExternalRecommendationForm() {
     document.getElementById('editExtRecId').value = '';
     document.getElementById('extRecCover').value = '';
     document.getElementById('extRecCoverStatus').innerText = '';
+    document.getElementById('extRecHours').value = '';
+    document.getElementById('extRecMins').value = '';
     document.getElementById('externalRecFormTitle').innerHTML = '<i class="fas fa-link"></i> เพิ่มหลักสูตรภายนอกแนะนำ';
     document.getElementById('btnSubmitExternalRec').innerHTML = '<i class="fas fa-save"></i> บันทึกหลักสูตรภายนอก';
     document.getElementById('btnCancelExternalRecEdit').classList.add('hidden');
@@ -2143,11 +2183,13 @@ function resetExternalRecommendationForm() {
 function editExternalRecommendation(recId) {
     const course = adminExternalRecommendationsData.find(item => item.rec_id === recId);
     if (!course) return;
+    const duration = splitHoursAndMinutes(course.hours);
 
     document.getElementById('editExtRecId').value = course.rec_id;
     document.getElementById('extRecTitle').value = course.title || '';
     document.getElementById('extRecOrganizer').value = course.organizer || '';
-    document.getElementById('extRecHours').value = course.hours || 0;
+    document.getElementById('extRecHours').value = duration.hours;
+    document.getElementById('extRecMins').value = duration.minutes;
     document.getElementById('extRecCover').value = course.cover_image || '';
     document.getElementById('extRecUrl').value = course.register_url || '';
     document.getElementById('externalRecFormTitle').innerHTML = '<i class="fas fa-edit"></i> แก้ไขหลักสูตรภายนอกแนะนำ';
@@ -2160,21 +2202,25 @@ const externalRecommendationForm = document.getElementById('externalRecommendati
 if (externalRecommendationForm) {
     externalRecommendationForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const hours = parseFloat(document.getElementById('extRecHours').value) || 0;
+        const minutes = parseFloat(document.getElementById('extRecMins').value) || 0;
+        const totalHours = +(hours + (minutes / 60)).toFixed(2);
+        const editId = document.getElementById('editExtRecId').value;
+        const currentRecommendation = adminExternalRecommendationsData.find(item => item.rec_id === editId);
 
         const payload = {
             title: document.getElementById('extRecTitle').value.trim(),
             organizer: document.getElementById('extRecOrganizer').value.trim(),
-            hours: parseFloat(document.getElementById('extRecHours').value) || 0,
+            hours: totalHours,
             cover_image: document.getElementById('extRecCover').value.trim(),
             register_url: normalizeExternalUrl(document.getElementById('extRecUrl').value.trim()),
-            status: 'active'
+            status: currentRecommendation ? (currentRecommendation.status || 'active') : 'active'
         };
 
         if (!payload.title || !payload.organizer || !payload.cover_image || !payload.register_url) {
             return showAlert('แจ้งเตือน', 'กรุณากรอกข้อมูลหลักสูตรภายนอกให้ครบทุกช่อง');
         }
 
-        const editId = document.getElementById('editExtRecId').value;
         const action = editId ? 'updateExternalRecommendation' : 'addExternalRecommendation';
         if (editId) payload.rec_id = editId;
 
@@ -2192,6 +2238,145 @@ if (externalRecommendationForm) {
             showAlert('ข้อผิดพลาด', res.message || 'ไม่สามารถบันทึกหลักสูตรภายนอกได้');
         }
     });
+}
+
+loadAdminCoursesTable = async function() {
+    const tbody = document.getElementById('adminCourseListBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
+    const res = await callAPI('getAdminCourses', {});
+
+    if (res.status !== 'success') {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">โหลดข้อมูลไม่สำเร็จ</td></tr>';
+        return;
+    }
+
+    adminCoursesData = (res.data || []).filter(course => (course.status || 'active') !== 'deleted');
+    if (adminCoursesData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">ยังไม่มีหลักสูตรในระบบ</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = '';
+    adminCoursesData.forEach(course => {
+        const status = course.status || 'active';
+        const toggleAction = getToggleRegistrationAction(status);
+
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>${course.title}</strong></td>
+                <td>${course.organizer || '-'}</td>
+                <td>${formatHoursLabel(course.hours)}</td>
+                <td>${getStatusBadge(status)}</td>
+                <td>
+                    <div class="table-actions">
+                        <button class="btn btn-action btn-edit" onclick="editCourse('${course.course_id}')"><i class="fas fa-edit"></i> แก้ไข</button>
+                        <button class="btn btn-action ${toggleAction.className}" onclick="changeCourseStatus('${course.course_id}', '${toggleAction.nextStatus}')"><i class="fas ${toggleAction.icon}"></i> ${toggleAction.label}</button>
+                        <button class="btn btn-action btn-danger" onclick="changeCourseStatus('${course.course_id}', 'deleted')"><i class="fas fa-trash-alt"></i> ลบ</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+};
+
+async function changeCourseStatus(courseId, nextStatus) {
+    const course = adminCoursesData.find(item => item.course_id === courseId);
+    if (!course) return;
+
+    const actionLabel = nextStatus === 'deleted' ? 'ลบหลักสูตร' : (nextStatus === 'inactive' ? 'ปิดลงทะเบียน' : 'เปิดลงทะเบียน');
+    const message = nextStatus === 'deleted'
+        ? `ยืนยันการลบหลักสูตร "${course.title}" ใช่หรือไม่?`
+        : `ยืนยันการ${actionLabel}สำหรับหลักสูตร "${course.title}" ใช่หรือไม่?`;
+    const confirmed = await showConfirm('ยืนยันการทำรายการ', message);
+    if (!confirmed) return;
+
+    showLoader();
+    const res = await callAPI('updateCourseStatus', { course_id: courseId, status: nextStatus });
+    hideLoader();
+
+    if (res.status === 'success') {
+        appState.coursesLoaded = false;
+        setDashboardRefreshNeeded();
+        if (document.getElementById('editCourseId').value === courseId) {
+            resetCourseForm();
+        }
+        showAlert('สำเร็จ', nextStatus === 'deleted' ? 'ลบหลักสูตรเรียบร้อยแล้ว' : res.message);
+        loadAdminCoursesTable();
+    } else {
+        showAlert('ข้อผิดพลาด', res.message || 'ไม่สามารถอัปเดตสถานะหลักสูตรได้');
+    }
+}
+
+loadAdminExternalRecommendationsTable = async function() {
+    const tbody = document.getElementById('adminExternalCourseListBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
+    const res = await callAPI('getExternalRecommendations', { admin_view: true });
+
+    if (res.status !== 'success') {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ef4444;">โหลดข้อมูลไม่สำเร็จ</td></tr>';
+        return;
+    }
+
+    adminExternalRecommendationsData = (res.data || []).filter(course => (course.status || 'active') !== 'deleted');
+    if (adminExternalRecommendationsData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">ยังไม่มีหลักสูตรภายนอกแนะนำ</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = '';
+    adminExternalRecommendationsData.forEach(course => {
+        const status = course.status || 'active';
+        const toggleAction = getToggleRegistrationAction(status);
+
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>${course.title}</strong></td>
+                <td>${course.organizer || '-'}</td>
+                <td>${formatHoursLabel(course.hours)}</td>
+                <td><a href="${normalizeExternalUrl(course.register_url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">เปิดลิงก์</a></td>
+                <td>${getStatusBadge(status)}</td>
+                <td>
+                    <div class="table-actions">
+                        <button class="btn btn-action btn-edit" onclick="editExternalRecommendation('${course.rec_id}')"><i class="fas fa-edit"></i> แก้ไข</button>
+                        <button class="btn btn-action ${toggleAction.className}" onclick="changeExternalRecommendationStatus('${course.rec_id}', '${toggleAction.nextStatus}')"><i class="fas ${toggleAction.icon}"></i> ${toggleAction.label}</button>
+                        <button class="btn btn-action btn-danger" onclick="changeExternalRecommendationStatus('${course.rec_id}', 'deleted')"><i class="fas fa-trash-alt"></i> ลบ</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+};
+
+async function changeExternalRecommendationStatus(recId, nextStatus) {
+    const course = adminExternalRecommendationsData.find(item => item.rec_id === recId);
+    if (!course) return;
+
+    const actionLabel = nextStatus === 'deleted' ? 'ลบหลักสูตรภายนอก' : (nextStatus === 'inactive' ? 'ปิดลงทะเบียน' : 'เปิดลงทะเบียน');
+    const message = nextStatus === 'deleted'
+        ? `ยืนยันการลบหลักสูตร "${course.title}" ใช่หรือไม่?`
+        : `ยืนยันการ${actionLabel}สำหรับหลักสูตร "${course.title}" ใช่หรือไม่?`;
+    const confirmed = await showConfirm('ยืนยันการทำรายการ', message);
+    if (!confirmed) return;
+
+    showLoader();
+    const res = await callAPI('updateExternalRecommendationStatus', { rec_id: recId, status: nextStatus });
+    hideLoader();
+
+    if (res.status === 'success') {
+        appState.externalRecommendationsLoaded = false;
+        setDashboardRefreshNeeded();
+        if (document.getElementById('editExtRecId').value === recId) {
+            resetExternalRecommendationForm();
+        }
+        showAlert('สำเร็จ', nextStatus === 'deleted' ? 'ลบหลักสูตรภายนอกเรียบร้อยแล้ว' : res.message);
+        loadAdminExternalRecommendationsTable();
+    } else {
+        showAlert('ข้อผิดพลาด', res.message || 'ไม่สามารถอัปเดตสถานะหลักสูตรภายนอกได้');
+    }
 }
 
 editAdminUser = function(userId) {
