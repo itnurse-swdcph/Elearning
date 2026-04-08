@@ -341,6 +341,51 @@ body { background-color: var(--bg-color); color: var(--text-main); }
 .btn-action { padding: 8px 12px; font-size: 0.9rem; margin-right: 5px; }
 .btn-edit { background: var(--accent-color); color: white; border: none; }
 .btn-edit:hover { background: #b8962c; }
+.btn-warning {
+    background: #f59e0b;
+    color: white;
+    border: none;
+}
+.btn-warning:hover { background: #d97706; }
+.btn-danger {
+    background: #dc2626;
+    color: white;
+    border: none;
+}
+.btn-danger:hover { background: #b91c1c; }
+.btn-success {
+    background: #16a34a;
+    color: white;
+    border: none;
+}
+.btn-success:hover { background: #15803d; }
+.table-status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.table-status-badge.active {
+    background: rgba(22, 163, 74, 0.12);
+    color: #15803d;
+}
+.table-status-badge.inactive {
+    background: rgba(245, 158, 11, 0.14);
+    color: #b45309;
+}
+.table-status-badge.deleted {
+    background: rgba(220, 38, 38, 0.12);
+    color: #b91c1c;
+}
+.table-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
 /* ================= Classroom Layout ================= */
 .classroom-layout {
     display: flex;
