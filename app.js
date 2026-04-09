@@ -121,7 +121,7 @@ async function callAPI(action, payload) {
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     showLoader();
-    const res = await callAPI('login', { username: document.getElementById('loginUsername').value, password: document.getElementById('loginPassword').value });
+    const res = await callAPI('login', { username: document.getElementById('loginUsername').value.trim(), password: document.getElementById('loginPassword').value });
     hideLoader();
     if (res.status === 'success') {
         localStorage.setItem('swd_user', JSON.stringify(res.user));
@@ -133,11 +133,11 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     e.preventDefault();
     showLoader();
     const payload = {
-        name: document.getElementById('regName').value, 
-        position: document.getElementById('regPosition').value,
-        department: document.getElementById('regDept').value, 
-        username: document.getElementById('regUsername').value,
-        email: document.getElementById('regEmail').value, 
+        name: document.getElementById('regName').value.trim(), 
+        position: document.getElementById('regPosition').value.trim(), 
+        department: document.getElementById('regDept').value.trim(),
+        username: document.getElementById('regUsername').value.trim(),
+        email: document.getElementById('regEmail').value.trim(), 
         password: document.getElementById('regPassword').value
     };
     const res = await callAPI('register', payload);
