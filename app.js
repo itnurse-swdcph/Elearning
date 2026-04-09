@@ -1,4 +1,3 @@
-// เปลี่ยน URL ตรงนี้เป็น Web App URL ที่ได้จาก Google Apps Script
 const API_URL = 'https://script.google.com/macros/s/AKfycbxlfD-5saP7FtUX_YxuBe3gowToA38b0qc0jW5JuWjMN9XotTlqRfc0LuaWtibYNwMp1Q/exec'; 
 const appState = {
     user: null,
@@ -18,16 +17,31 @@ window.addEventListener('DOMContentLoaded', async () => {
     const thisYear = new Date().getFullYear();
     years.forEach(el => el.innerText = thisYear);
 
-    // 2. โหลดรายชื่อหน่วยงานใส่ Datalist (สำหรับหน้าสมัครเรียนและหน้าแก้ไขโปรไฟล์)
+    // 2. โหลดรายชื่อหน่วยงานสำหรับช่องเลือกและ datalist ที่ยังใช้งานอยู่
     try {
         const res = await callAPI('getSettings', {});
         if(res && res.status === 'success') {
-            let datalistHtml = '';
-            res.data.forEach(d => {
-                datalistHtml += `<option value="${d}">`;
-            });
+            const departments = Array.isArray(res.data) ? res.data : [];
             const deptList = document.getElementById('deptList');
-            if(deptList) deptList.innerHTML = datalistHtml;
+            if (deptList) {
+                deptList.innerHTML = '';
+                departments.forEach((department) => {
+                    const option = document.createElement('option');
+                    option.value = department;
+                    deptList.appendChild(option);
+                });
+            }
+
+            const registerDept = document.getElementById('regDept');
+            if (registerDept) {
+                registerDept.innerHTML = '<option value="">เลือกหน่วยงาน</option>';
+                departments.forEach((department) => {
+                    const option = document.createElement('option');
+                    option.value = department;
+                    option.textContent = department;
+                    registerDept.appendChild(option);
+                });
+            }
         }
     } catch (err) {
         console.error("ระบบไม่สามารถโหลดรายการหน่วยงานได้:", err);
