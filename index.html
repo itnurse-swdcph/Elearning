@@ -82,7 +82,11 @@
             <form id="registerForm" class="hidden">
                 <div class="input-group"><input type="text" id="regName" placeholder="ชื่อ-นามสกุล" required></div>
                 <div class="input-group"><input type="text" id="regPosition" placeholder="ตำแหน่ง" required></div>
-                <div class="input-group"><input type="text" id="regDept" list="deptList" placeholder="พิมพ์ค้นหาหรือเลือกหน่วยงาน" required></div>
+                <div class="input-group">
+                    <select id="regDept" required>
+                        <option value="">เลือกหน่วยงาน</option>
+                    </select>
+                </div>
                 <div class="input-group"><input type="text" id="regUsername" placeholder="ตั้งชื่อผู้ใช้งาน (Username)" required></div>
                 <div class="input-group"><input type="email" id="regEmail" placeholder="อีเมล (สำหรับติดต่อ)" required></div>
                 <div class="input-group"><input type="password" id="regPassword" placeholder="กำหนดรหัสผ่าน" required></div>
