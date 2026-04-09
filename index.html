@@ -582,14 +582,22 @@
                         <div class="tab-header"><h3><i class="fas fa-file-upload"></i> บันทึกประวัติการอบรมภายนอก</h3></div>
                         <form id="externalTrainingForm" class="admin-form">
                             <div class="form-grid">
-                                <div class="input-group" style="grid-column: 1 / -1;"><label>หัวข้อการอบรม / ประชุมวิชาการ</label><input type="text" id="extTopic" placeholder="เช่น CPR" required></div>
+                                <div class="input-group" style="grid-column: 1 / -1;">
+                                    <label>เลือกจากหลักสูตรภายนอกแนะนำ (ถ้ามี)</label>
+                                    <select id="extRecSelect" onchange="handleExternalTrainingRecommendationChange(this.value)">
+                                        <option value="">กรอกข้อมูลเอง</option>
+                                    </select>
+                                    <small id="extRecSelectHint" style="color: var(--text-light); display: block; margin-top: 6px;">ถ้าเลือกจากรายการแนะนำ ระบบจะดึงชื่อหลักสูตร หน่วยงาน และชั่วโมงให้อัตโนมัติ เหลือกรอกวันที่กับแนบหลักฐาน</small>
+                                </div>
+                                <div class="input-group" style="grid-column: 1 / -1;"><label>ชื่อหลักสูตร</label><input type="text" id="extTopic" placeholder="เช่น CPR" required></div>
                                 <div class="input-group"><label>หน่วยงานที่จัด</label><input type="text" id="extOrganizer" required></div>
                                 <div class="input-group"><label>วันที่จัดอบรม</label><input type="date" id="extDate" required></div>
-                                <div class="input-group time-input-group">
+                                <div class="input-group time-input-group" id="extManualDurationGroup">
                                     <label>ระยะเวลา (ชั่วโมง : นาที)</label><br>
-                                    <input type="number" id="extHours" placeholder="ชม." min="0" required> : 
+                                    <input type="number" id="extHours" placeholder="ชม." min="0" required> :
                                     <input type="number" id="extMins" placeholder="นาที" min="0" max="59" required>
                                 </div>
+                                <div class="input-group hidden" id="extPresetDurationGroup"><label>ชั่วโมงการอบรม</label><input type="text" id="extDurationDisplay" class="readonly-field" readonly></div>
                                 <div class="input-group"><label>แนบไฟล์ใบประกาศ / หลักฐาน (PDF/รูป)</label><input type="file" id="extCertFile" accept=".pdf, image/*" required></div>
                             </div>
                             <button type="submit" class="btn btn-primary" style="margin-top: 15px;"><i class="fas fa-paper-plane"></i> บันทึกข้อมูลเข้า Portfolio</button>
