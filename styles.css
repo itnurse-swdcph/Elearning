@@ -92,6 +92,12 @@ body { background-color: var(--bg-color); color: var(--text-main); }
     background-color: white;
 }
 
+.readonly-field {
+    background: #e2e8f0 !important;
+    color: #475569;
+    cursor: not-allowed;
+}
+
 .switch-form { margin-top: 15px; font-size: 0.9rem; }
 .switch-form a { color: var(--primary-color); text-decoration: none; font-weight: 600; transition: var(--transition); }
 .switch-form a:hover { color: var(--accent-color); }
