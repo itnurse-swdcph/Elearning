@@ -1358,6 +1358,91 @@ function closeQuiz() {
     }
 }
 // ================= External Training Logic (อัปโหลดประวัติภายนอก) =================
+let selectedExternalTrainingRecommendation = null;
+
+async function loadExternalTrainingRecommendationOptions(force = false) {
+    const select = document.getElementById('extRecSelect');
+    if (!select) return;
+
+    let recommendations = externalRecommendationCourses || [];
+    if (force || recommendations.length === 0) {
+        const res = await callAPI('getExternalRecommendations', {});
+        if (res.status === 'success') {
+            recommendations = res.data || [];
+            externalRecommendationCourses = recommendations;
+            appState.externalRecommendationsLoaded = recommendations.length > 0;
+        } else {
+            recommendations = [];
+        }
+    }
+
+    const currentValue = select.value;
+    select.innerHTML = '<option value="">กรอกข้อมูลเอง</option>';
+    recommendations.forEach(course => {
+        select.innerHTML += `<option value="${course.rec_id}">${course.title} | ${course.organizer || '-'} | ${formatHoursLabel(course.hours)}</option>`;
+    });
+
+    if (currentValue && recommendations.some(course => course.rec_id === currentValue)) {
+        select.value = currentValue;
+        handleExternalTrainingRecommendationChange(currentValue);
+    } else {
+        handleExternalTrainingRecommendationChange('');
+    }
+}
+
+function handleExternalTrainingRecommendationChange(recId) {
+    const topicInput = document.getElementById('extTopic');
+    const organizerInput = document.getElementById('extOrganizer');
+    const dateInput = document.getElementById('extDate');
+    const hoursInput = document.getElementById('extHours');
+    const minsInput = document.getElementById('extMins');
+    const durationDisplay = document.getElementById('extDurationDisplay');
+    const manualDurationGroup = document.getElementById('extManualDurationGroup');
+    const presetDurationGroup = document.getElementById('extPresetDurationGroup');
+    const hint = document.getElementById('extRecSelectHint');
+
+    if (!topicInput || !organizerInput || !dateInput || !hoursInput || !minsInput || !durationDisplay || !manualDurationGroup || !presetDurationGroup) {
+        return;
+    }
+
+    const recommendation = (externalRecommendationCourses || []).find(course => course.rec_id === recId) || null;
+    selectedExternalTrainingRecommendation = recommendation;
+
+    if (recommendation) {
+        const duration = splitHoursAndMinutes(recommendation.hours);
+        topicInput.value = recommendation.title || '';
+        organizerInput.value = recommendation.organizer || '';
+        topicInput.readOnly = true;
+        organizerInput.readOnly = true;
+        topicInput.classList.add('readonly-field');
+        organizerInput.classList.add('readonly-field');
+        hoursInput.value = duration.hours;
+        minsInput.value = duration.minutes;
+        hoursInput.required = false;
+        minsInput.required = false;
+        manualDurationGroup.classList.add('hidden');
+        presetDurationGroup.classList.remove('hidden');
+        durationDisplay.value = formatHoursLabel(recommendation.hours);
+        if (hint) hint.innerText = 'เลือกจากรายการแนะนำแล้ว ระบบดึงข้อมูลหลักสูตร หน่วยงาน และชั่วโมงให้อัตโนมัติ เหลือกรอกวันที่และแนบหลักฐาน';
+        return;
+    }
+
+    topicInput.readOnly = false;
+    organizerInput.readOnly = false;
+    topicInput.classList.remove('readonly-field');
+    organizerInput.classList.remove('readonly-field');
+    topicInput.value = '';
+    organizerInput.value = '';
+    hoursInput.value = '';
+    minsInput.value = '';
+    durationDisplay.value = '';
+    hoursInput.required = true;
+    minsInput.required = true;
+    manualDurationGroup.classList.remove('hidden');
+    presetDurationGroup.classList.add('hidden');
+    if (hint) hint.innerText = 'ถ้าเลือกจากรายการแนะนำ ระบบจะดึงชื่อหลักสูตร หน่วยงาน และชั่วโมงให้อัตโนมัติ เหลือกรอกวันที่กับแนบหลักฐาน';
+}
+
 document.getElementById('externalTrainingForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -1376,14 +1461,26 @@ document.getElementById('externalTrainingForm').addEventListener('submit', async
         const base64Data = event.target.result;
         
         const user = JSON.parse(localStorage.getItem('swd_user'));
-        const hr = parseFloat(document.getElementById('extHours').value) || 0;
-        const min = parseFloat(document.getElementById('extMins').value) || 0;
+        const topicValue = document.getElementById('extTopic').value.trim();
+        const organizerValue = document.getElementById('extOrganizer').value.trim();
+        const isRecommendationMode = !!selectedExternalTrainingRecommendation;
+        const hr = isRecommendationMode ? Math.floor(parseFloat(selectedExternalTrainingRecommendation.hours) || 0) : (parseFloat(document.getElementById('extHours').value) || 0);
+        const min = isRecommendationMode ? Math.round(((parseFloat(selectedExternalTrainingRecommendation.hours) || 0) - hr) * 60) : (parseFloat(document.getElementById('extMins').value) || 0);
         const totalDecimalHours = +(hr + (min / 60)).toFixed(2);
+
+        if (!topicValue || !organizerValue) {
+            hideLoader();
+            return showAlert('แจ้งเตือน', 'กรุณากรอกชื่อหลักสูตรและหน่วยงานที่จัดให้ครบ');
+        }
+        if (!isRecommendationMode && totalDecimalHours <= 0) {
+            hideLoader();
+            return showAlert('แจ้งเตือน', 'กรุณากรอกชั่วโมงการอบรมให้ถูกต้อง');
+        }
         
         const payload = {
             user_id: user.id,
-            topic: document.getElementById('extTopic').value,
-            organizer: document.getElementById('extOrganizer').value,
+            topic: topicValue,
+            organizer: organizerValue,
             date: document.getElementById('extDate').value,
             hours: totalDecimalHours,
             fileName: user.name + '_ExtCert_' + file.name, // ตั้งชื่อไฟล์ใหม่ให้มีชื่อคนอัปโหลดนำหน้า
@@ -1396,6 +1493,7 @@ document.getElementById('externalTrainingForm').addEventListener('submit', async
         if (res.status === 'success') {
             showAlert('สำเร็จ', 'บันทึกประวัติและอัปโหลดไฟล์เรียบร้อยแล้ว (รอแอดมินตรวจสอบเพื่ออนุมัติชั่วโมง)');
             document.getElementById('externalTrainingForm').reset();
+            handleExternalTrainingRecommendationChange('');
             // โหลดตารางประวัติใหม่เพื่อให้อัปเดตทันที
             loadTrainingHistory(); 
         } else {
@@ -2079,6 +2177,7 @@ switchUserTab = function(tabId, element) {
     if (element) element.classList.add('active');
 
     if (tabId === 'dashboardTab') refreshDashboardData();
+    if (tabId === 'externalTab') loadExternalTrainingRecommendationOptions(true);
     if (tabId === 'historyTab') loadTrainingHistory();
     if (tabId === 'profileTab') {
         const user = getCurrentUser();
