@@ -92,6 +92,32 @@ body { background-color: var(--bg-color); color: var(--text-main); }
     background-color: white;
 }
 
+.password-field {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.password-field input {
+    padding-right: 76px;
+    margin-bottom: 0 !important;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    color: var(--secondary-color);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.password-toggle:hover {
+    color: var(--accent-color);
+}
+
 .readonly-field {
     background: #e2e8f0 !important;
     color: #475569;
@@ -101,6 +127,20 @@ body { background-color: var(--bg-color); color: var(--text-main); }
 .switch-form { margin-top: 15px; font-size: 0.9rem; }
 .switch-form a { color: var(--primary-color); text-decoration: none; font-weight: 600; transition: var(--transition); }
 .switch-form a:hover { color: var(--accent-color); }
+
+.text-link-btn {
+    border: none;
+    background: transparent;
+    color: var(--secondary-color);
+    cursor: pointer;
+    font-weight: 600;
+    margin: -4px 0 12px auto;
+    display: block;
+}
+
+.text-link-btn:hover {
+    color: var(--accent-color);
+}
 
 /* Navbar & App */
 .navbar { 
