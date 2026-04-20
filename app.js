@@ -1,4 +1,4 @@
-﻿const API_URL = 'https://script.google.com/macros/s/AKfycbxlfD-5saP7FtUX_YxuBe3gowToA38b0qc0jW5JuWjMN9XotTlqRfc0LuaWtibYNwMp1Q/exec'; 
+const API_URL = 'https://script.google.com/macros/s/AKfycbxlfD-5saP7FtUX_YxuBe3gowToA38b0qc0jW5JuWjMN9XotTlqRfc0LuaWtibYNwMp1Q/exec'; 
 const appState = {
     user: null,
     dashboardNeedsRefresh: true,
@@ -7,13 +7,13 @@ const appState = {
 };
 
 const POSITION_PRESETS = [
-    'เธเธฑเธเธงเธดเธเธฒเธเธฒเธฃเธชเธฒเธเธฒเธฃเธ“เธชเธธเธ(เธเธขเธฒเธเธฒเธฅ)',
-    'เธเธขเธฒเธเธฒเธฅเธงเธดเธเธฒเธเธตเธ',
-    'เธเธขเธฒเธเธฒเธฅเธงเธดเธเธฒเธเธตเธเธเธเธดเธเธฑเธ•เธดเธเธฒเธฃ',
-    'เธเธขเธฒเธเธฒเธฅเธงเธดเธเธฒเธเธตเธเธเธณเธเธฒเธเธเธฒเธฃ',
-    'เธเธขเธฒเธเธฒเธฅเธงเธดเธเธฒเธเธตเธเธเธณเธเธฒเธเธเธฒเธฃเธเธดเน€เธจเธฉ',
-    'เธเธเธฑเธเธเธฒเธเธเนเธงเธขเน€เธซเธฅเธทเธญเธเธเนเธเน',
-    'เธเธเธฑเธเธเธฒเธเธเธฃเธฐเธเธณเธ•เธถเธ'
+    'นักวิชาการสาธารณสุข(พยาบาล)',
+    'พยาบาลวิชาชีพ',
+    'พยาบาลวิชาชีพปฏิบัติการ',
+    'พยาบาลวิชาชีพชำนาญการ',
+    'พยาบาลวิชาชีพชำนาญการพิเศษ',
+    'พนักงานช่วยเหลือคนไข้',
+    'พนักงานประจำตึก'
 ];
 
 let loaderCount = 0;
@@ -28,15 +28,15 @@ function ensureForgotPasswordModal() {
     wrapper.className = 'modal hidden';
     wrapper.innerHTML = `
         <div class="modal-content" style="text-align: left; max-width: 460px;">
-            <h3 style="margin-bottom: 10px;">เธฅเธทเธกเธฃเธซเธฑเธชเธเนเธฒเธ</h3>
-            <p style="margin-bottom: 20px;">เธเธฃเธญเธเธญเธตเน€เธกเธฅเธ—เธตเนเนเธเนเธฅเธเธ—เธฐเน€เธเธตเธขเธ เธฃเธฐเธเธเธเธฐเธชเนเธเธฅเธดเธเธเนเธชเธณเธซเธฃเธฑเธเธ•เธฑเนเธเธฃเธซเธฑเธชเธเนเธฒเธเนเธซเธกเนเนเธเธขเธฑเธเธญเธตเน€เธกเธฅเธเธฑเนเธ</p>
+            <h3 style="margin-bottom: 10px;">ลืมรหัสผ่าน</h3>
+            <p style="margin-bottom: 20px;">กรอกอีเมลที่ใช้ลงทะเบียน ระบบจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปยังอีเมลนั้น</p>
             <form id="forgotPasswordForm">
                 <div class="input-group">
-                    <input type="email" id="forgotPasswordEmail" placeholder="เธญเธตเน€เธกเธฅเธ—เธตเนเธฅเธเธ—เธฐเน€เธเธตเธขเธเนเธงเน" required>
+                    <input type="email" id="forgotPasswordEmail" placeholder="อีเมลที่ลงทะเบียนไว้" required>
                 </div>
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button type="button" onclick="closeForgotPasswordModal()" class="btn btn-outline">เธขเธเน€เธฅเธดเธ</button>
-                    <button type="submit" class="btn btn-primary">เธชเนเธเธฅเธดเธเธเนเธฃเธตเน€เธเนเธ•</button>
+                    <button type="button" onclick="closeForgotPasswordModal()" class="btn btn-outline">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">ส่งลิงก์รีเซ็ต</button>
                 </div>
             </form>
         </div>
@@ -48,7 +48,7 @@ function populatePositionSelectOptions(select) {
     if (!select || select.dataset.positionOptionsReady === 'true') return;
 
     const currentValue = select.value;
-    const placeholderLabel = select.dataset.placeholder || 'เน€เธฅเธทเธญเธเธ•เธณเนเธซเธเนเธ';
+    const placeholderLabel = select.dataset.placeholder || 'เลือกตำแหน่ง';
     select.innerHTML = '';
 
     const placeholder = document.createElement('option');
@@ -65,7 +65,7 @@ function populatePositionSelectOptions(select) {
 
     const otherOption = document.createElement('option');
     otherOption.value = '__other__';
-    otherOption.textContent = 'เธ•เธณเนเธซเธเนเธเธญเธทเนเธ เน';
+    otherOption.textContent = 'ตำแหน่งอื่น ๆ';
     select.appendChild(otherOption);
 
     select.dataset.positionOptionsReady = 'true';
@@ -135,7 +135,7 @@ function enhancePositionInput(selectId, otherInputId) {
         select.id = selectId;
         select.required = existingField.required;
         select.className = existingField.className;
-        select.dataset.placeholder = existingField.placeholder || 'เน€เธฅเธทเธญเธเธ•เธณเนเธซเธเนเธ';
+        select.dataset.placeholder = existingField.placeholder || 'เลือกตำแหน่ง';
         select.setAttribute('onchange', `handlePositionFieldChange('${selectId}', '${otherInputId}')`);
         parent.replaceChild(select, existingField);
     }
@@ -147,7 +147,7 @@ function enhancePositionInput(selectId, otherInputId) {
         otherInput = document.createElement('input');
         otherInput.type = 'text';
         otherInput.id = otherInputId;
-        otherInput.placeholder = 'เธเธดเธกเธเนเธ•เธณเนเธซเธเนเธเธญเธทเนเธ เน';
+        otherInput.placeholder = 'พิมพ์ตำแหน่งอื่น ๆ';
         otherInput.className = 'hidden';
         parent.appendChild(otherInput);
     }
@@ -166,7 +166,7 @@ function togglePasswordVisibility(inputId, button) {
     const nextType = input.type === 'password' ? 'text' : 'password';
     input.type = nextType;
     if (button) {
-        button.textContent = nextType === 'password' ? 'เนเธชเธ”เธ' : 'เธเนเธญเธ';
+        button.textContent = nextType === 'password' ? 'แสดง' : 'ซ่อน';
     }
 }
 
@@ -184,7 +184,7 @@ function enhancePasswordField(inputId) {
     const toggleButton = document.createElement('button');
     toggleButton.type = 'button';
     toggleButton.className = 'password-toggle';
-    toggleButton.textContent = 'เนเธชเธ”เธ';
+    toggleButton.textContent = 'แสดง';
     toggleButton.addEventListener('click', () => togglePasswordVisibility(inputId, toggleButton));
     wrapper.appendChild(toggleButton);
 }
@@ -200,7 +200,7 @@ function ensureRegisterConfirmPasswordField() {
 
     const confirmGroup = document.createElement('div');
     confirmGroup.className = 'input-group';
-    confirmGroup.innerHTML = '<input type="password" id="regConfirmPassword" placeholder="เธขเธทเธเธขเธฑเธเธฃเธซเธฑเธชเธเนเธฒเธเธญเธตเธเธเธฃเธฑเนเธ" required>';
+    confirmGroup.innerHTML = '<input type="password" id="regConfirmPassword" placeholder="ยืนยันรหัสผ่านอีกครั้ง" required>';
     passwordGroup.insertAdjacentElement('afterend', confirmGroup);
     enhancePasswordField('regConfirmPassword');
 }
@@ -215,7 +215,7 @@ function ensureForgotPasswordTrigger() {
     const trigger = document.createElement('button');
     trigger.type = 'button';
     trigger.className = 'text-link-btn';
-    trigger.textContent = 'เธฅเธทเธกเธฃเธซเธฑเธชเธเนเธฒเธ?';
+    trigger.textContent = 'ลืมรหัสผ่าน?';
     trigger.addEventListener('click', openForgotPasswordModal);
     submitButton.insertAdjacentElement('afterend', trigger);
 }
@@ -261,7 +261,7 @@ async function handleForgotPasswordRequest(e) {
     const emailInput = document.getElementById('forgotPasswordEmail');
     const email = String(emailInput ? emailInput.value : '').trim();
     if (!email) {
-        showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธญเธตเน€เธกเธฅเธ—เธตเนเธฅเธเธ—เธฐเน€เธเธตเธขเธเนเธงเน');
+        showAlert('แจ้งเตือน', 'กรุณากรอกอีเมลที่ลงทะเบียนไว้');
         return;
     }
 
@@ -275,21 +275,21 @@ async function handleForgotPasswordRequest(e) {
 
     if (res.status === 'success') {
         closeForgotPasswordModal();
-        showAlert('เธ•เธฃเธงเธเธชเธญเธเธญเธตเน€เธกเธฅ', res.message || 'เธซเธฒเธเธญเธตเน€เธกเธฅเธเธตเนเธกเธตเธญเธขเธนเนเนเธเธฃเธฐเธเธ เธเธฐเธกเธตเธฅเธดเธเธเนเธชเธณเธซเธฃเธฑเธเธ•เธฑเนเธเธฃเธซเธฑเธชเธเนเธฒเธเนเธซเธกเนเธชเนเธเนเธเนเธซเน');
+        showAlert('ตรวจสอบอีเมล', res.message || 'หากอีเมลนี้มีอยู่ในระบบ จะมีลิงก์สำหรับตั้งรหัสผ่านใหม่ส่งไปให้');
     } else {
-        showAlert('เน€เธเธดเธ”เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', res.message || 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธชเนเธเธฅเธดเธเธเนเธฃเธตเน€เธเนเธ•เธฃเธซเธฑเธชเธเนเธฒเธเนเธ”เน');
+        showAlert('เกิดข้อผิดพลาด', res.message || 'ไม่สามารถส่งลิงก์รีเซ็ตรหัสผ่านได้');
     }
 }
 
-// เนเธซเธฅเธ”เธเนเธญเธกเธนเธฅเธเธทเนเธเธเธฒเธเน€เธกเธทเนเธญเน€เธเธดเธ”เน€เธงเนเธ
+// โหลดข้อมูลพื้นฐานเมื่อเปิดเว็บ
 window.addEventListener('DOMContentLoaded', async () => {
-    // 1. เธญเธฑเธเน€เธ”เธ•เธเธตเนเธ Footer เธ—เธฑเธเธ—เธต (เธ—เธธเธเธเธธเธ”เธ—เธตเนเนเธเนเธเธฅเธฒเธช current-year)
+    // 1. อัปเดตปีใน Footer ทันที (ทุกจุดที่ใช้คลาส current-year)
     initializeAuthEnhancements();
     const years = document.querySelectorAll('.current-year');
     const thisYear = new Date().getFullYear();
     years.forEach(el => el.innerText = thisYear);
 
-    // 2. เนเธซเธฅเธ”เธฃเธฒเธขเธเธทเนเธญเธซเธเนเธงเธขเธเธฒเธเธชเธณเธซเธฃเธฑเธเธเนเธญเธเน€เธฅเธทเธญเธเนเธฅเธฐ datalist เธ—เธตเนเธขเธฑเธเนเธเนเธเธฒเธเธญเธขเธนเน
+    // 2. โหลดรายชื่อหน่วยงานสำหรับช่องเลือกและ datalist ที่ยังใช้งานอยู่
     try {
         const res = await callAPI('getSettings', {});
         if(res && res.status === 'success') {
@@ -306,7 +306,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
             const registerDept = document.getElementById('regDept');
             if (registerDept) {
-                registerDept.innerHTML = '<option value="">เน€เธฅเธทเธญเธเธซเธเนเธงเธขเธเธฒเธ</option>';
+                registerDept.innerHTML = '<option value="">เลือกหน่วยงาน</option>';
                 departments.forEach((department) => {
                     const option = document.createElement('option');
                     option.value = department;
@@ -316,11 +316,11 @@ window.addEventListener('DOMContentLoaded', async () => {
             }
         }
     } catch (err) {
-        console.error("เธฃเธฐเธเธเนเธกเนเธชเธฒเธกเธฒเธฃเธ–เนเธซเธฅเธ”เธฃเธฒเธขเธเธฒเธฃเธซเธเนเธงเธขเธเธฒเธเนเธ”เน:", err);
+        console.error("ระบบไม่สามารถโหลดรายการหน่วยงานได้:", err);
     }
 });
 
-// เธ•เธฃเธงเธเธชเธญเธเธชเธ–เธฒเธเธฐเธเธฒเธฃเธฅเนเธญเธเธญเธดเธเน€เธกเธทเนเธญเน€เธเธดเธ”เธซเธเนเธฒเน€เธงเนเธ
+// ตรวจสอบสถานะการล็อกอินเมื่อเปิดหน้าเว็บ
 
 window.addEventListener('DOMContentLoaded', () => {
     checkSession();
@@ -400,7 +400,7 @@ async function callAPI(action, payload) {
         });
         return await response.json();
     } catch (error) {
-        return { status: 'error', message: 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เน€เธเธทเนเธญเธกเธ•เนเธญเน€เธเธดเธฃเนเธเน€เธงเธญเธฃเนเนเธ”เน' };
+        return { status: 'error', message: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้' };
     }
 }
 
@@ -413,7 +413,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     if (res.status === 'success') {
         localStorage.setItem('swd_user', JSON.stringify(res.user));
         await initApp({ forceDashboardRefresh: true });
-    } else showAlert('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', res.message);
+    } else showAlert('ข้อผิดพลาด', res.message);
 });
 
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
@@ -423,12 +423,12 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     const position = getPositionFieldValue('regPosition', 'regPositionOther');
 
     if (!position) {
-        showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเธซเธฃเธทเธญเธฃเธฐเธเธธเธ•เธณเนเธซเธเนเธ');
+        showAlert('แจ้งเตือน', 'กรุณาเลือกหรือระบุตำแหน่ง');
         return;
     }
 
     if (password !== confirmPassword) {
-        showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธฃเธซเธฑเธชเธเนเธฒเธเนเธฅเธฐเธขเธทเธเธขเธฑเธเธฃเธซเธฑเธชเธเนเธฒเธเนเธกเนเธ•เธฃเธเธเธฑเธ');
+        showAlert('แจ้งเตือน', 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน');
         return;
     }
 
@@ -446,9 +446,9 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     if (res.status === 'success') { 
         document.getElementById('registerForm').reset();
         setPositionFieldValue('regPosition', 'regPositionOther', '');
-        showAlert('เธชเธณเน€เธฃเนเธ', 'เธฅเธเธ—เธฐเน€เธเธตเธขเธเน€เธฃเธตเธขเธเธฃเนเธญเธข เธเธฃเธธเธ“เธฒเน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธ'); 
+        showAlert('สำเร็จ', 'ลงทะเบียนเรียบร้อย กรุณาเข้าสู่ระบบ'); 
         toggleAuth(); 
-    } else showAlert('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', res.message);
+    } else showAlert('ข้อผิดพลาด', res.message);
 });
 
 function logout() {
@@ -522,7 +522,7 @@ async function loadDashboardStats(force = false) {
             renderDashboardStats(statRes.stats);
             return statRes.stats;
         }
-        showAlert('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', statRes.message || 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เนเธซเธฅเธ”เธชเธ–เธดเธ•เธดเนเธ”เน');
+        showAlert('ข้อผิดพลาด', statRes.message || 'ไม่สามารถโหลดสถิติได้');
     } finally {
         hideLoader();
     }
@@ -572,7 +572,7 @@ function returnToDashboard() {
     const dashboardMenuBtn = document.querySelector('#userMenu li:first-child');
     switchUserTab('dashboardTab', dashboardMenuBtn);
 }
-// เนเธเธ Event เนเธซเนเธเนเธญเธเธญเธฑเธเนเธซเธฅเธ”เธฃเธนเธเธซเธเนเธฒเธเธเนเธญเธ”เธกเธดเธ
+// แนบ Event ให้ช่องอัปโหลดรูปหน้าปกแอดมิน
 async function uploadImageFile(file, filePrefix) {
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -586,32 +586,32 @@ async function uploadImageFile(file, filePrefix) {
 
 document.getElementById('cCoverUpload').addEventListener('change', async function() {
     if(!this.files[0]) return;
-    document.getElementById('cCoverStatus').innerText = "เธเธณเธฅเธฑเธเธญเธฑเธเนเธซเธฅเธ”...";
+    document.getElementById('cCoverStatus').innerText = "กำลังอัปโหลด...";
     const res = await uploadImageFile(this.files[0], 'Cover');
 /*
         if(res.status === 'success') {
             document.getElementById('cCover').value = res.url;
-            document.getElementById('cCoverStatus').innerHTML = '<span style="color:green;">โ… เธญเธฑเธเนเธซเธฅเธ”เธชเธณเน€เธฃเนเธ</span>';
+            document.getElementById('cCoverStatus').innerHTML = '<span style="color:green;">✅ อัปโหลดสำเร็จ</span>';
         }
 */
     if (res.status === 'success') {
         document.getElementById('cCover').value = res.url;
-        document.getElementById('cCoverStatus').innerHTML = '<span style="color:green;">เธญเธฑเธเนเธซเธฅเธ”เธชเธณเน€เธฃเนเธ</span>';
+        document.getElementById('cCoverStatus').innerHTML = '<span style="color:green;">อัปโหลดสำเร็จ</span>';
     } else {
-        document.getElementById('cCoverStatus').innerHTML = '<span style="color:#ef4444;">เธญเธฑเธเนเธซเธฅเธ”เนเธกเนเธชเธณเน€เธฃเนเธ</span>';
+        document.getElementById('cCoverStatus').innerHTML = '<span style="color:#ef4444;">อัปโหลดไม่สำเร็จ</span>';
     }
 });
 
-// เธชเนเธเธเธญเธฃเนเธกเนเธเนเนเธ Profile
+// ส่งฟอร์มแก้ไข Profile
 document.getElementById('extRecCoverUpload').addEventListener('change', async function() {
     if(!this.files[0]) return;
-    document.getElementById('extRecCoverStatus').innerText = 'เธเธณเธฅเธฑเธเธญเธฑเธเนเธซเธฅเธ”...';
+    document.getElementById('extRecCoverStatus').innerText = 'กำลังอัปโหลด...';
     const res = await uploadImageFile(this.files[0], 'ExternalRecCover');
     if (res.status === 'success') {
         document.getElementById('extRecCover').value = res.url;
-        document.getElementById('extRecCoverStatus').innerHTML = '<span style="color:green;">เธญเธฑเธเนเธซเธฅเธ”เธชเธณเน€เธฃเนเธ</span>';
+        document.getElementById('extRecCoverStatus').innerHTML = '<span style="color:green;">อัปโหลดสำเร็จ</span>';
     } else {
-        document.getElementById('extRecCoverStatus').innerHTML = '<span style="color:#ef4444;">เธญเธฑเธเนเธซเธฅเธ”เนเธกเนเธชเธณเน€เธฃเนเธ</span>';
+        document.getElementById('extRecCoverStatus').innerHTML = '<span style="color:#ef4444;">อัปโหลดไม่สำเร็จ</span>';
     }
 });
 
@@ -621,13 +621,13 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
     const file = document.getElementById('pImgUpload').files[0];
     const position = getPositionFieldValue('pPosition', 'pPositionOther');
     if (!position) {
-        showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเธซเธฃเธทเธญเธฃเธฐเธเธธเธ•เธณเนเธซเธเนเธ');
+        showAlert('แจ้งเตือน', 'กรุณาเลือกหรือระบุตำแหน่ง');
         return;
     }
     showLoader();
     
     let profileUrl = user.profile_img;
-    // เธ–เนเธฒเธกเธตเธเธฒเธฃเน€เธฅเธทเธญเธเธฃเธนเธเนเธซเธกเน เนเธซเนเธญเธฑเธเนเธซเธฅเธ”เธเนเธญเธ
+    // ถ้ามีการเลือกรูปใหม่ ให้อัปโหลดก่อน
     if(file) {
         const reader = new FileReader();
         await new Promise((resolve) => {
@@ -656,12 +656,12 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
         user.department = document.getElementById('pDept').value;
         user.profile_img = profileUrl;
         localStorage.setItem('swd_user', JSON.stringify(user));
-        showAlert('เธชเธณเน€เธฃเนเธ', 'เธญเธฑเธเน€เธ”เธ•เธเนเธญเธกเธนเธฅเธชเนเธงเธเธ•เธฑเธงเน€เธฃเธตเธขเธเธฃเนเธญเธขเนเธฅเนเธง');
-        initApp(); // เธฃเธตเน€เธเธฃเธเธซเธเนเธฒเธเธญ
+        showAlert('สำเร็จ', 'อัปเดตข้อมูลส่วนตัวเรียบร้อยแล้ว');
+        initApp(); // รีเฟรชหน้าจอ
     }
 });
 
-// เน€เธ•เธดเธกเธเนเธญเธกเธนเธฅเธฅเธเธเธญเธฃเนเธกเนเธฅเธฐเธฃเธตเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅเน€เธกเธทเนเธญเน€เธเธฅเธตเนเธขเธเนเธ—เนเธ
+// เติมข้อมูลลงฟอร์มและรีโหลดข้อมูลเมื่อเปลี่ยนแท็บ
 function switchUserTab(tabId, element) {
     const tabs = document.querySelectorAll('.user-tab');
     tabs.forEach(tab => tab.classList.add('hidden'));
@@ -671,14 +671,14 @@ function switchUserTab(tabId, element) {
     
     document.getElementById(tabId).classList.remove('hidden');
     
-    // เธเนเธญเธเธเธฑเธ Error เธ–เนเธฒเธซเธฒ element เนเธกเนเน€เธเธญ
+    // ป้องกัน Error ถ้าหา element ไม่เจอ
     if (element) {
         element.classList.add('active');
     }
 
-    // --- เธชเนเธงเธเธฃเธตเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅเธ•เธฒเธกเนเธ—เนเธเธ—เธตเนเธเธ” ---
+    // --- ส่วนรีโหลดข้อมูลตามแท็บที่กด ---
     if(tabId === 'dashboardTab') {
-        initApp(); // เธชเธฑเนเธเธ”เธถเธเธชเธ–เธดเธ•เธดเนเธ”เธเธเธญเธฃเนเธ”เนเธฅเธฐเธเธฒเธฃเนเธ”เธซเธฅเธฑเธเธชเธนเธ•เธฃเนเธซเธกเนเธ—เธธเธเธเธฃเธฑเนเธเธ—เธตเนเธเธฅเธฑเธเธกเธฒเธซเธเนเธฒเธเธตเน
+        initApp(); // สั่งดึงสถิติแดชบอร์ดและการ์ดหลักสูตรใหม่ทุกครั้งที่กลับมาหน้านี้
     }
     if(tabId === 'historyTab') {
         loadTrainingHistory();
@@ -694,33 +694,33 @@ function switchUserTab(tabId, element) {
     }
 }
 
-// เธเธฑเธเธเนเธเธฑเธเนเธซเธฅเธ”เธเธฃเธฐเธงเธฑเธ•เธดเธฅเธเธ•เธฒเธฃเธฒเธ Portfolio
+// ฟังก์ชันโหลดประวัติลงตาราง Portfolio
 async function loadTrainingHistory() {
     const user = JSON.parse(localStorage.getItem('swd_user'));
     const tbody = document.getElementById('historyTableBody');
     if(!tbody) return;
     
-    // เน€เธเธฅเธตเนเธขเธ colspan เน€เธเนเธ 6 เน€เธเธฃเธฒเธฐเน€เธฃเธฒเน€เธเธดเนเธกเธเธญเธฅเธฑเธกเธเน
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">เธเธณเธฅเธฑเธเธ”เธถเธเธเนเธญเธกเธนเธฅเธเธฃเธฐเธงเธฑเธ•เธดเธเธฒเธฃเธญเธเธฃเธก...</td></tr>';
+    // เปลี่ยน colspan เป็น 6 เพราะเราเพิ่มคอลัมน์
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">กำลังดึงข้อมูลประวัติการอบรม...</td></tr>';
     const res = await callAPI('getUserHistory', { user_id: user.id });
     
     if (res.status === 'success') {
         tbody.innerHTML = ''; 
         if (res.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">เธขเธฑเธเนเธกเนเธกเธตเธเธฃเธฐเธงเธฑเธ•เธดเธเธฒเธฃเธญเธเธฃเธกเนเธเธฃเธฐเธเธเธเธฃเธฑเธ</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">ยังไม่มีประวัติการอบรมในระบบครับ</td></tr>';
             return;
         }
         
         res.data.forEach(item => {
-            // เธเธฑเธเธเธฑเธเนเธกเนเนเธซเนเธเธธเนเธกเธ•เธเธเธฃเธฃเธ—เธฑเธ” (white-space: nowrap)
+            // บังคับไม่ให้ปุ่มตกบรรทัด (white-space: nowrap)
             const certBtn = item.cert_url && item.cert_url.trim() !== '' 
-                ? `<a href="${item.cert_url}" target="_blank" class="btn btn-outline" style="padding: 5px 10px; font-size: 0.85rem; white-space: nowrap;"><i class="fas fa-file-pdf text-danger"></i> เธซเธฅเธฑเธเธเธฒเธ</a>`
-                : '<span style="color: #94a3b8; font-size: 0.85rem; white-space: nowrap;">เนเธกเนเธกเธตเนเธเธฅเน</span>';
+                ? `<a href="${item.cert_url}" target="_blank" class="btn btn-outline" style="padding: 5px 10px; font-size: 0.85rem; white-space: nowrap;"><i class="fas fa-file-pdf text-danger"></i> หลักฐาน</a>`
+                : '<span style="color: #94a3b8; font-size: 0.85rem; white-space: nowrap;">ไม่มีไฟล์</span>';
             
-            // เธเนเธฒเธขเธเธณเธเธฑเธเธชเธ–เธฒเธเธฐเธชเธณเธซเธฃเธฑเธเธญเธเธฃเธกเธ เธฒเธขเธเธญเธ
+            // ป้ายกำกับสถานะสำหรับอบรมภายนอก
             let statusBadge = '';
-            if(item.status === 'pending') statusBadge = '<span class="badge" style="background:#f59e0b; color:white; font-size: 0.7rem; white-space: nowrap;">เธฃเธญเธ•เธฃเธงเธ</span>';
-            else if(item.status === 'rejected') statusBadge = '<span class="badge" style="background:#ef4444; color:white; font-size: 0.7rem; white-space: nowrap;">เนเธกเนเธญเธเธธเธกเธฑเธ•เธด</span>';
+            if(item.status === 'pending') statusBadge = '<span class="badge" style="background:#f59e0b; color:white; font-size: 0.7rem; white-space: nowrap;">รอตรวจ</span>';
+            else if(item.status === 'rejected') statusBadge = '<span class="badge" style="background:#ef4444; color:white; font-size: 0.7rem; white-space: nowrap;">ไม่อนุมัติ</span>';
                 
             tbody.innerHTML += `
                 <tr>
@@ -737,12 +737,12 @@ async function loadTrainingHistory() {
         document.querySelectorAll('.stat-number')[1].innerText = certCount;
         
     } else {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #EF4444;">เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เนเธซเธฅเธ”เธเนเธญเธกเธนเธฅเนเธ”เน เธเธฃเธธเธ“เธฒเธฅเธญเธเนเธซเธกเน</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #EF4444;">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่</td></tr>';
     }
 }
 // ================= Course Display & Search Logic =================
 let globalCourses = []; 
-let cachedUserEnrollments = []; // เน€เธเนเธเธชเธ–เธฒเธเธฐเธเธฒเธฃเน€เธฃเธตเธขเธเนเธงเนเนเธเน€เธเธฃเธทเนเธญเธ เธเธฐเนเธ”เนเนเธกเนเธ•เนเธญเธเนเธซเธฅเธ”เธเนเธณเธ•เธญเธเธเนเธเธซเธฒ
+let cachedUserEnrollments = []; // เก็บสถานะการเรียนไว้ในเครื่อง จะได้ไม่ต้องโหลดซ้ำตอนค้นหา
 let externalRecommendationCourses = [];
 
 async function loadCourses() {
@@ -755,47 +755,47 @@ async function loadCourses() {
     if (res.status === 'success') {
         globalCourses = res.data; 
         cachedUserEnrollments = enrollRes.data || [];
-        renderCourseGrid(globalCourses); // เธชเธฑเนเธเธงเธฒเธ”เธเธฒเธฃเนเธ”เธ—เธฑเนเธเธซเธกเธ”เธเธฃเธฑเนเธเนเธฃเธ
+        renderCourseGrid(globalCourses); // สั่งวาดการ์ดทั้งหมดครั้งแรก
     }
 }
 
-// เธเธฑเธเธเนเธเธฑเธเธเนเธเธซเธฒเธซเธฅเธฑเธเธชเธนเธ•เธฃ (เธ—เธณเธเธฒเธเน€เธกเธทเนเธญเธเธดเธกเธเนเธเนเธญเธเธงเธฒเธก)
+// ฟังก์ชันค้นหาหลักสูตร (ทำงานเมื่อพิมพ์ข้อความ)
 function filterCourses() {
     const user = appState.user || getCurrentUser();
     const searchText = document.getElementById('courseSearchInput').value.trim().toLowerCase();
     const visibleCourses = globalCourses.filter(course => isCourseVisibleToUser(course, user));
     
     if (searchText === '') {
-        renderCourseGrid(visibleCourses); // เนเธเธงเนเธ—เธฑเนเธเธซเธกเธ”
+        renderCourseGrid(visibleCourses); // โชว์ทั้งหมด
     } else {
         const filtered = visibleCourses.filter(course => 
             course.title.toLowerCase().includes(searchText)
         );
-        renderCourseGrid(filtered); // เนเธเธงเนเน€เธเธเธฒเธฐเธ—เธตเนเธเนเธเน€เธเธญ
+        renderCourseGrid(filtered); // โชว์เฉพาะที่ค้นเจอ
     }
 }
 
-// เธเธฑเธเธเนเธเธฑเธเธงเธฒเธ”เธเธฒเธฃเนเธ”เธซเธฅเธฑเธเธชเธนเธ•เธฃเธฅเธเธซเธเนเธฒเธเธญ
+// ฟังก์ชันวาดการ์ดหลักสูตรลงหน้าจอ
 function renderCourseGrid(coursesToRender) {
     const grid = document.getElementById('courseGrid');
     grid.innerHTML = '';
     
     if (coursesToRender.length === 0) {
-        grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-light); padding: 30px; background: #f8fafc; border-radius: 8px;">เนเธกเนเธเธเธซเธฅเธฑเธเธชเธนเธ•เธฃเธ—เธตเนเธเนเธเธซเธฒเธเธฃเธฑเธ</div>';
+        grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-light); padding: 30px; background: #f8fafc; border-radius: 8px;">ไม่พบหลักสูตรที่ค้นหาครับ</div>';
         return;
     }
 
     coursesToRender.forEach(course => {
         const enrollData = cachedUserEnrollments.find(e => e.course_id === course.id);
-        let btnText = "เน€เธเนเธฒเธชเธนเนเธเธ—เน€เธฃเธตเธขเธ", btnClass = "btn-primary";
+        let btnText = "เข้าสู่บทเรียน", btnClass = "btn-primary";
         
         if(enrollData) {
             if(enrollData.status === 'completed') {
-                btnText = "เน€เธเนเธฒเธชเธนเนเธเธ—เน€เธฃเธตเธขเธเธญเธตเธเธเธฃเธฑเนเธ"; btnClass = "btn-outline";
+                btnText = "เข้าสู่บทเรียนอีกครั้ง"; btnClass = "btn-outline";
             } else {
                 try {
                     let prog = JSON.parse(enrollData.progress);
-                    if(prog.completed && prog.completed.length > 0) { btnText = "เน€เธฃเธตเธขเธเธ•เนเธญ"; btnClass = "btn-success"; }
+                    if(prog.completed && prog.completed.length > 0) { btnText = "เรียนต่อ"; btnClass = "btn-success"; }
                 } catch(e) {}
             }
         }
@@ -806,7 +806,7 @@ function renderCourseGrid(coursesToRender) {
                 <div class="course-info">
                     <h4>${course.title}</h4>
                     <div class="course-meta">
-                        <span><i class="fas fa-clock"></i> ${course.hours} เธเธก.</span>
+                        <span><i class="fas fa-clock"></i> ${course.hours} ชม.</span>
                     </div>
                     <button class="btn ${btnClass} w-100" onclick="enrollCourse('${course.id}')">${btnText}</button>
                 </div>
@@ -815,42 +815,42 @@ function renderCourseGrid(coursesToRender) {
     });
 }
 
-// เธ•เธฃเธงเธเธชเธญเธเธชเธ–เธฒเธเธฐเธเธฒเธฃเธฅเนเธญเธเธญเธดเธเน€เธกเธทเนเธญเน€เธเธดเธ”เธซเธเนเธฒเน€เธงเนเธ
+// ตรวจสอบสถานะการล็อกอินเมื่อเปิดหน้าเว็บ
 // ================= Admin Logic =================
 
 function goToAdminPanel() {
     document.getElementById('appSection').classList.add('hidden');
     document.getElementById('adminSection').classList.remove('hidden');
-    loadAdminReport(); // เนเธซเธฅเธ”เธเนเธญเธกเธนเธฅเธ•เธฒเธฃเธฒเธเธชเธ–เธดเธ•เธดเธ—เธฑเธเธ—เธตเธ—เธตเนเน€เธเนเธฒเธซเธเนเธฒเนเธญเธ”เธกเธดเธ
+    loadAdminReport(); // โหลดข้อมูลตารางสถิติทันทีที่เข้าหน้าแอดมิน
 }
 
-// เธญเธญเธเธเธฒเธเธฃเธฐเธเธเนเธญเธ”เธกเธดเธ (เธเธฅเธฑเธเธซเธเนเธฒเธเธนเนเนเธเนเธเธฒเธเนเธฅเธฐเธฃเธตเน€เธเธฃเธ)
+// ออกจากระบบแอดมิน (กลับหน้าผู้ใช้งานและรีเฟรช)
 function exitAdmin() {
-    // เน€เธฃเธตเธขเธเนเธเนเธฃเธฐเธเธเธเธฅเธฑเธเธซเธเนเธฒเธซเธฅเธฑเธเนเธเธเธฃเธตเน€เธเธฃเธเธเนเธญเธกเธนเธฅ
+    // เรียกใช้ระบบกลับหน้าหลักแบบรีเฟรชข้อมูล
     returnToDashboard();
 }
 
 function switchAdminTab(tabId, element = null) {
-    // เธเนเธญเธเธ—เธธเธ Tab
+    // ซ่อนทุก Tab
     const tabs = document.querySelectorAll('.admin-tab');
     tabs.forEach(tab => tab.classList.add('hidden'));
     
-    // เธฅเธ Active menu
-    const menus = document.querySelectorAll('.admin-sidebar li'); // เน€เธเนเธเนเธซเนเธ•เธฃเธเธเธฑเธเธเธฅเธฒเธชเน€เธกเธเธนเธเธญเธเธเธธเธ“ (เน€เธเนเธ .admin-sidebar li เธซเธฃเธทเธญ .sidebar-menu li)
+    // ลบ Active menu
+    const menus = document.querySelectorAll('.admin-sidebar li'); // เช็คให้ตรงกับคลาสเมนูของคุณ (เช่น .admin-sidebar li หรือ .sidebar-menu li)
     menus.forEach(menu => menu.classList.remove('active'));
     
-    // เนเธเธงเน Tab เธ—เธตเนเน€เธฅเธทเธญเธ
+    // โชว์ Tab ที่เลือก
     const targetTab = document.getElementById(tabId);
     if(targetTab) targetTab.classList.remove('hidden');
     
-    // เน€เธเธดเนเธกเธชเธต Active เนเธซเนเน€เธกเธเธนเธ—เธตเนเธ–เธนเธเธเธฅเธดเธ (เนเธเธเธเนเธญเธเธเธฑเธ Error)
+    // เพิ่มสี Active ให้เมนูที่ถูกคลิก (แบบป้องกัน Error)
     if (element) {
         element.classList.add('active');
     } else if (window.event && window.event.currentTarget) {
         window.event.currentTarget.classList.add('active');
     }
     
-    // เนเธซเธฅเธ”เธเนเธญเธกเธนเธฅเธ•เธฒเธกเธซเธเนเธฒ Tab เธ—เธตเนเน€เธฅเธทเธญเธ
+    // โหลดข้อมูลตามหน้า Tab ที่เลือก
     if(tabId === 'reportTab') loadAdminReport();
     if(tabId === 'courseMgtTab') {
         appState.coursesLoaded = false;
@@ -859,7 +859,7 @@ function switchAdminTab(tabId, element = null) {
         loadAdminCoursesTable(); 
     }
     if(tabId === 'examMgtTab') {
-        initExamAdmin(); // เน€เธฃเธตเธขเธเธเธฑเธเธเนเธเธฑเธเธ”เธถเธเธฃเธฒเธขเธเธทเนเธญเธงเธดเธเธฒเธกเธฒเนเธชเน Dropdown
+        initExamAdmin(); // เรียกฟังก์ชันดึงรายชื่อวิชามาใส่ Dropdown
     }
     if(tabId === 'approveExtTab') {
         loadAdminExtRequests();
@@ -868,27 +868,27 @@ function switchAdminTab(tabId, element = null) {
         loadAdminUsersTable();
     }
     if(tabId === 'courseReportTab') {
-        initCourseReportAdmin(); // เนเธซเธฅเธ”เธฃเธฒเธขเธเธทเนเธญเธงเธดเธเธฒเนเธชเน Dropdown
+        initCourseReportAdmin(); // โหลดรายชื่อวิชาใส่ Dropdown
     }
 }
 
-// ================= Admin: Report & Stats (เธเธฃเนเธญเธกเธฃเธฐเธเธเธเธฃเธญเธ) =================
-let globalAdminReportData = []; // เธชเธฃเนเธฒเธเธ•เธฑเธงเนเธเธฃเน€เธเนเธเธเนเธญเธกเธนเธฅเธชเธ–เธดเธ•เธดเนเธงเนเนเธเน€เธเธฃเธทเนเธญเธ เธเธฐเนเธ”เนเนเธกเนเธ•เนเธญเธเนเธซเธฅเธ”เนเธซเธกเนเธ•เธญเธเน€เธเธฅเธตเนเธขเธ Dropdown
-let adminChartInstance = null;  // เธ•เธฑเธงเนเธเธฃเน€เธเนเธเธเธฃเธฒเธ
+// ================= Admin: Report & Stats (พร้อมระบบกรอง) =================
+let globalAdminReportData = []; // สร้างตัวแปรเก็บข้อมูลสถิติไว้ในเครื่อง จะได้ไม่ต้องโหลดใหม่ตอนเปลี่ยน Dropdown
+let adminChartInstance = null;  // ตัวแปรเก็บกราฟ
 
-// เธเธฑเธเธเนเธเธฑเธเธ”เธถเธเธเนเธญเธกเธนเธฅเธเธฒเธ API (เธ—เธณเธเธฒเธเธเธฃเธฑเนเธเนเธฃเธเธ•เธญเธเน€เธเธดเธ”เนเธ—เนเธ)
+// ฟังก์ชันดึงข้อมูลจาก API (ทำงานครั้งแรกตอนเปิดแท็บ)
 async function loadAdminReport() {
     const tbody = document.getElementById('reportTableBody'); 
     if(!tbody) return;
     
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅเธชเธ–เธดเธ•เธด...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">กำลังโหลดข้อมูลสถิติ...</td></tr>';
     const res = await callAPI('getAdminReport', {});
     
     if (res.status === 'success') {
         globalAdminReportData = res.data; 
         filterAdminReport();
     } else {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: red;">เนเธซเธฅเธ”เธเนเธญเธกเธนเธฅเธเธดเธ”เธเธฅเธฒเธ”</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: red;">โหลดข้อมูลผิดพลาด</td></tr>`;
     }
 }
 
@@ -910,12 +910,12 @@ function renderReportTableAndChart(dataToShow) {
     tbody.innerHTML = '';
     
     if (dataToShow.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">เนเธกเนเธกเธตเธเนเธญเธกเธนเธฅเธเธนเนเนเธเนเธเธฒเธเธ•เธฒเธกเน€เธเธทเนเธญเธเนเธเธ—เธตเนเน€เธฅเธทเธญเธ</td></tr>';
-        renderAdminChart({}); // เธงเธฒเธ”เธเธฃเธฒเธเน€เธเธฅเนเธฒ
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">ไม่มีข้อมูลผู้ใช้งานตามเงื่อนไขที่เลือก</td></tr>';
+        renderAdminChart({}); // วาดกราฟเปล่า
         return;
     }
     
-    let deptStats = {}; // เน€เธเนเธเธชเธ–เธดเธ•เธดเธ—เธณเธเธฃเธฒเธ
+    let deptStats = {}; // เก็บสถิติทำกราฟ
     
     dataToShow.forEach(r => {
         if (!deptStats[r.department]) deptStats[r.department] = { passed: 0, failed: 0 };
@@ -927,13 +927,13 @@ function renderReportTableAndChart(dataToShow) {
         if (r.status_code === 'warning') statusColor = '#f59e0b';
 
         const statusBadge = `<span class="badge" style="background: ${statusColor}; color: white;">${r.status}</span>`;
-        const positionGroupLabel = r.position_group === 'nurse' ? 'เธเธขเธฒเธเธฒเธฅเธงเธดเธเธฒเธเธตเธ' : 'เธชเธฒเธขเธชเธเธฑเธเธชเธเธธเธ';
+        const positionGroupLabel = r.position_group === 'nurse' ? 'พยาบาลวิชาชีพ' : 'สายสนับสนุน';
         const dayLabel = r.position_group === 'nurse' ? r.totalDays : '-';
         const mandatoryLabel = r.position_group === 'support'
             ? `${r.mandatory_completed}/${r.mandatory_total || 0}`
             : '-';
         const mandatoryHint = r.position_group === 'support' && Array.isArray(r.mandatory_pending_titles) && r.mandatory_pending_titles.length > 0
-            ? `<br><small style="color: var(--text-light);">เธเธเน€เธซเธฅเธทเธญ: ${r.mandatory_pending_titles.join(', ')}</small>`
+            ? `<br><small style="color: var(--text-light);">คงเหลือ: ${r.mandatory_pending_titles.join(', ')}</small>`
             : '';
             
         tbody.innerHTML += `
@@ -951,15 +951,15 @@ function renderReportTableAndChart(dataToShow) {
         `;
     });
 
-    // เธงเธฒเธ”เธเธฃเธฒเธ
+    // วาดกราฟ
     renderAdminChart(deptStats);
 }
 
-// เธเธฑเธเธเนเธเธฑเธเธงเธฒเธ”เธเธฃเธฒเธ Chart.js
+// ฟังก์ชันวาดกราฟ Chart.js
 function renderAdminChart(deptStats) {
     const ctx = document.getElementById('passRateChart').getContext('2d');
     
-    // เธฅเธเธเธฃเธฒเธเน€เธเนเธฒเธ—เธดเนเธเธเนเธญเธ (เธ–เนเธฒเธกเธต) เธเนเธญเธเธเธฑเธเธเธฑเนเธเธเธฃเธฒเธเธเธฃเธฐเธเธฃเธดเธเธเนเธญเธเธเธฑเธ
+    // ลบกราฟเก่าทิ้งก่อน (ถ้ามี) ป้องกันบั๊กกราฟกระพริบซ้อนกัน
     if (adminChartInstance) adminChartInstance.destroy();
 
     const labels = Object.keys(deptStats);
@@ -971,8 +971,8 @@ function renderAdminChart(deptStats) {
         data: {
             labels: labels,
             datasets: [
-                { label: 'เธเนเธฒเธเน€เธเธ“เธ‘เน (เธเธ)', data: passedData, backgroundColor: '#10B981', borderRadius: 4 },
-                { label: 'เธขเธฑเธเนเธกเนเธเนเธฒเธ (เธเธ)', data: failedData, backgroundColor: '#EF4444', borderRadius: 4 }
+                { label: 'ผ่านเกณฑ์ (คน)', data: passedData, backgroundColor: '#10B981', borderRadius: 4 },
+                { label: 'ยังไม่ผ่าน (คน)', data: failedData, backgroundColor: '#EF4444', borderRadius: 4 }
             ]
         },
         options: {
@@ -980,7 +980,7 @@ function renderAdminChart(deptStats) {
             maintainAspectRatio: false,
             scales: { 
                 x: { stacked: true }, 
-                y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } // เธเธฑเธเธเธฑเธเนเธซเนเธเธฃเธฒเธเนเธเธงเธ•เธฑเนเธเน€เธเนเธเน€เธฅเธเธเธณเธเธงเธเน€เธ•เนเธก (เธเธ)
+                y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } // บังคับให้กราฟแนวตั้งเป็นเลขจำนวนเต็ม (คน)
             },
             plugins: { 
                 legend: { position: 'top' } 
@@ -988,7 +988,7 @@ function renderAdminChart(deptStats) {
         }
     });
 }
-// เธเธฑเธเธเนเธเธฑเธ Export Excel เธญเธขเนเธฒเธเธเนเธฒเธขเธ”เนเธงเธข JS
+// ฟังก์ชัน Export Excel อย่างง่ายด้วย JS
 function exportToExcel() {
     let table = document.getElementById('adminReportTable');
     if (!table) return;
@@ -1003,7 +1003,7 @@ function exportToExcel() {
 
 let adminCoursesData = [];
 
-// เนเธซเธฅเธ”เธฃเธฒเธขเธเธทเนเธญเธซเธฅเธฑเธเธชเธนเธ•เธฃเนเธเธ•เธฒเธฃเธฒเธเนเธญเธ”เธกเธดเธ
+// โหลดรายชื่อหลักสูตรในตารางแอดมิน
 async function loadAdminCoursesTable() {
     showLoader();
     const res = await callAPI('getAdminCourses', {});
@@ -1015,10 +1015,10 @@ async function loadAdminCoursesTable() {
     if (res.status === 'success') {
         adminCoursesData = res.data; 
         res.data.forEach(course => {
-            // เนเธเธฅเธเธเธฑเนเธงเนเธกเธเธเธฅเธฑเธเธกเธฒเนเธชเธ”เธเธเธฅ
+            // แปลงชั่วโมงกลับมาแสดงผล
             const hr = Math.floor(course.hours);
             const min = Math.round((course.hours - hr) * 60);
-            const timeText = min > 0 ? `${hr} เธเธก. ${min} เธเธฒเธ—เธต` : `${hr} เธเธก.`;
+            const timeText = min > 0 ? `${hr} ชม. ${min} นาที` : `${hr} ชม.`;
 
             tbody.innerHTML += `
                 <tr>
@@ -1026,7 +1026,7 @@ async function loadAdminCoursesTable() {
                     <td>${course.organizer}</td>
                     <td>${timeText}</td>
                     <td>
-                        <button class="btn btn-action btn-edit" onclick="editCourse('${course.course_id}')"><i class="fas fa-edit"></i> เนเธเนเนเธ</button>
+                        <button class="btn btn-action btn-edit" onclick="editCourse('${course.course_id}')"><i class="fas fa-edit"></i> แก้ไข</button>
                     </td>
                 </tr>
             `;
@@ -1034,15 +1034,15 @@ async function loadAdminCoursesTable() {
     }
 }
 
-// เธเธฑเธเธเนเธเธฑเธเน€เธเธดเนเธก/เธฅเธ เธเธฅเนเธญเธเธเธฃเธญเธเธเนเธญเธกเธนเธฅเธงเธดเธ”เธตเนเธญ
+// ฟังก์ชันเพิ่ม/ลบ กล่องกรอกข้อมูลวิดีโอ
 function addUnitField(title = '', video = '', time = '') {
     const container = document.getElementById('unitsContainer');
     const unitHTML = `
         <div class="unit-box">
             <div class="unit-row">
-                <input type="text" class="u-title" placeholder="เธเธทเนเธญเธซเธเนเธงเธข (เน€เธเนเธ EP.1)" value="${title}" required>
-                <input type="text" class="u-video" placeholder="URL เธงเธดเธ”เธตเนเธญ" value="${video}" required>
-                <input type="number" class="u-time" placeholder="เน€เธงเธฅเธฒเธ”เธนเธเธฑเนเธเธ•เนเธณ (เธเธฒเธ—เธต)" value="${time}" required>
+                <input type="text" class="u-title" placeholder="ชื่อหน่วย (เช่น EP.1)" value="${title}" required>
+                <input type="text" class="u-video" placeholder="URL วิดีโอ" value="${video}" required>
+                <input type="number" class="u-time" placeholder="เวลาดูขั้นต่ำ (นาที)" value="${time}" required>
                 <button type="button" class="btn-remove-unit" onclick="removeUnitField(this)"><i class="fas fa-trash"></i></button>
             </div>
         </div>
@@ -1074,14 +1074,14 @@ function toggleCourseDeliveryFields() {
     }
 }
 
-// เธเธณเธเนเธญเธกเธนเธฅเธฅเธเธเธญเธฃเนเธกเน€เธเธทเนเธญเน€เธ•เธฃเธตเธขเธกเนเธเนเนเธ
+// นำข้อมูลลงฟอร์มเพื่อเตรียมแก้ไข
 function editCourse(courseId) {
     const course = adminCoursesData.find(c => c.course_id === courseId);
     if(!course) return;
 
-    // เน€เธเธฅเธตเนเธขเธเธซเธเนเธฒเธ•เธฒ UI
-    document.getElementById('courseFormTitle').innerHTML = '<i class="fas fa-edit"></i> เนเธเนเนเธเธเนเธญเธกเธนเธฅเธซเธฅเธฑเธเธชเธนเธ•เธฃ';
-    document.getElementById('btnSubmitCourse').innerHTML = '<i class="fas fa-save"></i> เธเธฑเธเธ—เธถเธเธเธฒเธฃเนเธเนเนเธ';
+    // เปลี่ยนหน้าตา UI
+    document.getElementById('courseFormTitle').innerHTML = '<i class="fas fa-edit"></i> แก้ไขข้อมูลหลักสูตร';
+    document.getElementById('btnSubmitCourse').innerHTML = '<i class="fas fa-save"></i> บันทึกการแก้ไข';
     document.getElementById('btnCancelEdit').classList.remove('hidden');
     document.getElementById('editCourseId').value = course.course_id;
 
@@ -1113,11 +1113,11 @@ function editCourse(courseId) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// เธฅเนเธฒเธเธเธญเธฃเนเธกเธเธฅเธฑเธเน€เธเนเธเนเธซเธกเธ”เน€เธเธดเนเธกเธซเธฅเธฑเธเธชเธนเธ•เธฃ
+// ล้างฟอร์มกลับเป็นโหมดเพิ่มหลักสูตร
 function resetCourseForm() {
     document.getElementById('addCourseForm').reset();
-    document.getElementById('courseFormTitle').innerHTML = '<i class="fas fa-plus-circle"></i> เน€เธเธดเนเธกเธซเธฅเธฑเธเธชเธนเธ•เธฃเนเธซเธกเน';
-    document.getElementById('btnSubmitCourse').innerHTML = '<i class="fas fa-save"></i> เธเธฑเธเธ—เธถเธเธซเธฅเธฑเธเธชเธนเธ•เธฃ';
+    document.getElementById('courseFormTitle').innerHTML = '<i class="fas fa-plus-circle"></i> เพิ่มหลักสูตรใหม่';
+    document.getElementById('btnSubmitCourse').innerHTML = '<i class="fas fa-save"></i> บันทึกหลักสูตร';
     document.getElementById('btnCancelEdit').classList.add('hidden');
     document.getElementById('editCourseId').value = '';
     document.getElementById('cDeliveryType').value = 'video';
@@ -1129,7 +1129,7 @@ function resetCourseForm() {
     toggleCourseDeliveryFields();
 }
 
-// เธเธฑเธเธเนเธเธฑเธเธเธฑเธเธ—เธถเธเธซเธฅเธฑเธเธชเธนเธ•เธฃ (เธเธฑเธ”เธเธฒเธฃเธ—เธฑเนเธเธ•เธญเธเน€เธเธดเนเธกเนเธซเธกเน เนเธฅเธฐเธ•เธญเธเนเธเนเนเธ)
+// ฟังก์ชันบันทึกหลักสูตร (จัดการทั้งตอนเพิ่มใหม่ และตอนแก้ไข)
 document.getElementById('addCourseForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -1145,7 +1145,7 @@ document.getElementById('addCourseForm').addEventListener('submit', async (e) =>
             });
         });
         if (unitsData.length === 0) {
-            return showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธซเธฅเธฑเธเธชเธนเธ•เธฃเนเธเธเธญเธญเธเนเธฅเธเนเธ•เนเธญเธเธกเธตเธซเธเนเธงเธขเธงเธดเธ”เธตเนเธญเธญเธขเนเธฒเธเธเนเธญเธข 1 เธซเธเนเธงเธข');
+            return showAlert('แจ้งเตือน', 'หลักสูตรแบบออนไลน์ต้องมีหน่วยวิดีโออย่างน้อย 1 หน่วย');
         }
     }
 
@@ -1178,11 +1178,11 @@ document.getElementById('addCourseForm').addEventListener('submit', async (e) =>
     hideLoader();
     
     if(res.status === 'success') {
-        showAlert('เธชเธณเน€เธฃเนเธ', res.message);
+        showAlert('สำเร็จ', res.message);
         resetCourseForm();
         loadAdminCoursesTable(); 
     } else {
-        showAlert('เธเธดเธ”เธเธฅเธฒเธ”', res.message);
+        showAlert('ผิดพลาด', res.message);
     }
 });
 
@@ -1193,7 +1193,7 @@ let ytPlayer;
 let currentClassCourse = null;
 let currentUnits = [];
 let completedUnits = []; 
-let resumeTimes = {}; // เธ•เธฑเธงเนเธเธฃเนเธซเธกเนเธชเธณเธซเธฃเธฑเธเน€เธเนเธเน€เธงเธฅเธฒเธ—เธตเนเธ”เธนเธเนเธฒเธเนเธงเน
+let resumeTimes = {}; // ตัวแปรใหม่สำหรับเก็บเวลาที่ดูค้างไว้
 let activeUnitIndex = 0;
 let maxTimeWatched = 0; 
 let trackerInterval;
@@ -1206,12 +1206,12 @@ function extractYTId(url) {
     return (match && match[2].length === 11) ? match[2] : null;
 }
 
-// 1. เธเธฑเธเธเนเธเธฑเธเธเธฑเธเธ—เธถเธเธเธงเธฒเธกเธเธทเธเธซเธเนเธฒ (เธ—เธฑเนเธเธ•เธญเธเธ”เธนเธเธ เนเธฅเธฐเธ•เธญเธเธเธ”เธญเธญเธ)
+// 1. ฟังก์ชันบันทึกความคืบหน้า (ทั้งตอนดูจบ และตอนกดออก)
 function saveProgressToDB() {
     if(!currentClassCourse || currentCourseFlow === 'classroom') return;
     const user = JSON.parse(localStorage.getItem('swd_user'));
     
-    // เธญเธฑเธเน€เธ”เธ•เน€เธงเธฅเธฒเธฅเนเธฒเธชเธธเธ”เธเนเธญเธเธชเนเธ
+    // อัปเดตเวลาล่าสุดก่อนส่ง
     if(ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
         maxTimeWatched = Math.max(maxTimeWatched, ytPlayer.getCurrentTime());
     }
@@ -1224,12 +1224,12 @@ function saveProgressToDB() {
     });
 }
 
-// 2. เธเธ”เน€เธเนเธฒเน€เธฃเธตเธขเธ
+// 2. กดเข้าเรียน
 async function enrollCourse(courseId) {
     const user = JSON.parse(localStorage.getItem('swd_user'));
     
     const targetCourse = globalCourses.find(c => c.id === courseId);
-    if(!targetCourse) return showAlert('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', 'เนเธกเนเธเธเธเนเธญเธกเธนเธฅเธซเธฅเธฑเธเธชเธนเธ•เธฃเธเธตเน');
+    if(!targetCourse) return showAlert('ข้อผิดพลาด', 'ไม่พบข้อมูลหลักสูตรนี้');
 
     showLoader();
     const enrollRes = await callAPI('enrollCourse', { user_id: user.id, course_id: courseId });
@@ -1247,15 +1247,15 @@ async function enrollCourse(courseId) {
 
         if (currentCourseFlow === 'classroom') {
             const confirmed = await showConfirm(
-                'เธซเธฅเธฑเธเธชเธนเธ•เธฃเธญเธเธฃเธกเนเธเธซเนเธญเธ',
-                'เธซเธฅเธฑเธเธชเธนเธ•เธฃเธเธตเนเนเธกเนเธกเธตเธงเธดเธ”เธตเนเธญเนเธเธฃเธฐเธเธ เธเธนเนเน€เธเนเธฒเธญเธเธฃเธกเธ•เนเธญเธเธเนเธฒเธเธเธฒเธฃเธญเธเธฃเธกเนเธเธซเนเธญเธเน€เธฃเธตเธขเธเธเนเธญเธ เนเธฅเนเธงเธเธถเธเธ—เธณเนเธเธเธ—เธ”เธชเธญเธเธซเธฅเธฑเธเน€เธฃเธตเธขเธเนเธเธฃเธฐเธเธเน€เธเธทเนเธญเธฃเธฑเธเนเธเธเธฃเธฐเธเธฒเธจ'
+                'หลักสูตรอบรมในห้อง',
+                'หลักสูตรนี้ไม่มีวิดีโอในระบบ ผู้เข้าอบรมต้องผ่านการอบรมในห้องเรียนก่อน แล้วจึงทำแบบทดสอบหลังเรียนในระบบเพื่อรับใบประกาศ'
             );
             if (!confirmed) return;
             startQuiz('post');
             return;
         }
 
-        if(currentUnits.length === 0) return showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธซเธฅเธฑเธเธชเธนเธ•เธฃเธเธตเนเธขเธฑเธเนเธกเนเธกเธตเธงเธดเธ”เธตเนเธญเน€เธเธทเนเธญเธซเธฒเธเธฃเธฑเธ');
+        if(currentUnits.length === 0) return showAlert('แจ้งเตือน', 'หลักสูตรนี้ยังไม่มีวิดีโอเนื้อหาครับ');
         
         if (progData.preTestScore === undefined || progData.preTestScore === null) {
             startQuiz('pre');
@@ -1263,7 +1263,7 @@ async function enrollCourse(courseId) {
             enterClassroom();
         }
     } else {
-        showAlert('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”เธเธฒเธเธฃเธฐเธเธ', enrollRes.message);
+        showAlert('ข้อผิดพลาดจากระบบ', enrollRes.message);
     }
 }
 
@@ -1274,7 +1274,7 @@ function enterClassroom() {
     
     renderPlaylist();
     
-    // เธซเธฒ EP เธ–เธฑเธ”เนเธเธ—เธตเนเธขเธฑเธเนเธกเนเธเธเธกเธฒเน€เธฅเนเธเธเนเธญเธ
+    // หา EP ถัดไปที่ยังไม่จบมาเล่นก่อน
     let nextUnfinishedUnit = 0;
     for(let i=0; i<currentUnits.length; i++) {
         if(!completedUnits.includes(i)) {
@@ -1286,7 +1286,7 @@ function enterClassroom() {
     loadQA();
 }
 
-// เธญเธญเธเธเธฒเธเธซเนเธญเธเน€เธฃเธตเธขเธ (เธเธฅเธฑเธเธซเธเนเธฒเธซเธฅเธฑเธเนเธฅเธฐเธฃเธตเน€เธเธฃเธ)
+// ออกจากห้องเรียน (กลับหน้าหลักและรีเฟรช)
 function exitClassroom() {
     clearInterval(trackerInterval);
     saveProgressToDB();
@@ -1334,7 +1334,7 @@ function renderPlaylist() {
             <li style="${liStyle}" onclick="${(isLocked || isActive) ? '' : `loadVideo(${index})`}">
                 <div>
                     <strong style="color: ${isActive ? 'var(--primary-color)' : 'inherit'}">${unit.title}</strong><br>
-                    <small style="color: #64748b;"><i class="fas fa-clock"></i> ${unit.min_time} เธเธฒเธ—เธต</small>
+                    <small style="color: #64748b;"><i class="fas fa-clock"></i> ${unit.min_time} นาที</small>
                 </div>
                 ${statusIcon}
             </li>
@@ -1343,15 +1343,15 @@ function renderPlaylist() {
 
     const percent = Math.round((totalDone / currentUnits.length) * 100) || 0;
     document.getElementById('courseProgressFill').style.width = percent + '%';
-    document.getElementById('progressText').innerText = `เธชเธณเน€เธฃเนเธ ${percent}%`;
+    document.getElementById('progressText').innerText = `สำเร็จ ${percent}%`;
 
     if(percent === 100) document.getElementById('btnTakeExam').classList.remove('hidden');
     else document.getElementById('btnTakeExam').classList.add('hidden');
 }
 
-// 4. เนเธซเธฅเธ”เธงเธดเธ”เธตเนเธญเธเธฃเนเธญเธก Resume เน€เธงเธฅเธฒ
+// 4. โหลดวิดีโอพร้อม Resume เวลา
 function loadVideo(index) {
-    // เธ–เนเธฒเธกเธตเธเธฒเธฃเน€เธเธฅเธตเนเธขเธ EP เนเธซเนเน€เธเธเน€เธงเธฅเธฒเธเธญเธ EP เน€เธ”เธดเธกเธเนเธญเธ
+    // ถ้ามีการเปลี่ยน EP ให้เซฟเวลาของ EP เดิมก่อน
     if (activeUnitIndex !== index && currentClassCourse) {
         saveProgressToDB();
     }
@@ -1362,7 +1362,7 @@ function loadVideo(index) {
     
     document.getElementById('currentUnitTitle').innerText = unit.title;
     
-    // เธ”เธถเธเน€เธงเธฅเธฒเธ—เธตเนเธ”เธนเธเนเธฒเธเนเธงเน (เธเธชเธกเธเธฑเธเธฃเธฐเธซเธงเนเธฒเธ Local Storage เธเนเธญเธเธเธฑเธเนเธเธ”เธฑเธ เนเธฅเธฐ DB)
+    // ดึงเวลาที่ดูค้างไว้ (ผสมกันระหว่าง Local Storage ป้องกันไฟดับ และ DB)
     const user = JSON.parse(localStorage.getItem('swd_user'));
     const cacheKey = `resume_${user.id}_${currentClassCourse.id}_${index}`;
     let localSavedTime = parseFloat(localStorage.getItem(cacheKey)) || 0;
@@ -1371,7 +1371,7 @@ function loadVideo(index) {
 
     renderPlaylist(); 
 
-    if(!videoId) return showAlert('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', 'เธฅเธดเธเธเนเธงเธดเธ”เธตเนเธญเนเธกเนเธ–เธนเธเธ•เนเธญเธ');
+    if(!videoId) return showAlert('ข้อผิดพลาด', 'ลิงก์วิดีโอไม่ถูกต้อง');
 
     if(!ytPlayer) {
         ytPlayer = new YT.Player('youtubePlayer', {
@@ -1379,45 +1379,45 @@ function loadVideo(index) {
             videoId: videoId,
             playerVars: { 
                 'controls': 1, 'disablekb': 1, 'rel': 0, 
-                'start': Math.floor(maxTimeWatched) // เธชเธฑเนเธเนเธซเนเน€เธฃเธดเนเธกเน€เธฅเนเธเธเธฒเธเธเธธเธ”เธ—เธตเนเธ”เธนเธเนเธฒเธเนเธงเน
+                'start': Math.floor(maxTimeWatched) // สั่งให้เริ่มเล่นจากจุดที่ดูค้างไว้
             },
             events: { 'onStateChange': onPlayerStateChange }
         });
     } else {
-        // เนเธเนเธเธณเธชเธฑเนเธเนเธซเธฅเธ”เธงเธดเธ”เธตเนเธญเนเธเธเธฃเธฐเธเธธเธงเธดเธเธฒเธ—เธตเน€เธฃเธดเนเธกเธ•เนเธ
+        // ใช้คำสั่งโหลดวิดีโอแบบระบุวินาทีเริ่มต้น
         ytPlayer.loadVideoById({videoId: videoId, startSeconds: Math.floor(maxTimeWatched)});
     }
 }
 
-// 5. เธฃเธฐเธเธเธ•เธฃเธงเธเธเธฑเธเน€เธงเธฅเธฒเนเธฅเธฐเธเธฑเธ”เธเธฒเธฃเธ•เธญเธเธเธ
+// 5. ระบบตรวจจับเวลาและจัดการตอนจบ
 function onPlayerStateChange(event) {
     if (event.data == YT.PlayerState.PLAYING) {
         trackerInterval = setInterval(() => {
             const currentTime = ytPlayer.getCurrentTime();
             const duration = ytPlayer.getDuration();
             
-            // เน€เธเนเธเธเธฒเธฃเนเธญเธเธเธฃเธญเธงเธดเธ”เธตเนเธญ
+            // เช็คการแอบกรอวิดีโอ
             if (currentTime > maxTimeWatched + 3) {
-                // เธ–เนเธฒ EP เธเธตเนเธ”เธนเธเธเนเธฅเนเธง (Done) เนเธซเนเธ”เธนเธญเธดเธชเธฃเธฐเนเธ”เน เนเธกเนเธฅเนเธญเธ!
+                // ถ้า EP นี้ดูจบแล้ว (Done) ให้ดูอิสระได้ ไม่ล็อก!
                 if (completedUnits.includes(activeUnitIndex)) {
                     maxTimeWatched = currentTime; 
                 } else {
-                    // เธ–เนเธฒเธขเธฑเธเนเธกเนเธเธ เธ”เธถเธเธเธฅเธฑเธเธกเธฒเธ—เธตเนเน€เธ”เธดเธก
+                    // ถ้ายังไม่จบ ดึงกลับมาที่เดิม
                     ytPlayer.seekTo(maxTimeWatched); 
-                    showAlert('เธเธฃเธธเธ“เธฒเธฃเธฑเธเธเธกเธงเธดเธ”เธตเนเธญเนเธซเนเธเธ', 'เธฃเธฐเธเธเธฅเนเธญเธเธเธฒเธฃเน€เธฅเธทเนเธญเธเธเนเธฒเธกเธชเธณเธซเธฃเธฑเธ EP เธ—เธตเนเธขเธฑเธเน€เธฃเธตเธขเธเนเธกเนเธเธเธเธฃเธฑเธ');
+                    showAlert('กรุณารับชมวิดีโอให้จบ', 'ระบบล็อกการเลื่อนข้ามสำหรับ EP ที่ยังเรียนไม่จบครับ');
                 }
             } else {
                 maxTimeWatched = Math.max(maxTimeWatched, currentTime);
             }
 
-            // เนเธเธเธญเธฑเธเน€เธงเธฅเธฒเธฅเธเน€เธเธฃเธทเนเธญเธเธญเธฑเธ•เนเธเธกเธฑเธ•เธดเธ—เธธเธเน 5 เธงเธดเธเธฒเธ—เธต (เธเธฑเธเนเธเธ”เธฑเธ/เน€เธเธฅเธญเธเธดเธ”เนเธ—เนเธ)
+            // แบคอัปเวลาลงเครื่องอัตโนมัติทุกๆ 5 วินาที (กันไฟดับ/เผลอปิดแท็บ)
             if (Math.floor(currentTime) % 5 === 0) {
                 const user = JSON.parse(localStorage.getItem('swd_user'));
                 const cacheKey = `resume_${user.id}_${currentClassCourse.id}_${activeUnitIndex}`;
                 localStorage.setItem(cacheKey, maxTimeWatched);
             }
 
-            // เธเธ EP (เน€เธซเธฅเธทเธญเนเธกเนเธ–เธถเธ 2 เธงเธดเธชเธธเธ”เธ—เนเธฒเธข)
+            // จบ EP (เหลือไม่ถึง 2 วิสุดท้าย)
             if (duration > 0 && currentTime >= duration - 2) {
                 markUnitComplete(activeUnitIndex);
             }
@@ -1427,13 +1427,13 @@ function onPlayerStateChange(event) {
     }
 }
 
-// 6. เธเธฑเธเธ—เธถเธเน€เธกเธทเนเธญเธเธเธซเธเนเธงเธข
+// 6. บันทึกเมื่อจบหน่วย
 function markUnitComplete(index) {
     if(!completedUnits.includes(index)) {
         completedUnits.push(index);
-        saveProgressToDB(); // เธเธฑเธเธ—เธถเธเธงเนเธฒเธเธเนเธฅเนเธง
+        saveProgressToDB(); // บันทึกว่าจบแล้ว
         renderPlaylist();
-        showAlert('เธขเธญเธ”เน€เธขเธตเนเธขเธก!', `เธเธธเธ“เน€เธฃเธตเธขเธ ${currentUnits[index].title} เธเธเนเธฅเนเธง!`);
+        showAlert('ยอดเยี่ยม!', `คุณเรียน ${currentUnits[index].title} จบแล้ว!`);
     }
 }
 
@@ -1443,28 +1443,28 @@ function startExam() {
 // ================= Admin: Exam Management =================
 let adminCurrentExams = [];
 
-// เนเธซเธฅเธ”เธฃเธฒเธขเธเธทเนเธญเธซเธฅเธฑเธเธชเธนเธ•เธฃเนเธชเน Dropdown (เน€เธฃเธตเธขเธเนเธเนเธ•เธญเธเน€เธเนเธฒเธซเธเนเธฒเนเธญเธ”เธกเธดเธ)
-// เนเธซเธฅเธ”เธฃเธฒเธขเธเธทเนเธญเธซเธฅเธฑเธเธชเธนเธ•เธฃเนเธชเน Dropdown (เธเธเธฑเธเธ”เธถเธเธเนเธญเธกเธนเธฅเธชเธ”เธเธฒเธเธเธฒเธเธเนเธญเธกเธนเธฅ)
+// โหลดรายชื่อหลักสูตรใส่ Dropdown (เรียกใช้ตอนเข้าหน้าแอดมิน)
+// โหลดรายชื่อหลักสูตรใส่ Dropdown (ฉบับดึงข้อมูลสดจากฐานข้อมูล)
 async function initExamAdmin() {
     const select = document.getElementById('examCourseSelect');
-    select.innerHTML = '<option value="">-- เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธซเธฅเธฑเธเธชเธนเธ•เธฃ... --</option>';
+    select.innerHTML = '<option value="">-- กำลังโหลดหลักสูตร... --</option>';
     
-    // เธชเธฑเนเธเธ”เธถเธเธเนเธญเธกเธนเธฅเธซเธฅเธฑเธเธชเธนเธ•เธฃเธ—เธฑเนเธเธซเธกเธ”เธเธญเธเนเธญเธ”เธกเธดเธ
+    // สั่งดึงข้อมูลหลักสูตรทั้งหมดของแอดมิน
     const res = await callAPI('getAdminCourses', {});
     
-    select.innerHTML = '<option value="">-- เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเธซเธฅเธฑเธเธชเธนเธ•เธฃ --</option>';
+    select.innerHTML = '<option value="">-- กรุณาเลือกหลักสูตร --</option>';
     
     if (res.status === 'success' && res.data.length > 0) {
-        adminCoursesData = res.data; // เธญเธฑเธเน€เธ”เธ•เธเนเธญเธกเธนเธฅเนเธเธเธงเธฒเธกเธเธณเน€เธเธฃเธทเนเธญเธ
+        adminCoursesData = res.data; // อัปเดตข้อมูลในความจำเครื่อง
         res.data.forEach(c => {
             select.innerHTML += `<option value="${c.course_id}">${c.title}</option>`;
         });
     } else {
-        select.innerHTML = '<option value="">-- เธขเธฑเธเนเธกเนเธกเธตเธซเธฅเธฑเธเธชเธนเธ•เธฃเนเธเธฃเธฐเธเธ --</option>';
+        select.innerHTML = '<option value="">-- ยังไม่มีหลักสูตรในระบบ --</option>';
     }
 }
 
-// เน€เธกเธทเนเธญเนเธญเธ”เธกเธดเธเน€เธฅเธทเธญเธเธซเธฅเธฑเธเธชเธนเธ•เธฃ
+// เมื่อแอดมินเลือกหลักสูตร
 async function loadCourseExamsForAdmin() {
     const courseId = document.getElementById('examCourseSelect').value;
     const builder = document.getElementById('examBuilderSection');
@@ -1480,11 +1480,11 @@ async function loadCourseExamsForAdmin() {
     if(res.status === 'success' && res.data.length > 0) {
         res.data.forEach((ex, idx) => addQuestionBox(ex, idx + 1));
     } else {
-        addQuestionBox(); // เนเธเธงเนเธเธฅเนเธญเธเน€เธเธฅเนเธฒ 1 เธเธฅเนเธญเธ
+        addQuestionBox(); // โชว์กล่องเปล่า 1 กล่อง
     }
 }
 
-// เธชเธฃเนเธฒเธเธเธฅเนเธญเธเธเธดเธกเธเนเธเนเธญเธชเธญเธ
+// สร้างกล่องพิมพ์ข้อสอบ
 function addQuestionBox(data = null, num = null) {
     const container = document.getElementById('questionsContainer');
     const qCount = container.children.length + 1;
@@ -1495,21 +1495,21 @@ function addQuestionBox(data = null, num = null) {
     const html = `
         <div class="exam-box">
             <button class="btn-remove" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
-            <h5 style="margin-bottom: 10px; color: var(--primary-color);">เธเนเธญเธ—เธตเน ${qNum}</h5>
-            <input type="text" class="q-text" placeholder="เธเธดเธกเธเนเธเธณเธ–เธฒเธก..." value="${d.question}" style="width: 100%; padding: 10px; margin-bottom: 10px;" required>
+            <h5 style="margin-bottom: 10px; color: var(--primary-color);">ข้อที่ ${qNum}</h5>
+            <input type="text" class="q-text" placeholder="พิมพ์คำถาม..." value="${d.question}" style="width: 100%; padding: 10px; margin-bottom: 10px;" required>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div style="display:flex; gap:5px; align-items:center;">
-                    <input type="radio" name="ans_${qCount}" value="A" ${d.answer === 'A' ? 'checked' : ''}> เธ. <input type="text" class="q-a" placeholder="เธ•เธฑเธงเน€เธฅเธทเธญเธ เธ." value="${d.a}" style="width: 100%; padding: 8px;">
+                    <input type="radio" name="ans_${qCount}" value="A" ${d.answer === 'A' ? 'checked' : ''}> ก. <input type="text" class="q-a" placeholder="ตัวเลือก ก." value="${d.a}" style="width: 100%; padding: 8px;">
                 </div>
                 <div style="display:flex; gap:5px; align-items:center;">
-                    <input type="radio" name="ans_${qCount}" value="B" ${d.answer === 'B' ? 'checked' : ''}> เธ. <input type="text" class="q-b" placeholder="เธ•เธฑเธงเน€เธฅเธทเธญเธ เธ." value="${d.b}" style="width: 100%; padding: 8px;">
+                    <input type="radio" name="ans_${qCount}" value="B" ${d.answer === 'B' ? 'checked' : ''}> ข. <input type="text" class="q-b" placeholder="ตัวเลือก ข." value="${d.b}" style="width: 100%; padding: 8px;">
                 </div>
                 <div style="display:flex; gap:5px; align-items:center;">
-                    <input type="radio" name="ans_${qCount}" value="C" ${d.answer === 'C' ? 'checked' : ''}> เธ. <input type="text" class="q-c" placeholder="เธ•เธฑเธงเน€เธฅเธทเธญเธ เธ." value="${d.c}" style="width: 100%; padding: 8px;">
+                    <input type="radio" name="ans_${qCount}" value="C" ${d.answer === 'C' ? 'checked' : ''}> ค. <input type="text" class="q-c" placeholder="ตัวเลือก ค." value="${d.c}" style="width: 100%; padding: 8px;">
                 </div>
                 <div style="display:flex; gap:5px; align-items:center;">
-                    <input type="radio" name="ans_${qCount}" value="D" ${d.answer === 'D' ? 'checked' : ''}> เธ. <input type="text" class="q-d" placeholder="เธ•เธฑเธงเน€เธฅเธทเธญเธ เธ." value="${d.d}" style="width: 100%; padding: 8px;">
+                    <input type="radio" name="ans_${qCount}" value="D" ${d.answer === 'D' ? 'checked' : ''}> ง. <input type="text" class="q-d" placeholder="ตัวเลือก ง." value="${d.d}" style="width: 100%; padding: 8px;">
                 </div>
             </div>
         </div>
@@ -1517,10 +1517,10 @@ function addQuestionBox(data = null, num = null) {
     container.insertAdjacentHTML('beforeend', html);
 }
 
-// เนเธญเธ”เธกเธดเธเธเธ”เธเธฑเธเธ—เธถเธเธเนเธญเธชเธญเธ
+// แอดมินกดบันทึกข้อสอบ
 async function saveExamsToDB() {
     const courseId = document.getElementById('examCourseSelect').value;
-    if(!courseId) return showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเธซเธฅเธฑเธเธชเธนเธ•เธฃเธเนเธญเธเธเธฑเธเธ—เธถเธ');
+    if(!courseId) return showAlert('แจ้งเตือน', 'กรุณาเลือกหลักสูตรก่อนบันทึก');
     
     const boxes = document.querySelectorAll('.exam-box');
     let examsData = [];
@@ -1537,30 +1537,30 @@ async function saveExamsToDB() {
         });
     });
     
-    if(examsData.length === 0) return showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธ•เนเธญเธเธกเธตเธเนเธญเธชเธญเธเธญเธขเนเธฒเธเธเนเธญเธข 1 เธเนเธญ');
+    if(examsData.length === 0) return showAlert('แจ้งเตือน', 'ต้องมีข้อสอบอย่างน้อย 1 ข้อ');
     
     showLoader();
     const res = await callAPI('saveCourseExams', { course_id: courseId, exams: examsData });
     hideLoader();
     
-    if(res.status === 'success') showAlert('เธชเธณเน€เธฃเนเธ', 'เธเธฑเธเธ—เธถเธเธเธฅเธฑเธเธเนเธญเธชเธญเธเน€เธฃเธตเธขเธเธฃเนเธญเธขเนเธฅเนเธง');
+    if(res.status === 'success') showAlert('สำเร็จ', 'บันทึกคลังข้อสอบเรียบร้อยแล้ว');
 }
 
-// *เธญเธขเนเธฒเธฅเธทเธกเนเธเน€เธเธดเนเธกเธเธฒเธฃเน€เธฃเธตเธขเธ initExamAdmin() เนเธงเนเนเธเธเธฑเธเธเนเธเธฑเธ switchAdminTab(tabId) เธ”เนเธงเธขเธเธฐเธเธฃเธฑเธ (เน€เธกเธทเนเธญ tabId === 'examMgtTab')*
+// *อย่าลืมไปเพิ่มการเรียก initExamAdmin() ไว้ในฟังก์ชัน switchAdminTab(tabId) ด้วยนะครับ (เมื่อ tabId === 'examMgtTab')*
 
 
 // ================= User: Quiz Taking System =================
 let userQuizData = [];
 let currentQIndex = 0;
-let userAnswers = {}; // เน€เธเนเธเธเธณเธ•เธญเธ { 0: 'A', 1: 'C' }
-let activeQuizType = 'pre'; // 'pre' เธซเธฃเธทเธญ 'post'
+let userAnswers = {}; // เก็บคำตอบ { 0: 'A', 1: 'C' }
+let activeQuizType = 'pre'; // 'pre' หรือ 'post'
 
-// เน€เธฃเธดเนเธกเธ—เธณเธเนเธญเธชเธญเธ (เน€เธฃเธตเธขเธเธเธฒเธเธซเธเนเธฒ Dashboard เธซเธฃเธทเธญ เธซเนเธญเธเน€เธฃเธตเธขเธ)
+// เริ่มทำข้อสอบ (เรียกจากหน้า Dashboard หรือ ห้องเรียน)
 async function startQuiz(type) {
     activeQuizType = type;
     showLoader();
     
-    // เธ”เธถเธเธเนเธญเธชเธญเธ
+    // ดึงข้อสอบ
     const res = await callAPI('getCourseExams', { course_id: currentClassCourse.id });
     hideLoader();
     
@@ -1569,8 +1569,8 @@ async function startQuiz(type) {
         currentQIndex = 0;
         userAnswers = {};
         
-        document.getElementById('quizTitle').innerText = type === 'pre' ? 'เนเธเธเธ—เธ”เธชเธญเธเธเนเธญเธเน€เธฃเธตเธขเธ (Pre-test)' : 'เนเธเธเธ—เธ”เธชเธญเธเธซเธฅเธฑเธเน€เธฃเธตเธขเธ (Post-test)';
-        document.getElementById('quizSubtitle').innerText = `เธงเธดเธเธฒ: ${currentClassCourse.title}`;
+        document.getElementById('quizTitle').innerText = type === 'pre' ? 'แบบทดสอบก่อนเรียน (Pre-test)' : 'แบบทดสอบหลังเรียน (Post-test)';
+        document.getElementById('quizSubtitle').innerText = `วิชา: ${currentClassCourse.title}`;
         
         document.getElementById('quizSection').classList.remove('hidden');
         document.getElementById('quizContent').classList.remove('hidden');
@@ -1579,39 +1579,39 @@ async function startQuiz(type) {
         renderQuestion();
     } else {
         const message = currentCourseFlow === 'classroom'
-            ? 'เธซเธฅเธฑเธเธชเธนเธ•เธฃเธญเธเธฃเธกเนเธเธซเนเธญเธเธเธตเนเธขเธฑเธเนเธกเนเธกเธตเธเธฒเธฃเธ•เธฑเนเธเธเนเธฒเนเธเธเธ—เธ”เธชเธญเธเธซเธฅเธฑเธเน€เธฃเธตเธขเธ'
-            : 'เธซเธฅเธฑเธเธชเธนเธ•เธฃเธเธตเนเธขเธฑเธเนเธกเนเธกเธตเธเธฒเธฃเธ•เธฑเนเธเธเนเธฒเนเธเธเธ—เธ”เธชเธญเธเธเธฃเธฑเธ เธเธฃเธธเธ“เธฒเธเนเธฒเธกเนเธเน€เธฃเธตเธขเธเนเธ”เนเน€เธฅเธข';
-        showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', message);
+            ? 'หลักสูตรอบรมในห้องนี้ยังไม่มีการตั้งค่าแบบทดสอบหลังเรียน'
+            : 'หลักสูตรนี้ยังไม่มีการตั้งค่าแบบทดสอบครับ กรุณาข้ามไปเรียนได้เลย';
+        showAlert('แจ้งเตือน', message);
         if(type === 'pre') enterClassroom();
         if(type === 'post' && currentCourseFlow === 'classroom') finishCourseFlow();
     }
 }
 
-// เนเธชเธ”เธเธเธณเธ–เธฒเธกเธ—เธตเธฅเธฐเธเนเธญ
+// แสดงคำถามทีละข้อ
 function renderQuestion() {
     const q = userQuizData[currentQIndex];
-    document.getElementById('quizProgressText').innerText = `เธเนเธญเธ—เธตเน ${currentQIndex + 1} / ${userQuizData.length}`;
+    document.getElementById('quizProgressText').innerText = `ข้อที่ ${currentQIndex + 1} / ${userQuizData.length}`;
     document.getElementById('questionText').innerText = `${currentQIndex + 1}. ${q.question}`;
     
     const ans = userAnswers[currentQIndex] || '';
     
     const optionsHtml = `
         <label class="option-label ${ans==='A'?'selected':''}" onclick="selectAnswer('A')">
-            <input type="radio" name="userAns" value="A" ${ans==='A'?'checked':''}> เธ. ${q.a}
+            <input type="radio" name="userAns" value="A" ${ans==='A'?'checked':''}> ก. ${q.a}
         </label>
         <label class="option-label ${ans==='B'?'selected':''}" onclick="selectAnswer('B')">
-            <input type="radio" name="userAns" value="B" ${ans==='B'?'checked':''}> เธ. ${q.b}
+            <input type="radio" name="userAns" value="B" ${ans==='B'?'checked':''}> ข. ${q.b}
         </label>
         <label class="option-label ${ans==='C'?'selected':''}" onclick="selectAnswer('C')">
-            <input type="radio" name="userAns" value="C" ${ans==='C'?'checked':''}> เธ. ${q.c}
+            <input type="radio" name="userAns" value="C" ${ans==='C'?'checked':''}> ค. ${q.c}
         </label>
         <label class="option-label ${ans==='D'?'selected':''}" onclick="selectAnswer('D')">
-            <input type="radio" name="userAns" value="D" ${ans==='D'?'checked':''}> เธ. ${q.d}
+            <input type="radio" name="userAns" value="D" ${ans==='D'?'checked':''}> ง. ${q.d}
         </label>
     `;
     document.getElementById('optionsContainer').innerHTML = optionsHtml;
     
-    // เธเธฑเธ”เธเธฒเธฃเธเธธเนเธก
+    // จัดการปุ่ม
     if(currentQIndex === userQuizData.length - 1) {
         document.getElementById('btnNextQuestion').classList.add('hidden');
         document.getElementById('btnSubmitQuiz').classList.remove('hidden');
@@ -1621,7 +1621,7 @@ function renderQuestion() {
     }
 }
 
-// เน€เธฅเธทเธญเธเธเธณเธ•เธญเธ (เธ—เธณเนเธฎเนเธฅเธ—เนเธชเธต)
+// เลือกคำตอบ (ทำไฮไลท์สี)
 function selectAnswer(val) {
     userAnswers[currentQIndex] = val;
     document.querySelectorAll('.option-label').forEach(el => el.classList.remove('selected'));
@@ -1629,16 +1629,16 @@ function selectAnswer(val) {
     document.querySelector(`input[value="${val}"]`).checked = true;
 }
 
-// เธเธ”เนเธเธเนเธญเธ–เธฑเธ”เนเธ
+// กดไปข้อถัดไป
 function nextQuestion() {
-    if(!userAnswers[currentQIndex]) return showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเธเธณเธ•เธญเธเธเนเธญเธเนเธเธเนเธญเธ–เธฑเธ”เนเธ');
+    if(!userAnswers[currentQIndex]) return showAlert('แจ้งเตือน', 'กรุณาเลือกคำตอบก่อนไปข้อถัดไป');
     currentQIndex++;
     renderQuestion();
 }
 
-// เธเธ”เธชเนเธเธเธณเธ•เธญเธเน€เธเธทเนเธญเธ•เธฃเธงเธ
+// กดส่งคำตอบเพื่อตรวจ
 async function submitQuizData() {
-    if(!userAnswers[currentQIndex]) return showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเธเธณเธ•เธญเธเธเนเธญเธชเธธเธ”เธ—เนเธฒเธข');
+    if(!userAnswers[currentQIndex]) return showAlert('แจ้งเตือน', 'กรุณาเลือกคำตอบข้อสุดท้าย');
     
     let score = 0;
     userQuizData.forEach((q, idx) => {
@@ -1646,14 +1646,14 @@ async function submitQuizData() {
     });
     
     const maxScore = userQuizData.length;
-    const passingScoreReq = currentClassCourse.passing_score || 80; // เธ”เธถเธเน€เธเธ“เธ‘เนเธเธฒเธเธซเธฅเธฑเธเธชเธนเธ•เธฃ (%)
+    const passingScoreReq = currentClassCourse.passing_score || 80; // ดึงเกณฑ์จากหลักสูตร (%)
     const userPercent = (score / maxScore) * 100;
     const isPassed = userPercent >= passingScoreReq;
     
     showLoader();
     const user = JSON.parse(localStorage.getItem('swd_user'));
     
-    // เธชเนเธเธเนเธญเธกเธนเธฅเนเธเธเธฑเธเธ—เธถเธ
+    // ส่งข้อมูลไปบันทึก
     await callAPI('submitQuiz', {
         user_id: user.id,
         course_id: currentClassCourse.id,
@@ -1663,7 +1663,7 @@ async function submitQuizData() {
     });
     hideLoader();
     
-    // เนเธเธงเนเธซเธเนเธฒเธชเธฃเธธเธเธเธฅ
+    // โชว์หน้าสรุปผล
     document.getElementById('quizContent').classList.add('hidden');
     const resBox = document.getElementById('quizResult');
     resBox.classList.remove('hidden');
@@ -1671,12 +1671,12 @@ async function submitQuizData() {
     document.getElementById('resultScore').innerText = score;
     document.getElementById('resultTotal').innerText = maxScore;
     
-    // เธเธฃเธฐเธเธฒเธจเธ•เธฑเธงเนเธเธฃเธเธธเนเธกเธ”เธณเน€เธเธดเธเธเธฒเธฃเธ•เนเธญ เน€เธเธทเนเธญเน€เธฃเธตเธขเธเนเธเนเธเนเธฒเธขเน
+    // ประกาศตัวแปรปุ่มดำเนินการต่อ เพื่อเรียกใช้ง่ายๆ
     const btnReturn = document.getElementById('btnReturnFromQuiz');
-    btnReturn.classList.remove('hidden'); // เนเธซเนเนเธเธงเนเน€เธเนเธเธเนเธฒเน€เธฃเธดเนเธกเธ•เนเธเนเธงเนเธเนเธญเธ
+    btnReturn.classList.remove('hidden'); // ให้โชว์เป็นค่าเริ่มต้นไว้ก่อน
     
     if(activeQuizType === 'pre') {
-        document.getElementById('resultTitle').innerText = 'เธ—เธณ Pre-test เน€เธชเธฃเนเธเธชเธดเนเธ';
+        document.getElementById('resultTitle').innerText = 'ทำ Pre-test เสร็จสิ้น';
         document.getElementById('resultTitle').style.color = 'var(--text-main)';
         document.getElementById('resultIcon').className = 'fas fa-clipboard-check text-primary';
     } else {
@@ -1685,11 +1685,11 @@ async function submitQuizData() {
             document.getElementById('resultIcon').className = 'fas fa-check-circle';
             document.getElementById('resultIcon').style.color = '#10B981';
             
-            // --- เน€เธฃเธดเนเธกเธ•เนเธเธเธฒเธฃเธชเธฃเนเธฒเธ PDF ---
-            document.getElementById('resultTitle').innerText = 'เธเธณเธฅเธฑเธเธชเธฃเนเธฒเธเนเธเธเธฃเธฐเธเธฒเธจ... เธเธฃเธธเธ“เธฒเธฃเธญเธชเธฑเธเธเธฃเธนเน';
+            // --- เริ่มต้นการสร้าง PDF ---
+            document.getElementById('resultTitle').innerText = 'กำลังสร้างใบประกาศ... กรุณารอสักครู่';
             document.getElementById('btnDownloadCert').classList.add('hidden');
             
-            btnReturn.classList.add('hidden'); // <--- 1. เธเนเธญเธเธเธธเนเธก "เธ”เธณเน€เธเธดเธเธเธฒเธฃเธ•เนเธญ" เธ•เธฃเธเธเธตเน! เธเนเธญเธเธเธฑเธเธเธเธเธ”เธญเธญเธ
+            btnReturn.classList.add('hidden'); // <--- 1. ซ่อนปุ่ม "ดำเนินการต่อ" ตรงนี้! ป้องกันคนกดออก
             
             const certRes = await callAPI('generateCert', {
                 user_id: user.id,
@@ -1698,20 +1698,20 @@ async function submitQuizData() {
             });
             
             if(certRes.status === 'success') {
-                document.getElementById('resultTitle').innerText = 'เธขเธดเธเธ”เธตเธ”เนเธงเธข! เธเธธเธ“เธชเธญเธเธเนเธฒเธ';
+                document.getElementById('resultTitle').innerText = 'ยินดีด้วย! คุณสอบผ่าน';
                 const btnCert = document.getElementById('btnDownloadCert');
                 btnCert.href = certRes.pdf_url;
-                btnCert.classList.remove('hidden'); // เนเธเธงเนเธเธธเนเธกเนเธซเธฅเธ” PDF
+                btnCert.classList.remove('hidden'); // โชว์ปุ่มโหลด PDF
             } else {
-                document.getElementById('resultTitle').innerText = 'เธชเธญเธเธเนเธฒเธ (เนเธ•เนเธเธเธเธฑเธเธซเธฒเธชเธฃเนเธฒเธเนเธเธเธฃเธฐเธเธฒเธจ)';
+                document.getElementById('resultTitle').innerText = 'สอบผ่าน (แต่พบปัญหาสร้างใบประกาศ)';
                 console.error(certRes.message);
             }
             
-            btnReturn.classList.remove('hidden'); // <--- 2. เนเธเธงเนเธเธธเนเธก "เธ”เธณเน€เธเธดเธเธเธฒเธฃเธ•เนเธญ" เธเธฅเธฑเธเธกเธฒเน€เธกเธทเนเธญเธเธฃเธฐเธเธงเธเธเธฒเธฃเน€เธชเธฃเนเธเธชเธดเนเธ!
+            btnReturn.classList.remove('hidden'); // <--- 2. โชว์ปุ่ม "ดำเนินการต่อ" กลับมาเมื่อกระบวนการเสร็จสิ้น!
             // --------------------------
             
         } else {
-            document.getElementById('resultTitle').innerText = 'เน€เธชเธตเธขเนเธเธ”เนเธงเธข เธเธธเธ“เธชเธญเธเนเธกเนเธเนเธฒเธเน€เธเธ“เธ‘เน';
+            document.getElementById('resultTitle').innerText = 'เสียใจด้วย คุณสอบไม่ผ่านเกณฑ์';
             document.getElementById('resultTitle').style.color = '#EF4444';
             document.getElementById('resultIcon').className = 'fas fa-times-circle';
             document.getElementById('resultIcon').style.color = '#EF4444';
@@ -1719,7 +1719,7 @@ async function submitQuizData() {
     }
 }
 
-// เธเธดเธ”เธซเธเนเธฒเธเนเธญเธชเธญเธเนเธฅเธฐเนเธเธชเน€เธ•เธเธ–เธฑเธ”เนเธ
+// ปิดหน้าข้อสอบและไปสเตปถัดไป
 function closeQuiz() {
     document.getElementById('quizSection').classList.add('hidden');
     if(activeQuizType === 'pre') {
@@ -1733,7 +1733,7 @@ function closeQuiz() {
         }
     }
 }
-// ================= External Training Logic (เธญเธฑเธเนเธซเธฅเธ”เธเธฃเธฐเธงเธฑเธ•เธดเธ เธฒเธขเธเธญเธ) =================
+// ================= External Training Logic (อัปโหลดประวัติภายนอก) =================
 let selectedExternalTrainingRecommendation = null;
 
 async function loadExternalTrainingRecommendationOptions(force = false) {
@@ -1753,7 +1753,7 @@ async function loadExternalTrainingRecommendationOptions(force = false) {
     }
 
     const currentValue = select.value;
-    select.innerHTML = '<option value="">เธเธฃเธญเธเธเนเธญเธกเธนเธฅเน€เธญเธ</option>';
+    select.innerHTML = '<option value="">กรอกข้อมูลเอง</option>';
     recommendations.forEach(course => {
         select.innerHTML += `<option value="${course.rec_id}">${course.title} | ${course.organizer || '-'} | ${formatHoursLabel(course.hours)}</option>`;
     });
@@ -1799,7 +1799,7 @@ function handleExternalTrainingRecommendationChange(recId) {
         manualDurationGroup.classList.add('hidden');
         presetDurationGroup.classList.remove('hidden');
         durationDisplay.value = formatHoursLabel(recommendation.hours);
-        if (hint) hint.innerText = 'เน€เธฅเธทเธญเธเธเธฒเธเธฃเธฒเธขเธเธฒเธฃเนเธเธฐเธเธณเนเธฅเนเธง เธฃเธฐเธเธเธ”เธถเธเธเนเธญเธกเธนเธฅเธซเธฅเธฑเธเธชเธนเธ•เธฃ เธซเธเนเธงเธขเธเธฒเธ เนเธฅเธฐเธเธฑเนเธงเนเธกเธเนเธซเนเธญเธฑเธ•เนเธเธกเธฑเธ•เธด เน€เธซเธฅเธทเธญเธเธฃเธญเธเธงเธฑเธเธ—เธตเนเนเธฅเธฐเนเธเธเธซเธฅเธฑเธเธเธฒเธ';
+        if (hint) hint.innerText = 'เลือกจากรายการแนะนำแล้ว ระบบดึงข้อมูลหลักสูตร หน่วยงาน และชั่วโมงให้อัตโนมัติ เหลือกรอกวันที่และแนบหลักฐาน';
         return;
     }
 
@@ -1816,22 +1816,22 @@ function handleExternalTrainingRecommendationChange(recId) {
     minsInput.required = true;
     manualDurationGroup.classList.remove('hidden');
     presetDurationGroup.classList.add('hidden');
-    if (hint) hint.innerText = 'เธ–เนเธฒเน€เธฅเธทเธญเธเธเธฒเธเธฃเธฒเธขเธเธฒเธฃเนเธเธฐเธเธณ เธฃเธฐเธเธเธเธฐเธ”เธถเธเธเธทเนเธญเธซเธฅเธฑเธเธชเธนเธ•เธฃ เธซเธเนเธงเธขเธเธฒเธ เนเธฅเธฐเธเธฑเนเธงเนเธกเธเนเธซเนเธญเธฑเธ•เนเธเธกเธฑเธ•เธด เน€เธซเธฅเธทเธญเธเธฃเธญเธเธงเธฑเธเธ—เธตเนเธเธฑเธเนเธเธเธซเธฅเธฑเธเธเธฒเธ';
+    if (hint) hint.innerText = 'ถ้าเลือกจากรายการแนะนำ ระบบจะดึงชื่อหลักสูตร หน่วยงาน และชั่วโมงให้อัตโนมัติ เหลือกรอกวันที่กับแนบหลักฐาน';
 }
 
 document.getElementById('externalTrainingForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const fileInput = document.getElementById('extCertFile');
-    if (fileInput.files.length === 0) return showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธเธฃเธธเธ“เธฒเนเธเธเนเธเธฅเนเนเธเธเธฃเธฐเธเธฒเธจเธ”เนเธงเธขเธเธฃเธฑเธ');
+    if (fileInput.files.length === 0) return showAlert('แจ้งเตือน', 'กรุณาแนบไฟล์ใบประกาศด้วยครับ');
     
     const file = fileInput.files[0];
-    // เธ•เธฃเธงเธเธชเธญเธเธเธเธฒเธ”เนเธเธฅเน (เธเธณเธเธฑเธ”เนเธกเนเน€เธเธดเธ 5MB เน€เธเธทเนเธญเนเธกเนเนเธซเนเธเธฑเนเธ Apps Script เธ—เธณเธเธฒเธเธซเธเธฑเธเน€เธเธดเธเนเธ)
-    if (file.size > 5 * 1024 * 1024) return showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธเธเธฒเธ”เนเธเธฅเนเนเธซเธเนเน€เธเธดเธเนเธ (เธ•เนเธญเธเนเธกเนเน€เธเธดเธ 5MB) เธเธฃเธธเธ“เธฒเธเธตเธเธญเธฑเธ”เนเธเธฅเนเธเธฃเธฑเธ');
+    // ตรวจสอบขนาดไฟล์ (จำกัดไม่เกิน 5MB เพื่อไม่ให้ฝั่ง Apps Script ทำงานหนักเกินไป)
+    if (file.size > 5 * 1024 * 1024) return showAlert('แจ้งเตือน', 'ขนาดไฟล์ใหญ่เกินไป (ต้องไม่เกิน 5MB) กรุณาบีบอัดไฟล์ครับ');
     
     showLoader();
     
-    // เน€เธ—เธเธเธดเธเนเธเธฅเธเนเธเธฅเน (PDF/Image) เนเธซเนเน€เธเนเธเธเนเธญเธกเธนเธฅเนเธเธ Base64 เน€เธเธทเนเธญเธชเนเธเธเนเธฒเธ JSON
+    // เทคนิคแปลงไฟล์ (PDF/Image) ให้เป็นข้อมูลแบบ Base64 เพื่อส่งผ่าน JSON
     const reader = new FileReader();
     reader.onload = async function(event) {
         const base64Data = event.target.result;
@@ -1846,11 +1846,11 @@ document.getElementById('externalTrainingForm').addEventListener('submit', async
 
         if (!topicValue || !organizerValue) {
             hideLoader();
-            return showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธเธทเนเธญเธซเธฅเธฑเธเธชเธนเธ•เธฃเนเธฅเธฐเธซเธเนเธงเธขเธเธฒเธเธ—เธตเนเธเธฑเธ”เนเธซเนเธเธฃเธ');
+            return showAlert('แจ้งเตือน', 'กรุณากรอกชื่อหลักสูตรและหน่วยงานที่จัดให้ครบ');
         }
         if (!isRecommendationMode && totalDecimalHours <= 0) {
             hideLoader();
-            return showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธเธฑเนเธงเนเธกเธเธเธฒเธฃเธญเธเธฃเธกเนเธซเนเธ–เธนเธเธ•เนเธญเธ');
+            return showAlert('แจ้งเตือน', 'กรุณากรอกชั่วโมงการอบรมให้ถูกต้อง');
         }
         
         const payload = {
@@ -1859,42 +1859,42 @@ document.getElementById('externalTrainingForm').addEventListener('submit', async
             organizer: organizerValue,
             date: document.getElementById('extDate').value,
             hours: totalDecimalHours,
-            fileName: user.name + '_ExtCert_' + file.name, // เธ•เธฑเนเธเธเธทเนเธญเนเธเธฅเนเนเธซเธกเนเนเธซเนเธกเธตเธเธทเนเธญเธเธเธญเธฑเธเนเธซเธฅเธ”เธเธณเธซเธเนเธฒ
-            fileData: base64Data // เธเนเธญเธกเธนเธฅเนเธเธฅเนเธ—เธตเนเนเธเธฅเธเนเธฅเนเธง
+            fileName: user.name + '_ExtCert_' + file.name, // ตั้งชื่อไฟล์ใหม่ให้มีชื่อคนอัปโหลดนำหน้า
+            fileData: base64Data // ข้อมูลไฟล์ที่แปลงแล้ว
         };
         
         const res = await callAPI('addExternalTraining', payload);
         hideLoader();
         
         if (res.status === 'success') {
-            showAlert('เธชเธณเน€เธฃเนเธ', 'เธเธฑเธเธ—เธถเธเธเธฃเธฐเธงเธฑเธ•เธดเนเธฅเธฐเธญเธฑเธเนเธซเธฅเธ”เนเธเธฅเนเน€เธฃเธตเธขเธเธฃเนเธญเธขเนเธฅเนเธง (เธฃเธญเนเธญเธ”เธกเธดเธเธ•เธฃเธงเธเธชเธญเธเน€เธเธทเนเธญเธญเธเธธเธกเธฑเธ•เธดเธเธฑเนเธงเนเธกเธ)');
+            showAlert('สำเร็จ', 'บันทึกประวัติและอัปโหลดไฟล์เรียบร้อยแล้ว (รอแอดมินตรวจสอบเพื่ออนุมัติชั่วโมง)');
             document.getElementById('externalTrainingForm').reset();
             handleExternalTrainingRecommendationChange('');
-            // เนเธซเธฅเธ”เธ•เธฒเธฃเธฒเธเธเธฃเธฐเธงเธฑเธ•เธดเนเธซเธกเนเน€เธเธทเนเธญเนเธซเนเธญเธฑเธเน€เธ”เธ•เธ—เธฑเธเธ—เธต
+            // โหลดตารางประวัติใหม่เพื่อให้อัปเดตทันที
             loadTrainingHistory(); 
         } else {
-            showAlert('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', res.message);
+            showAlert('ข้อผิดพลาด', res.message);
         }
     };
     
-    reader.readAsDataURL(file); // เน€เธฃเธดเนเธกเธญเนเธฒเธเนเธเธฅเน
+    reader.readAsDataURL(file); // เริ่มอ่านไฟล์
 });
 // ================= Admin: Approve External Training =================
 async function loadAdminExtRequests() {
     const tbody = document.getElementById('adminExtReqBody');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅ...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
     
     const res = await callAPI('getAdminExternalReq', {});
     
     if (res.status === 'success') {
         tbody.innerHTML = '';
         if (res.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">เนเธกเนเธกเธตเธฃเธฒเธขเธเธฒเธฃเธฃเธญเธญเธเธธเธกเธฑเธ•เธด</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">ไม่มีรายการรออนุมัติ</td></tr>';
             return;
         }
         
         res.data.forEach(req => {
-            // เนเธเธฅเธเธงเธฑเธเธ—เธตเนเนเธซเนเธญเนเธฒเธเธเนเธฒเธข
+            // แปลงวันที่ให้อ่านง่าย
             const dateObj = new Date(req.date);
             const dateStr = !isNaN(dateObj) ? dateObj.toLocaleDateString('th-TH') : req.date;
 
@@ -1902,11 +1902,11 @@ async function loadAdminExtRequests() {
                 <tr>
                     <td><strong>${req.user_name}</strong></td>
                     <td>${req.topic}<br><small style="color:var(--text-light);">${req.organizer}</small></td>
-                    <td>${dateStr}<br><span class="badge-hours">${req.hours} เธเธก.</span></td>
-                    <td><a href="${req.cert_url}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-file-pdf"></i> เธ•เธฃเธงเธเธชเธญเธเนเธเธฅเน</a></td>
+                    <td>${dateStr}<br><span class="badge-hours">${req.hours} ชม.</span></td>
+                    <td><a href="${req.cert_url}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-file-pdf"></i> ตรวจสอบไฟล์</a></td>
                     <td>
-                        <button class="btn btn-success btn-sm" onclick="handleExtReq('${req.ext_id}', 'approved')" style="margin-right: 5px;"><i class="fas fa-check"></i> เธญเธเธธเธกเธฑเธ•เธด</button>
-                        <button class="btn btn-sm" style="background:#EF4444; color:white;" onclick="handleExtReq('${req.ext_id}', 'rejected')"><i class="fas fa-times"></i> เธเธเธดเน€เธชเธ</button>
+                        <button class="btn btn-success btn-sm" onclick="handleExtReq('${req.ext_id}', 'approved')" style="margin-right: 5px;"><i class="fas fa-check"></i> อนุมัติ</button>
+                        <button class="btn btn-sm" style="background:#EF4444; color:white;" onclick="handleExtReq('${req.ext_id}', 'rejected')"><i class="fas fa-times"></i> ปฏิเสธ</button>
                     </td>
                 </tr>
             `;
@@ -1915,25 +1915,25 @@ async function loadAdminExtRequests() {
 }
 
 async function handleExtReq(extId, status) {
-    const title = status === 'approved' ? 'เธขเธทเธเธขเธฑเธเธเธฒเธฃเธญเธเธธเธกเธฑเธ•เธด' : 'เธขเธทเธเธขเธฑเธเธเธฒเธฃเธเธเธดเน€เธชเธ';
-    const confirmMsg = status === 'approved' ? 'เธเธธเธ“เธ•เนเธญเธเธเธฒเธฃเธญเธเธธเธกเธฑเธ•เธดเธเธฑเนเธงเนเธกเธเธญเธเธฃเธกเธเธตเนเนเธเนเธซเธฃเธทเธญเนเธกเน?' : 'เธเธธเธ“เธ•เนเธญเธเธเธฒเธฃเธเธเธดเน€เธชเธเธเธณเธเธญเธญเธเธฃเธกเธเธตเน (เธเธฐเนเธกเนเนเธ”เนเธฃเธฑเธเธเธฑเนเธงเนเธกเธ) เนเธเนเธซเธฃเธทเธญเนเธกเน?';
+    const title = status === 'approved' ? 'ยืนยันการอนุมัติ' : 'ยืนยันการปฏิเสธ';
+    const confirmMsg = status === 'approved' ? 'คุณต้องการอนุมัติชั่วโมงอบรมนี้ใช่หรือไม่?' : 'คุณต้องการปฏิเสธคำขออบรมนี้ (จะไม่ได้รับชั่วโมง) ใช่หรือไม่?';
     
-    // เน€เธฃเธตเธขเธเนเธเนเธเธฅเนเธญเธ Custom Confirm เนเธ—เธ pop-up เน€เธเธฃเธฒเธงเนเน€เธเธญเธฃเน
+    // เรียกใช้กล่อง Custom Confirm แทน pop-up เบราว์เซอร์
     const isConfirmed = await showConfirm(title, confirmMsg);
     
-    // เธ–เนเธฒเธเธนเนเนเธเนเธเธ”เธขเธเน€เธฅเธดเธ เนเธซเนเธซเธขเธธเธ”เธเธฒเธฃเธ—เธณเธเธฒเธเธ—เธฑเธเธ—เธต
+    // ถ้าผู้ใช้กดยกเลิก ให้หยุดการทำงานทันที
     if (!isConfirmed) return; 
     
-    // เธ–เนเธฒเธเธ”เธขเธทเธเธขเธฑเธ เนเธซเนเนเธซเธฅเธ” API เธ•เนเธญเนเธ
+    // ถ้ากดยืนยัน ให้โหลด API ต่อไป
     showLoader();
     const res = await callAPI('updateExternalStatus', { ext_id: extId, status: status });
     hideLoader();
     
     if (res.status === 'success') {
-        showAlert('เธชเธณเน€เธฃเนเธ', res.message);
-        loadAdminExtRequests(); // เนเธซเธฅเธ”เธ•เธฒเธฃเธฒเธเนเธซเธกเน
+        showAlert('สำเร็จ', res.message);
+        loadAdminExtRequests(); // โหลดตารางใหม่
     } else {
-        showAlert('เธเธดเธ”เธเธฅเธฒเธ”', res.message);
+        showAlert('ผิดพลาด', res.message);
     }
 }
 // ================= Admin: User Management Logic =================
@@ -1941,7 +1941,7 @@ let adminUsersData = [];
 
 async function loadAdminUsersTable() {
     const tbody = document.getElementById('adminUsersBody');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅ...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
     
     const res = await callAPI('getAdminUsers', {});
     
@@ -1961,7 +1961,7 @@ async function loadAdminUsersTable() {
                     <td>${u.email}</td>
                     <td>${roleBadge}</td>
                     <td>
-                        <button class="btn btn-outline btn-sm" onclick="editAdminUser('${u.id}')"><i class="fas fa-edit"></i> เนเธเนเนเธ</button>
+                        <button class="btn btn-outline btn-sm" onclick="editAdminUser('${u.id}')"><i class="fas fa-edit"></i> แก้ไข</button>
                     </td>
                 </tr>
             `;
@@ -1970,15 +1970,15 @@ async function loadAdminUsersTable() {
 }
 
 async function editAdminUser(userId) {
-    // 1. เธซเธฒเธเนเธญเธกเธนเธฅเธเธนเนเนเธเนเธเธฒเธ Array เธซเธฃเธทเธญเน€เธฃเธตเธขเธเธเธฒเธ Server (เนเธฅเนเธงเนเธ•เนเธฃเธฐเธเธเธเธญเธเธเธธเธ“)
-    // เธชเธกเธกเธ•เธดเธงเนเธฒเธ•เธฑเธงเนเธเธฃ users เธเธทเธญเธ—เธตเนเน€เธเนเธเธเนเธญเธกเธนเธฅเธเธขเธฒเธเธฒเธฅเธ—เธฑเนเธเธซเธกเธ”
+    // 1. หาข้อมูลผู้ใช้จาก Array หรือเรียกจาก Server (แล้วแต่ระบบของคุณ)
+    // สมมติว่าตัวแปร users คือที่เก็บข้อมูลพยาบาลทั้งหมด
     const user = adminUsersData.find(u => u.id === userId); 
 
     if (user) {
-        // 2. เนเธชเธ”เธ Section เนเธเนเนเธ
+        // 2. แสดง Section แก้ไข
         document.getElementById('editUserSection').classList.remove('hidden');
 
-        // 3. เธชเนเธเธเนเธฒเธเนเธญเธกเธนเธฅเน€เธ”เธดเธกเนเธเนเธชเนเนเธเนเธ•เนเธฅเธฐเธเนเธญเธ Input
+        // 3. ส่งค่าข้อมูลเดิมไปใส่ในแต่ละช่อง Input
         document.getElementById('editUserId').value = user.id;
         document.getElementById('euName').value = user.name;
         document.getElementById('euUsername').value = user.username;
@@ -2000,7 +2000,7 @@ document.getElementById('editUserForm').addEventListener('submit', async (e) => 
 
     const position = getPositionFieldValue('euPosition', 'euPositionOther');
     if (!position) {
-        showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเธซเธฃเธทเธญเธฃเธฐเธเธธเธ•เธณเนเธซเธเนเธ');
+        showAlert('แจ้งเตือน', 'กรุณาเลือกหรือระบุตำแหน่ง');
         return;
     }
     
@@ -2013,7 +2013,7 @@ document.getElementById('editUserForm').addEventListener('submit', async (e) => 
         password: document.getElementById('euPassword').value
     };
     
-    const isConfirmed = await showConfirm('เธขเธทเธเธขเธฑเธเธเธฒเธฃเนเธเนเนเธ', 'เธเธธเธ“เธ•เนเธญเธเธเธฒเธฃเธเธฑเธเธ—เธถเธเธเธฒเธฃเน€เธเธฅเธตเนเธขเธเนเธเธฅเธเธเนเธญเธกเธนเธฅเธเธนเนเนเธเนเธเธตเนเนเธเนเธซเธฃเธทเธญเนเธกเน?');
+    const isConfirmed = await showConfirm('ยืนยันการแก้ไข', 'คุณต้องการบันทึกการเปลี่ยนแปลงข้อมูลผู้ใช้นี้ใช่หรือไม่?');
     if(!isConfirmed) return;
     
     showLoader();
@@ -2021,70 +2021,70 @@ document.getElementById('editUserForm').addEventListener('submit', async (e) => 
     hideLoader();
     
     if(res.status === 'success') {
-        showAlert('เธชเธณเน€เธฃเนเธ', res.message);
+        showAlert('สำเร็จ', res.message);
         cancelEditUser();
-        loadAdminUsersTable(); // เนเธซเธฅเธ”เธ•เธฒเธฃเธฒเธเนเธซเธกเนเธซเธฅเธฑเธเน€เธเธเน€เธชเธฃเนเธ
+        loadAdminUsersTable(); // โหลดตารางใหม่หลังเซฟเสร็จ
     } else {
-        showAlert('เธเธดเธ”เธเธฅเธฒเธ”', res.message);
+        showAlert('ผิดพลาด', res.message);
     }
 });
 // ================= Export Portfolio to PDF =================
 function exportPortfolioPDF() {
     const user = JSON.parse(localStorage.getItem('swd_user')) || {};
     
-    // เธ”เธฑเธเธเนเธญเธกเธนเธฅเน€เธเธทเนเธญเธซเธฒเนเธกเนเน€เธเธญ เธเธฐเนเธ”เนเนเธกเนเธเธถเนเธ undefined
+    // ดักข้อมูลเผื่อหาไม่เจอ จะได้ไม่ขึ้น undefined
     const name = user.name || '-';
     const position = user.position || '-';
     const dept = user.department || '-';
 
-    document.getElementById('pdfUserName').innerHTML = `<strong>เธเธทเนเธญ-เธเธฒเธกเธชเธเธธเธฅ:</strong> ${name} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>เธ•เธณเนเธซเธเนเธ:</strong> ${position} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>เธซเธเนเธงเธขเธเธฒเธ:</strong> ${dept}`;
+    document.getElementById('pdfUserName').innerHTML = `<strong>ชื่อ-นามสกุล:</strong> ${name} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>ตำแหน่ง:</strong> ${position} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>หน่วยงาน:</strong> ${dept}`;
     
     const element = document.getElementById('printablePortfolio');
-    document.getElementById('pdfHeader').style.display = 'block'; // เนเธเธงเนเธซเธฑเธงเธเธฃเธฐเธ”เธฒเธฉ
+    document.getElementById('pdfHeader').style.display = 'block'; // โชว์หัวกระดาษ
     
     const opt = {
         margin:       10,
         filename:     `Portfolio_${name}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' } // เน€เธเธฅเธตเนเธขเธเน€เธเนเธเนเธเธงเธเธญเธ
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' } // เปลี่ยนเป็นแนวนอน
     };
 
     showLoader();
     html2pdf().set(opt).from(element).save().then(() => {
-        document.getElementById('pdfHeader').style.display = 'none'; // เธเนเธญเธเธซเธฑเธงเธเธฃเธฐเธ”เธฒเธฉเธเธฅเธฑเธ
+        document.getElementById('pdfHeader').style.display = 'none'; // ซ่อนหัวกระดาษกลับ
         hideLoader();
     });
 }
 // ================= Admin: Course Detail Report =================
 
-// เธ”เธถเธเธฃเธฒเธขเธเธทเนเธญเธซเธฅเธฑเธเธชเธนเธ•เธฃเนเธชเน Dropdown เนเธเธซเธเนเธฒเธฃเธฒเธขเธเธฒเธ
+// ดึงรายชื่อหลักสูตรใส่ Dropdown ในหน้ารายงาน
 async function initCourseReportAdmin() {
     const select = document.getElementById('reportCourseSelect');
-    select.innerHTML = '<option value="">-- เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธซเธฅเธฑเธเธชเธนเธ•เธฃ... --</option>';
+    select.innerHTML = '<option value="">-- กำลังโหลดหลักสูตร... --</option>';
     const res = await callAPI('getAdminCourses', {});
     
     if (res.status === 'success') {
-        select.innerHTML = '<option value="">-- เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเธซเธฅเธฑเธเธชเธนเธ•เธฃเธ—เธตเนเธ•เนเธญเธเธเธฒเธฃเธ”เธนเธฃเธฒเธขเธเธฒเธ --</option>';
+        select.innerHTML = '<option value="">-- กรุณาเลือกหลักสูตรที่ต้องการดูรายงาน --</option>';
         res.data.forEach(c => {
             select.innerHTML += `<option value="${c.course_id}">${c.title}</option>`;
         });
     }
 }
 
-// เธเธฑเธเธเนเธเธฑเธเนเธซเธฅเธ”เธฃเธฒเธขเธเธฒเธเน€เธกเธทเนเธญเน€เธเธฅเธตเนเธขเธ Dropdown
+// ฟังก์ชันโหลดรายงานเมื่อเปลี่ยน Dropdown
 async function loadCourseReport() {
     const courseId = document.getElementById('reportCourseSelect').value;
     const tbody = document.getElementById('courseReportBody');
     const summaryCard = document.getElementById('courseReportSummary');
 
     if(!courseId) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-light);">เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเธซเธฅเธฑเธเธชเธนเธ•เธฃเธเธฒเธเธ”เนเธฒเธเธเธเน€เธเธทเนเธญเธ”เธนเธฃเธฒเธขเธเธฒเธ</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-light);">กรุณาเลือกหลักสูตรจากด้านบนเพื่อดูรายงาน</td></tr>';
         summaryCard.classList.add('hidden');
         return;
     }
 
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">เธเธณเธฅเธฑเธเธเธณเธเธงเธ“เนเธฅเธฐเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅ...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">กำลังคำนวณและโหลดข้อมูล...</td></tr>';
     const res = await callAPI('getCourseReport', { course_id: courseId });
 
     if(res.status === 'success') {
@@ -2092,7 +2092,7 @@ async function loadCourseReport() {
         tbody.innerHTML = '';
 
         if(res.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">เธขเธฑเธเนเธกเนเธกเธตเธเธนเนเธฅเธเธ—เธฐเน€เธเธตเธขเธเนเธเธซเธฅเธฑเธเธชเธนเธ•เธฃเธเธตเน</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">ยังไม่มีผู้ลงทะเบียนในหลักสูตรนี้</td></tr>';
             document.getElementById('crTotal').innerText = 0;
             document.getElementById('crPassed').innerText = 0;
             document.getElementById('crPassRate').innerText = '0%';
@@ -2109,17 +2109,17 @@ async function loadCourseReport() {
             let statusText = '';
             let statusBadge = '';
             
-            // เนเธเธฃเธฐเธเธเธเธตเน status 'completed' เธซเธกเธฒเธขเธ–เธถเธเน€เธฃเธตเธขเธเธเธเนเธฅเธฐเธชเธญเธเธเนเธฒเธเนเธฅเนเธง
+            // ในระบบนี้ status 'completed' หมายถึงเรียนจบและสอบผ่านแล้ว
             if(r.status === 'completed') {
-                statusText = 'เธเนเธฒเธเธเธฒเธฃเธญเธเธฃเธก';
-                statusBadge = `<span class="badge" style="background: #10B981; color: white;">เธเนเธฒเธ</span>`;
+                statusText = 'ผ่านการอบรม';
+                statusBadge = `<span class="badge" style="background: #10B981; color: white;">ผ่าน</span>`;
                 totalPassed++;
             } else {
-                statusText = 'เธเธณเธฅเธฑเธเน€เธฃเธตเธขเธ/เธขเธฑเธเนเธกเนเธเนเธฒเธ';
-                statusBadge = `<span class="badge" style="background: #f59e0b; color: white;">เธฃเธญเธ”เธณเน€เธเธดเธเธเธฒเธฃ</span>`;
+                statusText = 'กำลังเรียน/ยังไม่ผ่าน';
+                statusBadge = `<span class="badge" style="background: #f59e0b; color: white;">รอดำเนินการ</span>`;
             }
 
-            // เธฃเธงเธกเธเธฐเนเธเธเน€เธเธทเนเธญเธซเธฒเธเนเธฒเน€เธเธฅเธตเนเธข
+            // รวมคะแนนเพื่อหาค่าเฉลี่ย
             if(r.post_score !== '-') {
                 sumPostScore += parseFloat(r.post_score);
                 postScoreCount++;
@@ -2138,7 +2138,7 @@ async function loadCourseReport() {
             `;
         });
 
-        // เธญเธฑเธเน€เธ”เธ•เธ•เธฑเธงเน€เธฅเธเธชเธฃเธธเธเธเธเธเธฒเธฃเนเธ”
+        // อัปเดตตัวเลขสรุปบนการ์ด
         document.getElementById('crTotal').innerText = totalEnrolled;
         document.getElementById('crPassed').innerText = totalPassed;
 
@@ -2149,35 +2149,35 @@ async function loadCourseReport() {
         document.getElementById('crAvgScore').innerText = avgScore;
 
     } else {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">เนเธซเธฅเธ”เธเนเธญเธกเธนเธฅเธเธดเธ”เธเธฅเธฒเธ”</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">โหลดข้อมูลผิดพลาด</td></tr>';
     }
 }
 
-// เนเธซเธฅเธ”เธ•เธฒเธฃเธฒเธเธซเธฅเธฑเธเธชเธนเธ•เธฃเธเธตเนเธญเธญเธเน€เธเนเธ Excel
+// โหลดตารางหลักสูตรนี้ออกเป็น Excel
 function exportCourseReportToExcel() {
     let table = document.getElementById("courseReportTable");
     let html = table.outerHTML.replace(/ /g, '%20');
     let a = document.createElement('a');
     a.href = 'data:application/vnd.ms-excel;charset=utf-8,\uFEFF' + html;
     
-    // เธ•เธฑเนเธเธเธทเนเธญเนเธเธฅเนเธ•เธฒเธกเธเธทเนเธญเธงเธดเธเธฒ
+    // ตั้งชื่อไฟล์ตามชื่อวิชา
     const select = document.getElementById('reportCourseSelect');
     let courseName = select.options[select.selectedIndex].text;
-    if(select.value === "") courseName = "เธชเธฃเธธเธเธฃเธฒเธขเธงเธดเธเธฒ";
+    if(select.value === "") courseName = "สรุปรายวิชา";
     
-    a.download = `เธฃเธฒเธขเธเธฒเธเธเธฅเธญเธเธฃเธก_${courseName}.xls`;
+    a.download = `รายงานผลอบรม_${courseName}.xls`;
     a.click();
 }
 // ================= Q&A Logic =================
 async function loadQA() {
     const container = document.getElementById('qaListContainer');
-    container.innerHTML = '<div style="text-align: center; color: var(--text-light);"><i class="fas fa-spinner fa-spin"></i> เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเธณเธ–เธฒเธก...</div>';
+    container.innerHTML = '<div style="text-align: center; color: var(--text-light);"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดคำถาม...</div>';
     const res = await callAPI('getQA', { course_id: currentClassCourse.id });
     
     if(res.status === 'success') {
         container.innerHTML = '';
         if(res.data.length === 0) {
-            container.innerHTML = '<div style="text-align: center; color: var(--text-light); padding: 15px;">เธขเธฑเธเนเธกเนเธกเธตเธเธณเธ–เธฒเธกเนเธเธเธ—เน€เธฃเธตเธขเธเธเธตเน เน€เธเนเธเธเธเนเธฃเธเธ—เธตเนเน€เธฃเธดเนเธกเธ–เธฒเธกเน€เธฅเธข!</div>';
+            container.innerHTML = '<div style="text-align: center; color: var(--text-light); padding: 15px;">ยังไม่มีคำถามในบทเรียนนี้ เป็นคนแรกที่เริ่มถามเลย!</div>';
             return;
         }
         
@@ -2186,18 +2186,18 @@ async function loadQA() {
         res.data.forEach(qa => {
             let adminReplyHtml = '';
             if(qa.answer) {
-                // เธ–เนเธฒเธกเธตเธเธเธ•เธญเธเนเธฅเนเธง เนเธเธงเนเธเธณเธ•เธญเธ
+                // ถ้ามีคนตอบแล้ว โชว์คำตอบ
                 adminReplyHtml = `
                     <div style="margin-top: 10px; background: #f0fdf4; padding: 10px; border-radius: 6px; border-left: 3px solid #10b981; font-size: 0.9rem;">
-                        <strong style="color: #10b981;"><i class="fas fa-user-md"></i> ${qa.ans_by} (เธเธนเนเธ•เธญเธ):</strong> ${qa.answer}
+                        <strong style="color: #10b981;"><i class="fas fa-user-md"></i> ${qa.ans_by} (ผู้ตอบ):</strong> ${qa.answer}
                     </div>
                 `;
             } else if (user.role === 'admin') {
-                // เธ–เนเธฒเนเธญเธ”เธกเธดเธเธ”เธนเธญเธขเธนเน เนเธฅเธฐเธขเธฑเธเนเธกเนเธกเธตเธเธเธ•เธญเธ เธเธฐเน€เธซเนเธเธเนเธญเธเนเธซเนเธเธดเธกเธเนเธ•เธญเธ
+                // ถ้าแอดมินดูอยู่ และยังไม่มีคนตอบ จะเห็นช่องให้พิมพ์ตอบ
                 adminReplyHtml = `
                     <div style="margin-top: 10px; display: flex; gap: 5px;">
-                        <input type="text" id="reply_${qa.id}" placeholder="เธเธดเธกเธเนเธเธณเธ•เธญเธเนเธเธเธฒเธเธฐเธเธนเนเธ”เธนเนเธฅ..." style="width: 100%; padding: 5px 10px; border-radius: 4px; border: 1px solid #cbd5e1; font-family: 'Prompt'; font-size: 0.85rem;">
-                        <button class="btn btn-sm btn-success" onclick="replyQA('${qa.id}')" style="white-space: nowrap;"><i class="fas fa-reply"></i> เธ•เธญเธ</button>
+                        <input type="text" id="reply_${qa.id}" placeholder="พิมพ์คำตอบในฐานะผู้ดูแล..." style="width: 100%; padding: 5px 10px; border-radius: 4px; border: 1px solid #cbd5e1; font-family: 'Prompt'; font-size: 0.85rem;">
+                        <button class="btn btn-sm btn-success" onclick="replyQA('${qa.id}')" style="white-space: nowrap;"><i class="fas fa-reply"></i> ตอบ</button>
                     </div>
                 `;
             }
@@ -2213,7 +2213,7 @@ async function loadQA() {
                 </div>
             `;
         });
-        container.scrollTop = container.scrollHeight; // เน€เธฅเธทเนเธญเธเนเธซเนเน€เธซเนเธเธเนเธญเธเธงเธฒเธกเธฅเนเธฒเธชเธธเธ”
+        container.scrollTop = container.scrollHeight; // เลื่อนให้เห็นข้อความล่าสุด
     }
 }
 
@@ -2229,7 +2229,7 @@ async function submitQA() {
     hideLoader();
     
     document.getElementById('qaInput').value = '';
-    loadQA(); // เนเธซเธฅเธ”เธเธฃเธฐเธ”เธฒเธเนเธซเธกเน
+    loadQA(); // โหลดกระดานใหม่
 }
 
 async function replyQA(qaId) {
@@ -2246,15 +2246,15 @@ async function replyQA(qaId) {
 // ================= Star Rating Logic =================
 let selectedRating = 0;
 
-// เนเธเธ Event เนเธซเนเธ”เธฒเธงเน€เธเธฅเธตเนเธขเธเธชเธตเธ•เธญเธเธเธ”
+// แนบ Event ให้ดาวเปลี่ยนสีตอนกด
 document.querySelectorAll('.star-btn').forEach(star => {
     star.addEventListener('click', function() {
         selectedRating = this.getAttribute('data-val');
         document.querySelectorAll('.star-btn').forEach(s => {
             if(s.getAttribute('data-val') <= selectedRating) {
-                s.style.color = '#fbbf24'; // เธชเธตเธ—เธญเธ
+                s.style.color = '#fbbf24'; // สีทอง
             } else {
-                s.style.color = '#cbd5e1'; // เธชเธตเน€เธ—เธฒ
+                s.style.color = '#cbd5e1'; // สีเทา
             }
         });
     });
@@ -2262,7 +2262,7 @@ document.querySelectorAll('.star-btn').forEach(star => {
 
 function openReviewModal() {
     selectedRating = 0;
-    document.querySelectorAll('.star-btn').forEach(s => s.style.color = '#cbd5e1'); // เธฅเนเธฒเธเธชเธต
+    document.querySelectorAll('.star-btn').forEach(s => s.style.color = '#cbd5e1'); // ล้างสี
     document.getElementById('reviewComment').value = '';
     document.getElementById('reviewModal').classList.remove('hidden');
 }
@@ -2273,7 +2273,7 @@ function closeReviewModal() {
 }
 
 async function submitCourseReview() {
-    if(selectedRating === 0) return showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธเธฃเธธเธ“เธฒเธเธ”เนเธซเนเธเธฐเนเธเธเธ”เธฒเธงเธเนเธญเธเธชเนเธเธเธฃเธฑเธ โญ๏ธ');
+    if(selectedRating === 0) return showAlert('แจ้งเตือน', 'กรุณากดให้คะแนนดาวก่อนส่งครับ ⭐️');
     
     const user = JSON.parse(localStorage.getItem('swd_user'));
     showLoader();
@@ -2283,27 +2283,27 @@ async function submitCourseReview() {
     });
     hideLoader();
     
-    showAlert('เธเธญเธเธเธธเธ“เธเธฃเธฑเธ', 'เธฃเธฐเธเธเนเธ”เนเธฃเธฑเธเธเธฅเธเธฒเธฃเธเธฃเธฐเน€เธกเธดเธเธเธญเธเธเธธเธ“เน€เธฃเธตเธขเธเธฃเนเธญเธขเนเธฅเนเธง');
+    showAlert('ขอบคุณครับ', 'ระบบได้รับผลการประเมินของคุณเรียบร้อยแล้ว');
     closeReviewModal();
 }
-// เธเธฑเธเธเนเธเธฑเธ เน€เธเธดเธ”-เธเธดเธ” เนเธ–เธ Q&A
+// ฟังก์ชัน เปิด-ปิด แถบ Q&A
 function toggleQA() {
     const content = document.getElementById('qaContent');
     const chevron = document.getElementById('qaChevron');
     
     if (content.classList.contains('hidden')) {
         content.classList.remove('hidden');
-        chevron.style.transform = 'rotate(180deg)'; // เธซเธกเธธเธเธฅเธนเธเธจเธฃเธเธถเนเธ
-        // เน€เธฅเธทเนเธญเธเธซเธเนเธฒเธเธญเธฅเธเธกเธฒเนเธซเนเน€เธซเนเธเธเนเธญเธเธเธณเธ–เธฒเธกเธเธฑเธ”เน€เธเธ
+        chevron.style.transform = 'rotate(180deg)'; // หมุนลูกศรขึ้น
+        // เลื่อนหน้าจอลงมาให้เห็นช่องคำถามชัดเจน
         setTimeout(() => {
             content.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 100);
     } else {
         content.classList.add('hidden');
-        chevron.style.transform = 'rotate(0deg)'; // เธซเธกเธธเธเธฅเธนเธเธจเธฃเธเธฅเธฑเธ
+        chevron.style.transform = 'rotate(0deg)'; // หมุนลูกศรกลับ
     }
 }
-// เธเธฑเธเธเนเธเธฑเธ เน€เธเธดเธ”-เธเธดเธ” เน€เธกเธเธนเนเธฎเธกเน€เธเธญเธฃเนเน€เธเธญเธฃเน
+// ฟังก์ชัน เปิด-ปิด เมนูแฮมเบอร์เกอร์
 function toggleSidebar() {
     const body = document.body;
     const overlay = document.getElementById('sidebarOverlay');
@@ -2317,37 +2317,37 @@ function toggleSidebar() {
     }
 }
 
-// เธญเธฑเธเน€เธ”เธ•เธเธฑเธเธเนเธเธฑเธ switchTab เธ—เธธเธเธ•เธฑเธง เนเธซเนเธเธดเธ” Sidebar เธญเธฑเธ•เนเธเธกเธฑเธ•เธดเน€เธกเธทเนเธญเธเธ”เน€เธฅเธทเธญเธเน€เธกเธเธน (เนเธเธกเธทเธญเธ–เธทเธญ)
+// อัปเดตฟังก์ชัน switchTab ทุกตัว ให้ปิด Sidebar อัตโนมัติเมื่อกดเลือกเมนู (ในมือถือ)
 const originalSwitchUserTab = switchUserTab;
 switchUserTab = function(tabId, element) {
-    originalSwitchUserTab(tabId, element); // เธฃเธฑเธเธเธฑเธเธเนเธเธฑเธเน€เธ”เธดเธก
+    originalSwitchUserTab(tabId, element); // รันฟังก์ชันเดิม
     if (window.innerWidth <= 768) {
-        toggleSidebar(); // เธเธดเธ”เน€เธกเธเธนเน€เธกเธทเนเธญเน€เธฅเธทเธญเธเนเธ—เนเธเน€เธชเธฃเนเธ
+        toggleSidebar(); // ปิดเมนูเมื่อเลือกแท็บเสร็จ
     }
 };
 
 const originalSwitchAdminTab = switchAdminTab;
 switchAdminTab = function(tabId, element) {
-    originalSwitchAdminTab(tabId, element); // เธฃเธฑเธเธเธฑเธเธเนเธเธฑเธเน€เธ”เธดเธก
+    originalSwitchAdminTab(tabId, element); // รันฟังก์ชันเดิม
     if (window.innerWidth <= 768) {
-        toggleSidebar(); // เธเธดเธ”เน€เธกเธเธนเน€เธกเธทเนเธญเน€เธฅเธทเธญเธเนเธ—เนเธเน€เธชเธฃเนเธ
+        toggleSidebar(); // ปิดเมนูเมื่อเลือกแท็บเสร็จ
     }
 };
 let adminExternalRecommendationsData = [];
 
 function getUserPositionGroup(user) {
     const position = String((user && user.position) || '').trim();
-    return position.includes('เธเธขเธฒเธเธฒเธฅเธงเธดเธเธฒเธเธตเธ') ? 'nurse' : 'support';
+    return position.includes('พยาบาลวิชาชีพ') ? 'nurse' : 'support';
 }
 
 function getCourseDeliveryLabel(deliveryType) {
-    return deliveryType === 'classroom' ? 'เธญเธเธฃเธกเนเธเธซเนเธญเธ' : 'เธญเธญเธเนเธฅเธเน';
+    return deliveryType === 'classroom' ? 'อบรมในห้อง' : 'ออนไลน์';
 }
 
 function getCourseAudienceLabel(audience) {
-    if (audience === 'nurse') return 'เน€เธเธเธฒเธฐเธเธขเธฒเธเธฒเธฅเธงเธดเธเธฒเธเธตเธ';
-    if (audience === 'support') return 'เน€เธเธเธฒเธฐเธชเธฒเธขเธชเธเธฑเธเธชเธเธธเธ';
-    return 'เธ—เธธเธเธ•เธณเนเธซเธเนเธ';
+    if (audience === 'nurse') return 'เฉพาะพยาบาลวิชาชีพ';
+    if (audience === 'support') return 'เฉพาะสายสนับสนุน';
+    return 'ทุกตำแหน่ง';
 }
 
 function isCourseVisibleToUser(course, user) {
@@ -2371,9 +2371,9 @@ function formatHoursLabel(hours) {
     const numericHours = parseFloat(hours) || 0;
     const hr = Math.floor(numericHours);
     const min = Math.round((numericHours - hr) * 60);
-    if (hr === 0 && min === 0) return '0 เธเธก.';
-    if (min === 0) return `${hr} เธเธก.`;
-    return `${hr} เธเธก. ${min} เธเธฒเธ—เธต`;
+    if (hr === 0 && min === 0) return '0 ชม.';
+    if (min === 0) return `${hr} ชม.`;
+    return `${hr} ชม. ${min} นาที`;
 }
 
 function splitHoursAndMinutes(hours) {
@@ -2384,9 +2384,9 @@ function splitHoursAndMinutes(hours) {
 }
 
 function getStatusText(status) {
-    if (status === 'inactive') return 'เธเธดเธ”เธฅเธเธ—เธฐเน€เธเธตเธขเธ';
-    if (status === 'deleted') return 'เธฅเธเนเธฅเนเธง';
-    return 'เน€เธเธดเธ”เธฅเธเธ—เธฐเน€เธเธตเธขเธ';
+    if (status === 'inactive') return 'ปิดลงทะเบียน';
+    if (status === 'deleted') return 'ลบแล้ว';
+    return 'เปิดลงทะเบียน';
 }
 
 function getStatusBadge(status) {
@@ -2398,7 +2398,7 @@ function getToggleRegistrationAction(status) {
     if (status === 'inactive') {
         return {
             nextStatus: 'active',
-            label: 'เน€เธเธดเธ”เธฅเธเธ—เธฐเน€เธเธตเธขเธ',
+            label: 'เปิดลงทะเบียน',
             className: 'btn-success',
             icon: 'fa-lock-open'
         };
@@ -2406,7 +2406,7 @@ function getToggleRegistrationAction(status) {
 
     return {
         nextStatus: 'inactive',
-        label: 'เธเธดเธ”เธฅเธเธ—เธฐเน€เธเธตเธขเธ',
+        label: 'ปิดลงทะเบียน',
         className: 'btn-warning',
         icon: 'fa-user-lock'
     };
@@ -2447,7 +2447,7 @@ async function loadCourses(force = false) {
         }
 
         renderCourseGrid([]);
-        showAlert('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', (res.message || enrollRes.message || 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เนเธซเธฅเธ”เธซเธฅเธฑเธเธชเธนเธ•เธฃเนเธ”เน'));
+        showAlert('ข้อผิดพลาด', (res.message || enrollRes.message || 'ไม่สามารถโหลดหลักสูตรได้'));
     } finally {
         hideLoader();
     }
@@ -2462,30 +2462,30 @@ function renderCourseGrid(coursesToRender) {
     const user = appState.user || getCurrentUser();
     grid.innerHTML = '';
     if (!coursesToRender || coursesToRender.length === 0) {
-        renderEmptyGrid('courseGrid', 'เนเธกเนเธเธเธซเธฅเธฑเธเธชเธนเธ•เธฃเธ—เธตเนเธเนเธเธซเธฒ');
+        renderEmptyGrid('courseGrid', 'ไม่พบหลักสูตรที่ค้นหา');
         return;
     }
 
     coursesToRender.forEach(course => {
         const enrollData = cachedUserEnrollments.find(e => e.course_id === course.id);
         const classroomCourse = isClassroomCourse(course);
-        let btnText = classroomCourse ? 'เธ—เธณเนเธเธเธ—เธ”เธชเธญเธเธซเธฅเธฑเธเธญเธเธฃเธก' : 'เน€เธเนเธฒเธชเธนเนเธเธ—เน€เธฃเธตเธขเธ';
+        let btnText = classroomCourse ? 'ทำแบบทดสอบหลังอบรม' : 'เข้าสู่บทเรียน';
         let btnClass = 'btn-primary';
 
         if (enrollData) {
             if (enrollData.status === 'completed') {
-                btnText = classroomCourse ? 'เน€เธเนเธฒเธชเธญเธเธ—เธเธ—เธงเธเธญเธตเธเธเธฃเธฑเนเธ' : 'เน€เธเนเธฒเน€เธฃเธตเธขเธเธญเธตเธเธเธฃเธฑเนเธ';
+                btnText = classroomCourse ? 'เข้าสอบทบทวนอีกครั้ง' : 'เข้าเรียนอีกครั้ง';
                 btnClass = 'btn-outline';
             } else if (!classroomCourse) {
                 try {
                     const prog = JSON.parse(enrollData.progress || '{}');
                     if (prog.completed && prog.completed.length > 0) {
-                        btnText = 'เน€เธฃเธตเธขเธเธ•เนเธญ';
+                        btnText = 'เรียนต่อ';
                         btnClass = 'btn-success';
                     }
                 } catch (error) {}
             } else {
-                btnText = 'เน€เธเนเธฒเธชเธญเธเธซเธฅเธฑเธเธญเธเธฃเธก';
+                btnText = 'เข้าสอบหลังอบรม';
             }
         }
 
@@ -2495,12 +2495,12 @@ function renderCourseGrid(coursesToRender) {
         ];
 
         if (course.is_mandatory && isCourseVisibleToUser(course, user)) {
-            badgeParts.push('<div class="course-badge course-badge-mandatory">เธซเธฅเธฑเธเธชเธนเธ•เธฃเธเธฑเธเธเธฑเธ</div>');
+            badgeParts.push('<div class="course-badge course-badge-mandatory">หลักสูตรบังคับ</div>');
         }
 
         const courseHint = classroomCourse
-            ? (course.note || 'เนเธกเนเธกเธตเธงเธดเธ”เธตเนเธญเนเธเธฃเธฐเธเธ เธเธนเนเน€เธเนเธฒเธญเธเธฃเธกเธ—เธณเนเธเธเธ—เธ”เธชเธญเธเธซเธฅเธฑเธเธญเธเธฃเธกเนเธเธซเนเธญเธเน€เธฃเธตเธขเธ')
-            : (course.note || 'เน€เธฃเธตเธขเธเธ•เธฒเธกเธซเธเนเธงเธขเธงเธดเธ”เธตเนเธญเนเธเธฃเธฐเธเธ เนเธฅเธฐเธ—เธณเนเธเธเธ—เธ”เธชเธญเธเธซเธฅเธฑเธเน€เธฃเธตเธขเธเน€เธกเธทเนเธญเน€เธฃเธตเธขเธเธเธฃเธ');
+            ? (course.note || 'ไม่มีวิดีโอในระบบ ผู้เข้าอบรมทำแบบทดสอบหลังอบรมในห้องเรียน')
+            : (course.note || 'เรียนตามหน่วยวิดีโอในระบบ และทำแบบทดสอบหลังเรียนเมื่อเรียนครบ');
 
         grid.innerHTML += `
             <div class="course-card">
@@ -2541,7 +2541,7 @@ async function loadExternalRecommendations(force = false) {
         }
 
         renderExternalRecommendationGrid([]);
-        showAlert('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', res.message || 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เนเธซเธฅเธ”เธซเธฅเธฑเธเธชเธนเธ•เธฃเธ เธฒเธขเธเธญเธเนเธ”เน');
+        showAlert('ข้อผิดพลาด', res.message || 'ไม่สามารถโหลดหลักสูตรภายนอกได้');
     } finally {
         hideLoader();
     }
@@ -2555,7 +2555,7 @@ function renderExternalRecommendationGrid(recommendations) {
 
     grid.innerHTML = '';
     if (!recommendations || recommendations.length === 0) {
-        renderEmptyGrid('externalRecommendationGrid', 'เธขเธฑเธเนเธกเนเธกเธตเธซเธฅเธฑเธเธชเธนเธ•เธฃเธ เธฒเธขเธเธญเธเนเธเธฐเธเธณ');
+        renderEmptyGrid('externalRecommendationGrid', 'ยังไม่มีหลักสูตรภายนอกแนะนำ');
         return;
     }
 
@@ -2564,13 +2564,13 @@ function renderExternalRecommendationGrid(recommendations) {
             <div class="course-card course-card-external">
                 <img src="${getDriveImageUrl(course.cover_image)}" class="course-img" alt="${course.title}">
                 <div class="course-info">
-                    <div class="course-badge">เธ เธฒเธขเธเธญเธ</div>
+                    <div class="course-badge">ภายนอก</div>
                     <h4 class="course-title">${course.title}</h4>
                     <div class="course-meta">
                         <span><i class="fas fa-building"></i> ${course.organizer || '-'}</span>
                         <span><i class="fas fa-clock"></i> ${formatHoursLabel(course.hours)}</span>
                     </div>
-                    <button class="btn btn-primary w-100" onclick="openExternalRegistration('${normalizeExternalUrl(course.register_url)}')">เธฅเธเธ—เธฐเน€เธเธตเธขเธ</button>
+                    <button class="btn btn-primary w-100" onclick="openExternalRegistration('${normalizeExternalUrl(course.register_url)}')">ลงทะเบียน</button>
                 </div>
             </div>
         `;
@@ -2580,7 +2580,7 @@ function renderExternalRecommendationGrid(recommendations) {
 function openExternalRegistration(url) {
     const normalizedUrl = normalizeExternalUrl(url);
     if (!normalizedUrl) {
-        showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธขเธฑเธเนเธกเนเนเธ”เนเธฃเธฐเธเธธ URL เธชเธณเธซเธฃเธฑเธเธฅเธเธ—เธฐเน€เธเธตเธขเธ');
+        showAlert('แจ้งเตือน', 'ยังไม่ได้ระบุ URL สำหรับลงทะเบียน');
         return;
     }
     window.open(normalizedUrl, '_blank', 'noopener,noreferrer');
@@ -2673,17 +2673,17 @@ async function loadAdminExternalRecommendationsTable() {
     const tbody = document.getElementById('adminExternalCourseListBody');
     if (!tbody) return;
 
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅ...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
     const res = await callAPI('getExternalRecommendations', { admin_view: true });
 
     if (res.status !== 'success') {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">เนเธซเธฅเธ”เธเนเธญเธกเธนเธฅเนเธกเนเธชเธณเน€เธฃเนเธ</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">โหลดข้อมูลไม่สำเร็จ</td></tr>';
         return;
     }
 
     adminExternalRecommendationsData = res.data || [];
     if (adminExternalRecommendationsData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">เธขเธฑเธเนเธกเนเธกเธตเธซเธฅเธฑเธเธชเธนเธ•เธฃเธ เธฒเธขเธเธญเธเนเธเธฐเธเธณ</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">ยังไม่มีหลักสูตรภายนอกแนะนำ</td></tr>';
         return;
     }
 
@@ -2694,8 +2694,8 @@ async function loadAdminExternalRecommendationsTable() {
                 <td><strong>${course.title}</strong></td>
                 <td>${course.organizer || '-'}</td>
                 <td>${formatHoursLabel(course.hours)}</td>
-                <td><a href="${normalizeExternalUrl(course.register_url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">เน€เธเธดเธ”เธฅเธดเธเธเน</a></td>
-                <td><button class="btn btn-action btn-edit" onclick="editExternalRecommendation('${course.rec_id}')"><i class="fas fa-edit"></i> เนเธเนเนเธ</button></td>
+                <td><a href="${normalizeExternalUrl(course.register_url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">เปิดลิงก์</a></td>
+                <td><button class="btn btn-action btn-edit" onclick="editExternalRecommendation('${course.rec_id}')"><i class="fas fa-edit"></i> แก้ไข</button></td>
             </tr>
         `;
     });
@@ -2711,8 +2711,8 @@ function resetExternalRecommendationForm() {
     document.getElementById('extRecCoverStatus').innerText = '';
     document.getElementById('extRecHours').value = '';
     document.getElementById('extRecMins').value = '';
-    document.getElementById('externalRecFormTitle').innerHTML = '<i class="fas fa-link"></i> เน€เธเธดเนเธกเธซเธฅเธฑเธเธชเธนเธ•เธฃเธ เธฒเธขเธเธญเธเนเธเธฐเธเธณ';
-    document.getElementById('btnSubmitExternalRec').innerHTML = '<i class="fas fa-save"></i> เธเธฑเธเธ—เธถเธเธซเธฅเธฑเธเธชเธนเธ•เธฃเธ เธฒเธขเธเธญเธ';
+    document.getElementById('externalRecFormTitle').innerHTML = '<i class="fas fa-link"></i> เพิ่มหลักสูตรภายนอกแนะนำ';
+    document.getElementById('btnSubmitExternalRec').innerHTML = '<i class="fas fa-save"></i> บันทึกหลักสูตรภายนอก';
     document.getElementById('btnCancelExternalRecEdit').classList.add('hidden');
 }
 
@@ -2728,8 +2728,8 @@ function editExternalRecommendation(recId) {
     document.getElementById('extRecMins').value = duration.minutes;
     document.getElementById('extRecCover').value = course.cover_image || '';
     document.getElementById('extRecUrl').value = course.register_url || '';
-    document.getElementById('externalRecFormTitle').innerHTML = '<i class="fas fa-edit"></i> เนเธเนเนเธเธซเธฅเธฑเธเธชเธนเธ•เธฃเธ เธฒเธขเธเธญเธเนเธเธฐเธเธณ';
-    document.getElementById('btnSubmitExternalRec').innerHTML = '<i class="fas fa-save"></i> เธเธฑเธเธ—เธถเธเธเธฒเธฃเนเธเนเนเธ';
+    document.getElementById('externalRecFormTitle').innerHTML = '<i class="fas fa-edit"></i> แก้ไขหลักสูตรภายนอกแนะนำ';
+    document.getElementById('btnSubmitExternalRec').innerHTML = '<i class="fas fa-save"></i> บันทึกการแก้ไข';
     document.getElementById('btnCancelExternalRecEdit').classList.remove('hidden');
     document.getElementById('externalRecommendationForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -2754,7 +2754,7 @@ if (externalRecommendationForm) {
         };
 
         if (!payload.title || !payload.organizer || !payload.cover_image || !payload.register_url) {
-            return showAlert('เนเธเนเธเน€เธ•เธทเธญเธ', 'เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธเนเธญเธกเธนเธฅเธซเธฅเธฑเธเธชเธนเธ•เธฃเธ เธฒเธขเธเธญเธเนเธซเนเธเธฃเธเธ—เธธเธเธเนเธญเธ');
+            return showAlert('แจ้งเตือน', 'กรุณากรอกข้อมูลหลักสูตรภายนอกให้ครบทุกช่อง');
         }
 
         const action = editId ? 'updateExternalRecommendation' : 'addExternalRecommendation';
@@ -2767,11 +2767,11 @@ if (externalRecommendationForm) {
         if (res.status === 'success') {
             appState.externalRecommendationsLoaded = false;
             setDashboardRefreshNeeded();
-            showAlert('เธชเธณเน€เธฃเนเธ', res.message);
+            showAlert('สำเร็จ', res.message);
             resetExternalRecommendationForm();
             loadAdminExternalRecommendationsTable();
         } else {
-            showAlert('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', res.message || 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธเธฑเธเธ—เธถเธเธซเธฅเธฑเธเธชเธนเธ•เธฃเธ เธฒเธขเธเธญเธเนเธ”เน');
+            showAlert('ข้อผิดพลาด', res.message || 'ไม่สามารถบันทึกหลักสูตรภายนอกได้');
         }
     });
 }
@@ -2780,17 +2780,17 @@ loadAdminCoursesTable = async function() {
     const tbody = document.getElementById('adminCourseListBody');
     if (!tbody) return;
 
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅ...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
     const res = await callAPI('getAdminCourses', {});
 
     if (res.status !== 'success') {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">เนเธซเธฅเธ”เธเนเธญเธกเธนเธฅเนเธกเนเธชเธณเน€เธฃเนเธ</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">โหลดข้อมูลไม่สำเร็จ</td></tr>';
         return;
     }
 
     adminCoursesData = (res.data || []).filter(course => (course.status || 'active') !== 'deleted');
     if (adminCoursesData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">เธขเธฑเธเนเธกเนเธกเธตเธซเธฅเธฑเธเธชเธนเธ•เธฃเนเธเธฃเธฐเธเธ</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">ยังไม่มีหลักสูตรในระบบ</td></tr>';
         return;
     }
 
@@ -2799,8 +2799,8 @@ loadAdminCoursesTable = async function() {
         const status = course.status || 'active';
         const toggleAction = getToggleRegistrationAction(status);
         const mandatoryBadge = course.is_mandatory
-            ? '<span class="table-status-badge active" style="margin-top: 6px;">เธเธฑเธเธเธฑเธ</span>'
-            : '<span class="table-status-badge inactive" style="margin-top: 6px;">เนเธกเนเธเธฑเธเธเธฑเธ</span>';
+            ? '<span class="table-status-badge active" style="margin-top: 6px;">บังคับ</span>'
+            : '<span class="table-status-badge inactive" style="margin-top: 6px;">ไม่บังคับ</span>';
 
         tbody.innerHTML += `
             <tr>
@@ -2814,9 +2814,9 @@ loadAdminCoursesTable = async function() {
                 <td>${getStatusBadge(status)}</td>
                 <td>
                     <div class="table-actions">
-                        <button class="btn btn-action btn-edit" onclick="editCourse('${course.course_id}')"><i class="fas fa-edit"></i> เนเธเนเนเธ</button>
+                        <button class="btn btn-action btn-edit" onclick="editCourse('${course.course_id}')"><i class="fas fa-edit"></i> แก้ไข</button>
                         <button class="btn btn-action ${toggleAction.className}" onclick="changeCourseStatus('${course.course_id}', '${toggleAction.nextStatus}')"><i class="fas ${toggleAction.icon}"></i> ${toggleAction.label}</button>
-                        <button class="btn btn-action btn-danger" onclick="changeCourseStatus('${course.course_id}', 'deleted')"><i class="fas fa-trash-alt"></i> เธฅเธ</button>
+                        <button class="btn btn-action btn-danger" onclick="changeCourseStatus('${course.course_id}', 'deleted')"><i class="fas fa-trash-alt"></i> ลบ</button>
                     </div>
                 </td>
             </tr>
@@ -2828,11 +2828,11 @@ async function changeCourseStatus(courseId, nextStatus) {
     const course = adminCoursesData.find(item => item.course_id === courseId);
     if (!course) return;
 
-    const actionLabel = nextStatus === 'deleted' ? 'เธฅเธเธซเธฅเธฑเธเธชเธนเธ•เธฃ' : (nextStatus === 'inactive' ? 'เธเธดเธ”เธฅเธเธ—เธฐเน€เธเธตเธขเธ' : 'เน€เธเธดเธ”เธฅเธเธ—เธฐเน€เธเธตเธขเธ');
+    const actionLabel = nextStatus === 'deleted' ? 'ลบหลักสูตร' : (nextStatus === 'inactive' ? 'ปิดลงทะเบียน' : 'เปิดลงทะเบียน');
     const message = nextStatus === 'deleted'
-        ? `เธขเธทเธเธขเธฑเธเธเธฒเธฃเธฅเธเธซเธฅเธฑเธเธชเธนเธ•เธฃ "${course.title}" เนเธเนเธซเธฃเธทเธญเนเธกเน?`
-        : `เธขเธทเธเธขเธฑเธเธเธฒเธฃ${actionLabel}เธชเธณเธซเธฃเธฑเธเธซเธฅเธฑเธเธชเธนเธ•เธฃ "${course.title}" เนเธเนเธซเธฃเธทเธญเนเธกเน?`;
-    const confirmed = await showConfirm('เธขเธทเธเธขเธฑเธเธเธฒเธฃเธ—เธณเธฃเธฒเธขเธเธฒเธฃ', message);
+        ? `ยืนยันการลบหลักสูตร "${course.title}" ใช่หรือไม่?`
+        : `ยืนยันการ${actionLabel}สำหรับหลักสูตร "${course.title}" ใช่หรือไม่?`;
+    const confirmed = await showConfirm('ยืนยันการทำรายการ', message);
     if (!confirmed) return;
 
     showLoader();
@@ -2845,10 +2845,10 @@ async function changeCourseStatus(courseId, nextStatus) {
         if (document.getElementById('editCourseId').value === courseId) {
             resetCourseForm();
         }
-        showAlert('เธชเธณเน€เธฃเนเธ', nextStatus === 'deleted' ? 'เธฅเธเธซเธฅเธฑเธเธชเธนเธ•เธฃเน€เธฃเธตเธขเธเธฃเนเธญเธขเนเธฅเนเธง' : res.message);
+        showAlert('สำเร็จ', nextStatus === 'deleted' ? 'ลบหลักสูตรเรียบร้อยแล้ว' : res.message);
         loadAdminCoursesTable();
     } else {
-        showAlert('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', res.message || 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธญเธฑเธเน€เธ”เธ•เธชเธ–เธฒเธเธฐเธซเธฅเธฑเธเธชเธนเธ•เธฃเนเธ”เน');
+        showAlert('ข้อผิดพลาด', res.message || 'ไม่สามารถอัปเดตสถานะหลักสูตรได้');
     }
 }
 
@@ -2856,17 +2856,17 @@ loadAdminExternalRecommendationsTable = async function() {
     const tbody = document.getElementById('adminExternalCourseListBody');
     if (!tbody) return;
 
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเนเธญเธกเธนเธฅ...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
     const res = await callAPI('getExternalRecommendations', { admin_view: true });
 
     if (res.status !== 'success') {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ef4444;">เนเธซเธฅเธ”เธเนเธญเธกเธนเธฅเนเธกเนเธชเธณเน€เธฃเนเธ</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ef4444;">โหลดข้อมูลไม่สำเร็จ</td></tr>';
         return;
     }
 
     adminExternalRecommendationsData = (res.data || []).filter(course => (course.status || 'active') !== 'deleted');
     if (adminExternalRecommendationsData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">เธขเธฑเธเนเธกเนเธกเธตเธซเธฅเธฑเธเธชเธนเธ•เธฃเธ เธฒเธขเธเธญเธเนเธเธฐเธเธณ</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">ยังไม่มีหลักสูตรภายนอกแนะนำ</td></tr>';
         return;
     }
 
@@ -2880,13 +2880,13 @@ loadAdminExternalRecommendationsTable = async function() {
                 <td><strong>${course.title}</strong></td>
                 <td>${course.organizer || '-'}</td>
                 <td>${formatHoursLabel(course.hours)}</td>
-                <td><a href="${normalizeExternalUrl(course.register_url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">เน€เธเธดเธ”เธฅเธดเธเธเน</a></td>
+                <td><a href="${normalizeExternalUrl(course.register_url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">เปิดลิงก์</a></td>
                 <td>${getStatusBadge(status)}</td>
                 <td>
                     <div class="table-actions">
-                        <button class="btn btn-action btn-edit" onclick="editExternalRecommendation('${course.rec_id}')"><i class="fas fa-edit"></i> เนเธเนเนเธ</button>
+                        <button class="btn btn-action btn-edit" onclick="editExternalRecommendation('${course.rec_id}')"><i class="fas fa-edit"></i> แก้ไข</button>
                         <button class="btn btn-action ${toggleAction.className}" onclick="changeExternalRecommendationStatus('${course.rec_id}', '${toggleAction.nextStatus}')"><i class="fas ${toggleAction.icon}"></i> ${toggleAction.label}</button>
-                        <button class="btn btn-action btn-danger" onclick="changeExternalRecommendationStatus('${course.rec_id}', 'deleted')"><i class="fas fa-trash-alt"></i> เธฅเธ</button>
+                        <button class="btn btn-action btn-danger" onclick="changeExternalRecommendationStatus('${course.rec_id}', 'deleted')"><i class="fas fa-trash-alt"></i> ลบ</button>
                     </div>
                 </td>
             </tr>
@@ -2898,11 +2898,11 @@ async function changeExternalRecommendationStatus(recId, nextStatus) {
     const course = adminExternalRecommendationsData.find(item => item.rec_id === recId);
     if (!course) return;
 
-    const actionLabel = nextStatus === 'deleted' ? 'เธฅเธเธซเธฅเธฑเธเธชเธนเธ•เธฃเธ เธฒเธขเธเธญเธ' : (nextStatus === 'inactive' ? 'เธเธดเธ”เธฅเธเธ—เธฐเน€เธเธตเธขเธ' : 'เน€เธเธดเธ”เธฅเธเธ—เธฐเน€เธเธตเธขเธ');
+    const actionLabel = nextStatus === 'deleted' ? 'ลบหลักสูตรภายนอก' : (nextStatus === 'inactive' ? 'ปิดลงทะเบียน' : 'เปิดลงทะเบียน');
     const message = nextStatus === 'deleted'
-        ? `เธขเธทเธเธขเธฑเธเธเธฒเธฃเธฅเธเธซเธฅเธฑเธเธชเธนเธ•เธฃ "${course.title}" เนเธเนเธซเธฃเธทเธญเนเธกเน?`
-        : `เธขเธทเธเธขเธฑเธเธเธฒเธฃ${actionLabel}เธชเธณเธซเธฃเธฑเธเธซเธฅเธฑเธเธชเธนเธ•เธฃ "${course.title}" เนเธเนเธซเธฃเธทเธญเนเธกเน?`;
-    const confirmed = await showConfirm('เธขเธทเธเธขเธฑเธเธเธฒเธฃเธ—เธณเธฃเธฒเธขเธเธฒเธฃ', message);
+        ? `ยืนยันการลบหลักสูตร "${course.title}" ใช่หรือไม่?`
+        : `ยืนยันการ${actionLabel}สำหรับหลักสูตร "${course.title}" ใช่หรือไม่?`;
+    const confirmed = await showConfirm('ยืนยันการทำรายการ', message);
     if (!confirmed) return;
 
     showLoader();
@@ -2915,10 +2915,10 @@ async function changeExternalRecommendationStatus(recId, nextStatus) {
         if (document.getElementById('editExtRecId').value === recId) {
             resetExternalRecommendationForm();
         }
-        showAlert('เธชเธณเน€เธฃเนเธ', nextStatus === 'deleted' ? 'เธฅเธเธซเธฅเธฑเธเธชเธนเธ•เธฃเธ เธฒเธขเธเธญเธเน€เธฃเธตเธขเธเธฃเนเธญเธขเนเธฅเนเธง' : res.message);
+        showAlert('สำเร็จ', nextStatus === 'deleted' ? 'ลบหลักสูตรภายนอกเรียบร้อยแล้ว' : res.message);
         loadAdminExternalRecommendationsTable();
     } else {
-        showAlert('เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”', res.message || 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธญเธฑเธเน€เธ”เธ•เธชเธ–เธฒเธเธฐเธซเธฅเธฑเธเธชเธนเธ•เธฃเธ เธฒเธขเธเธญเธเนเธ”เน');
+        showAlert('ข้อผิดพลาด', res.message || 'ไม่สามารถอัปเดตสถานะหลักสูตรภายนอกได้');
     }
 }
 
