@@ -44,6 +44,37 @@ function ensureForgotPasswordModal() {
     document.body.appendChild(wrapper);
 }
 
+function applyAuthTextOverrides() {
+    const loginIdentifierInput = document.getElementById('loginUsername');
+    if (loginIdentifierInput) {
+        loginIdentifierInput.placeholder = 'Username หรือ Email';
+    }
+
+    const forgotModal = document.getElementById('forgotPasswordModal');
+    if (forgotModal) {
+        const modalTitle = forgotModal.querySelector('h3');
+        const modalDescription = forgotModal.querySelector('p');
+        const emailInput = document.getElementById('forgotPasswordEmail');
+        const actionButton = forgotModal.querySelector('button[type="submit"]');
+
+        if (modalTitle) modalTitle.textContent = 'ลืมชื่อผู้ใช้ / ลืมรหัสผ่าน';
+        if (modalDescription) modalDescription.textContent = 'กรอกอีเมลที่ใช้ลงทะเบียน ระบบจะส่งชื่อผู้ใช้และลิงก์สำหรับตั้งรหัสผ่านใหม่ไปยังอีเมลนั้น';
+        if (emailInput) emailInput.placeholder = 'อีเมลที่ลงทะเบียนไว้';
+        if (actionButton) actionButton.textContent = 'ส่งข้อมูลกู้บัญชี';
+    }
+
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        const submitButton = loginForm.querySelector('button[type="submit"]');
+        if (submitButton) {
+            const helperButton = submitButton.nextElementSibling;
+            if (helperButton && helperButton.classList.contains('text-link-btn')) {
+                helperButton.textContent = 'ลืมชื่อผู้ใช้ / ลืมรหัสผ่าน';
+            }
+        }
+    }
+}
+
 function populatePositionSelectOptions(select) {
     if (!select || select.dataset.positionOptionsReady === 'true') return;
 
@@ -207,7 +238,13 @@ function ensureRegisterConfirmPasswordField() {
 
 function ensureForgotPasswordTrigger() {
     const loginForm = document.getElementById('loginForm');
-    if (!loginForm || loginForm.querySelector('.text-link-btn')) return;
+    if (!loginForm) return;
+
+    const existingTrigger = loginForm.querySelector('.text-link-btn');
+    if (existingTrigger) {
+        existingTrigger.textContent = 'ลืมชื่อผู้ใช้ / ลืมรหัสผ่าน';
+        return;
+    }
 
     const submitButton = loginForm.querySelector('button[type="submit"]');
     if (!submitButton) return;
@@ -215,13 +252,14 @@ function ensureForgotPasswordTrigger() {
     const trigger = document.createElement('button');
     trigger.type = 'button';
     trigger.className = 'text-link-btn';
-    trigger.textContent = 'ลืมรหัสผ่าน?';
+    trigger.textContent = 'ลืมชื่อผู้ใช้ / ลืมรหัสผ่าน';
     trigger.addEventListener('click', openForgotPasswordModal);
     submitButton.insertAdjacentElement('afterend', trigger);
 }
 
 function initializeAuthEnhancements() {
     ensureForgotPasswordModal();
+    applyAuthTextOverrides();
     enhancePasswordField('loginPassword');
     enhancePasswordField('regPassword');
     enhancePasswordField('pPassword');
@@ -275,7 +313,7 @@ async function handleForgotPasswordRequest(e) {
 
     if (res.status === 'success') {
         closeForgotPasswordModal();
-        showAlert('ตรวจสอบอีเมล', res.message || 'หากอีเมลนี้มีอยู่ในระบบ จะมีลิงก์สำหรับตั้งรหัสผ่านใหม่ส่งไปให้');
+        showAlert('ตรวจสอบอีเมล', res.message || 'หากอีเมลนี้มีอยู่ในระบบ เราจะส่งชื่อผู้ใช้และลิงก์สำหรับตั้งรหัสผ่านใหม่ไปให้');
     } else {
         showAlert('เกิดข้อผิดพลาด', res.message || 'ไม่สามารถส่งลิงก์รีเซ็ตรหัสผ่านได้');
     }
