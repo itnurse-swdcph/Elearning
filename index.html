@@ -44,6 +44,22 @@
         </div>
     </div>
 
+    <div id="forgotPasswordModal" class="modal hidden">
+        <div class="modal-content" style="text-align: left; max-width: 460px;">
+            <h3 style="margin-bottom: 10px;">ลืมรหัสผ่าน</h3>
+            <p style="margin-bottom: 20px;">กรอกอีเมลที่ใช้ลงทะเบียน ระบบจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปยังอีเมลนั้น</p>
+            <form id="forgotPasswordForm">
+                <div class="input-group">
+                    <input type="email" id="forgotPasswordEmail" placeholder="อีเมลที่ลงทะเบียนไว้" required>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" onclick="closeForgotPasswordModal()" class="btn btn-outline">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">ส่งลิงก์รีเซ็ต</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="reviewModal" class="modal hidden">
         <div class="modal-content" style="text-align: center; max-width: 400px;">
             <h3 style="color: var(--primary-color); margin-bottom: 10px;">ขอบคุณที่เข้าร่วมอบรม!</h3>
