@@ -1294,12 +1294,8 @@ async function enrollCourse(courseId) {
         }
 
         if(currentUnits.length === 0) return showAlert('แจ้งเตือน', 'หลักสูตรนี้ยังไม่มีวิดีโอเนื้อหาครับ');
-        
-        if (progData.preTestScore === undefined || progData.preTestScore === null) {
-            startQuiz('pre');
-        } else {
-            enterClassroom();
-        }
+
+        enterClassroom();
     } else {
         showAlert('ข้อผิดพลาดจากระบบ', enrollRes.message);
     }
@@ -1591,7 +1587,7 @@ async function saveExamsToDB() {
 let userQuizData = [];
 let currentQIndex = 0;
 let userAnswers = {}; // เก็บคำตอบ { 0: 'A', 1: 'C' }
-let activeQuizType = 'pre'; // 'pre' หรือ 'post'
+let activeQuizType = 'post';
 
 // เริ่มทำข้อสอบ (เรียกจากหน้า Dashboard หรือ ห้องเรียน)
 async function startQuiz(type) {
@@ -1607,7 +1603,7 @@ async function startQuiz(type) {
         currentQIndex = 0;
         userAnswers = {};
         
-        document.getElementById('quizTitle').innerText = type === 'pre' ? 'แบบทดสอบก่อนเรียน (Pre-test)' : 'แบบทดสอบหลังเรียน (Post-test)';
+        document.getElementById('quizTitle').innerText = 'แบบทดสอบหลังเรียน (Post-test)';
         document.getElementById('quizSubtitle').innerText = `วิชา: ${currentClassCourse.title}`;
         
         document.getElementById('quizSection').classList.remove('hidden');
@@ -1622,7 +1618,6 @@ async function startQuiz(type) {
             ? 'หลักสูตรอบรมในห้องนี้ยังไม่มีการตั้งค่าแบบทดสอบหลังเรียน'
             : 'หลักสูตรนี้ยังไม่มีการตั้งค่าแบบทดสอบครับ กรุณาข้ามไปเรียนได้เลย';
         showAlert('แจ้งเตือน', message);
-        if(type === 'pre') enterClassroom();
         if(type === 'post' && currentCourseFlow === 'classroom') finishCourseFlow();
     }
 }
@@ -1718,69 +1713,59 @@ async function submitQuizData() {
     const btnReturn = document.getElementById('btnReturnFromQuiz');
     btnReturn.classList.remove('hidden'); // ให้โชว์เป็นค่าเริ่มต้นไว้ก่อน
     
-    if(activeQuizType === 'pre') {
-        document.getElementById('resultTitle').innerText = 'ทำ Pre-test เสร็จสิ้น';
-        document.getElementById('resultTitle').style.color = 'var(--text-main)';
-        document.getElementById('resultIcon').className = 'fas fa-clipboard-check text-primary';
-    } else {
-        if(isPassed) {
-            document.getElementById('resultTitle').style.color = '#10B981';
-            document.getElementById('resultIcon').className = 'fas fa-check-circle';
-            document.getElementById('resultIcon').style.color = '#10B981';
-            
-            // --- เริ่มต้นการสร้าง PDF ---
-            document.getElementById('resultTitle').innerText = 'กำลังสร้างใบประกาศ... กรุณารอสักครู่';
-            document.getElementById('btnDownloadCert').classList.add('hidden');
-            
-            btnReturn.classList.add('hidden'); // <--- 1. ซ่อนปุ่ม "ดำเนินการต่อ" ตรงนี้! ป้องกันคนกดออก
-            
-            const certRes = await callAPI('generateCert', {
-                user_id: user.id,
-                user_name: user.name,
-                course_id: currentClassCourse.id
-            });
-            
-            if(certRes.status === 'success') {
-                document.getElementById('resultTitle').innerText = 'ยินดีด้วย! คุณสอบผ่าน';
-                const btnCert = document.getElementById('btnDownloadCert');
-                btnCert.href = certRes.pdf_url;
-                btnCert.classList.remove('hidden'); // โชว์ปุ่มโหลด PDF
-                if (certRes.cert_id || certRes.verify_url) {
-                    certMeta.innerHTML = `
-                        ${certRes.cert_id ? `Certificate ID: <strong>${certRes.cert_id}</strong><br>` : ''}
-                        ${certRes.verify_url ? `<a href="${certRes.verify_url}" target="_blank" rel="noopener">ตรวจสอบใบประกาศ</a>` : ''}
-                    `;
-                    certMeta.classList.remove('hidden');
-                }
-            } else {
-                document.getElementById('resultTitle').innerText = 'สอบผ่าน (แต่พบปัญหาสร้างใบประกาศ)';
-                console.error(certRes.message);
+    if(isPassed) {
+        document.getElementById('resultTitle').style.color = '#10B981';
+        document.getElementById('resultIcon').className = 'fas fa-check-circle';
+        document.getElementById('resultIcon').style.color = '#10B981';
+        
+        // --- เริ่มต้นการสร้าง PDF ---
+        document.getElementById('resultTitle').innerText = 'กำลังสร้างใบประกาศ... กรุณารอสักครู่';
+        document.getElementById('btnDownloadCert').classList.add('hidden');
+        
+        btnReturn.classList.add('hidden'); // <--- 1. ซ่อนปุ่ม "ดำเนินการต่อ" ตรงนี้! ป้องกันคนกดออก
+        
+        const certRes = await callAPI('generateCert', {
+            user_id: user.id,
+            user_name: user.name,
+            course_id: currentClassCourse.id
+        });
+        
+        if(certRes.status === 'success') {
+            document.getElementById('resultTitle').innerText = 'ยินดีด้วย! คุณสอบผ่าน';
+            const btnCert = document.getElementById('btnDownloadCert');
+            btnCert.href = certRes.pdf_url;
+            btnCert.classList.remove('hidden'); // โชว์ปุ่มโหลด PDF
+            if (certRes.cert_id || certRes.verify_url) {
+                certMeta.innerHTML = `
+                    ${certRes.cert_id ? `Certificate ID: <strong>${certRes.cert_id}</strong><br>` : ''}
+                    ${certRes.verify_url ? `<a href="${certRes.verify_url}" target="_blank" rel="noopener">ตรวจสอบใบประกาศ</a>` : ''}
+                `;
+                certMeta.classList.remove('hidden');
             }
-            
-            btnReturn.classList.remove('hidden'); // <--- 2. โชว์ปุ่ม "ดำเนินการต่อ" กลับมาเมื่อกระบวนการเสร็จสิ้น!
-            // --------------------------
-            
         } else {
-            document.getElementById('resultTitle').innerText = 'เสียใจด้วย คุณสอบไม่ผ่านเกณฑ์';
-            document.getElementById('resultTitle').style.color = '#EF4444';
-            document.getElementById('resultIcon').className = 'fas fa-times-circle';
-            document.getElementById('resultIcon').style.color = '#EF4444';
+            document.getElementById('resultTitle').innerText = 'สอบผ่าน (แต่พบปัญหาสร้างใบประกาศ)';
+            console.error(certRes.message);
         }
+        
+        btnReturn.classList.remove('hidden'); // <--- 2. โชว์ปุ่ม "ดำเนินการต่อ" กลับมาเมื่อกระบวนการเสร็จสิ้น!
+        // --------------------------
+        
+    } else {
+        document.getElementById('resultTitle').innerText = 'เสียใจด้วย คุณสอบไม่ผ่านเกณฑ์';
+        document.getElementById('resultTitle').style.color = '#EF4444';
+        document.getElementById('resultIcon').className = 'fas fa-times-circle';
+        document.getElementById('resultIcon').style.color = '#EF4444';
     }
 }
 
 // ปิดหน้าข้อสอบและไปสเตปถัดไป
 function closeQuiz() {
     document.getElementById('quizSection').classList.add('hidden');
-    if(activeQuizType === 'pre') {
-        enterClassroom();
+    const isPassed = document.getElementById('resultIcon').classList.contains('fa-check-circle');
+    if (isPassed) {
+        openReviewModal();
     } else {
-        const isPassed = document.getElementById('resultIcon').classList.contains('fa-check-circle');
-        if (isPassed) {
-            openReviewModal();
-        } else {
-            finishCourseFlow();
-        }
+        finishCourseFlow();
     }
 }
 // ================= External Training Logic (อัปโหลดประวัติภายนอก) =================
@@ -2129,12 +2114,12 @@ async function loadCourseReport() {
     const summaryCard = document.getElementById('courseReportSummary');
 
     if(!courseId) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-light);">กรุณาเลือกหลักสูตรจากด้านบนเพื่อดูรายงาน</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">กรุณาเลือกหลักสูตรจากด้านบนเพื่อดูรายงาน</td></tr>';
         summaryCard.classList.add('hidden');
         return;
     }
 
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">กำลังคำนวณและโหลดข้อมูล...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">กำลังคำนวณและโหลดข้อมูล...</td></tr>';
     const res = await callAPI('getCourseReport', { course_id: courseId });
 
     if(res.status === 'success') {
@@ -2142,7 +2127,7 @@ async function loadCourseReport() {
         tbody.innerHTML = '';
 
         if(res.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">ยังไม่มีผู้ลงทะเบียนในหลักสูตรนี้</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">ยังไม่มีผู้ลงทะเบียนในหลักสูตรนี้</td></tr>';
             document.getElementById('crTotal').innerText = 0;
             document.getElementById('crPassed').innerText = 0;
             document.getElementById('crPassRate').innerText = '0%';
@@ -2181,7 +2166,6 @@ async function loadCourseReport() {
                     <td>${r.name}</td>
                     <td>${r.position}</td>
                     <td>${r.department}</td>
-                    <td style="text-align: center; color: #64748b;">${r.pre_score}</td>
                     <td style="text-align: center; font-weight: bold; color: #0f172a;">${r.post_score}</td>
                     <td style="text-align: center;">${statusBadge}</td>
                 </tr>
@@ -2199,7 +2183,7 @@ async function loadCourseReport() {
         document.getElementById('crAvgScore').innerText = avgScore;
 
     } else {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">โหลดข้อมูลผิดพลาด</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">โหลดข้อมูลผิดพลาด</td></tr>';
     }
 }
 
