@@ -74,6 +74,9 @@ body { background-color: var(--bg-color); color: var(--text-main); }
     height: 80px; width: auto; object-fit: contain; 
     transition: var(--transition);
 }
+.mooc-login-logo {
+    height: 100px;
+}
 .logo-img:hover { transform: scale(1.05); } /* ขยายโลโก้เล็กน้อยเมื่อชี้ */
 
 .auth-box h2 { font-size: 1.2rem; color: var(--secondary-color); margin-bottom: 5px; }
@@ -151,6 +154,11 @@ body { background-color: var(--bg-color); color: var(--text-main); }
 .nav-brand { display: flex; align-items: center; gap: 12px; font-size: 1.2rem; font-weight: 600; cursor: pointer; transition: var(--transition); }
 .nav-brand:hover { opacity: 0.8; }
 .nav-logo { height: 40px; width: auto; object-fit: contain; }
+.mooc-topbar-logo {
+    height: 56px;
+    width: auto;
+    object-fit: contain;
+}
 .brand-text {
     background: var(--gold-gradient);
     -webkit-background-clip: text;
@@ -279,6 +287,11 @@ body { background-color: var(--bg-color); color: var(--text-main); }
     border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 .sidebar-logo { height: 60px; margin-bottom: 10px; }
+.mooc-sidebar-logo {
+    height: 82px;
+    width: auto;
+    object-fit: contain;
+}
 .sidebar-header h3 { color: var(--accent-color); font-weight: 600; }
 
 .sidebar-menu { list-style: none; flex-grow: 1; padding-top: 20px; }
