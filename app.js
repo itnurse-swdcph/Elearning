@@ -434,9 +434,23 @@ async function callAPI(action, payload) {
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ action: action, payload: payload })
         });
-        return await response.json();
+        const rawText = await response.text();
+        try {
+            return JSON.parse(rawText);
+        } catch (parseError) {
+            const looksLikeHtml = /^\s*</.test(rawText);
+            return {
+                status: 'error',
+                message: looksLikeHtml
+                    ? 'ระบบตอบกลับเป็นหน้าเว็บแทน JSON กรุณาตรวจสอบการ Deploy Google Apps Script ล่าสุด'
+                    : 'ระบบตอบกลับข้อมูลไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง'
+            };
+        }
     } catch (error) {
         return { status: 'error', message: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้' };
     }
