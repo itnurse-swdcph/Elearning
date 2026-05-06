@@ -65,12 +65,9 @@ function applyAuthTextOverrides() {
 
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
-        const submitButton = loginForm.querySelector('button[type="submit"]');
-        if (submitButton) {
-            const helperButton = submitButton.nextElementSibling;
-            if (helperButton && helperButton.classList.contains('text-link-btn')) {
-                helperButton.textContent = 'ลืมชื่อผู้ใช้ / ลืมรหัสผ่าน';
-            }
+        const helperButton = loginForm.querySelector('.text-link-btn');
+        if (helperButton) {
+            helperButton.textContent = 'ลืมชื่อผู้ใช้ / ลืมรหัสผ่าน';
         }
     }
 }
@@ -240,21 +237,66 @@ function ensureForgotPasswordTrigger() {
     const loginForm = document.getElementById('loginForm');
     if (!loginForm) return;
 
-    const existingTrigger = loginForm.querySelector('.text-link-btn');
+    const existingTrigger = loginForm.querySelector('[data-auth-helper="forgot-password"]');
     if (existingTrigger) {
         existingTrigger.textContent = 'ลืมชื่อผู้ใช้ / ลืมรหัสผ่าน';
         return;
     }
 
-    const submitButton = loginForm.querySelector('button[type="submit"]');
-    if (!submitButton) return;
+    const switchForm = loginForm.querySelector('.switch-form');
+    if (!switchForm) return;
 
     const trigger = document.createElement('button');
     trigger.type = 'button';
     trigger.className = 'text-link-btn';
+    trigger.dataset.authHelper = 'forgot-password';
     trigger.textContent = 'ลืมชื่อผู้ใช้ / ลืมรหัสผ่าน';
     trigger.addEventListener('click', openForgotPasswordModal);
-    submitButton.insertAdjacentElement('afterend', trigger);
+    switchForm.insertAdjacentElement('afterend', trigger);
+}
+
+function populateDepartmentOptions(departments) {
+    const normalizedDepartments = Array.from(new Set(
+        (Array.isArray(departments) ? departments : [])
+            .map((department) => String(department || '').trim())
+            .filter(Boolean)
+    ));
+
+    const deptList = document.getElementById('deptList');
+    if (deptList) {
+        deptList.innerHTML = '';
+        normalizedDepartments.forEach((department) => {
+            const option = document.createElement('option');
+            option.value = department;
+            deptList.appendChild(option);
+        });
+    }
+
+    const registerDept = document.getElementById('regDept');
+    if (registerDept) {
+        registerDept.innerHTML = '<option value="">เน€เธฅเธทเธญเธเธซเธเนเธงเธขเธเธฒเธ</option>';
+        normalizedDepartments.forEach((department) => {
+            const option = document.createElement('option');
+            option.value = department;
+            option.textContent = department;
+            registerDept.appendChild(option);
+        });
+        registerDept.disabled = normalizedDepartments.length === 0;
+    }
+}
+
+async function loadDepartments() {
+    try {
+        const res = await callAPI('getSettings', {});
+        if (res && res.status === 'success') {
+            populateDepartmentOptions(res.data);
+            return;
+        }
+    } catch (err) {
+        console.error("เธฃเธฐเธเธเนเธกเนเธชเธฒเธกเธฒเธฃเธ–เนเธซเธฅเธ”เธฃเธฒเธขเธเธฒเธฃเธซเธเนเธงเธขเธเธฒเธเนเธ”เน:", err);
+    }
+
+    populateDepartmentOptions([]);
 }
 
 function initializeAuthEnhancements() {
@@ -326,6 +368,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const years = document.querySelectorAll('.current-year');
     const thisYear = new Date().getFullYear();
     years.forEach(el => el.innerText = thisYear);
+    await loadDepartments();
 
     // 2. โหลดรายชื่อหน่วยงานสำหรับช่องเลือกและ datalist ที่ยังใช้งานอยู่
     try {
@@ -351,6 +394,7 @@ window.addEventListener('DOMContentLoaded', async () => {
                     option.textContent = department;
                     registerDept.appendChild(option);
                 });
+                registerDept.disabled = departments.length === 0;
             }
         }
     } catch (err) {
@@ -427,6 +471,11 @@ function toggleAuth() {
     document.getElementById('loginForm').classList.toggle('hidden');
     document.getElementById('registerForm').classList.toggle('hidden');
     closeForgotPasswordModal();
+
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm && !registerForm.classList.contains('hidden')) {
+        loadDepartments();
+    }
 }
 
 // ================= API Caller =================
@@ -434,9 +483,6 @@ async function callAPI(action, payload) {
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({ action: action, payload: payload })
         });
         const rawText = await response.text();
