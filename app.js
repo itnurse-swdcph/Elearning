@@ -485,7 +485,7 @@ function getCurrentUser() {
 
 // ================= UI Utilities =================
 function getDriveImageUrl(url) {
-    if (!url) return 'https://via.placeholder.com/300x180?text=Course+Cover';
+    if (!url) return "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 180' fill='%23e2e8f0'><rect width='300' height='180' rx='10' fill='%23e2e8f0'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2364748b' font-family='sans-serif' font-size='16'>Course Cover</text></svg>";
     const match = url.match(/drive\.google\.com\/file\/d\/([^\/]+)/);
     if (match && match[1]) {
         return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
@@ -3547,7 +3547,7 @@ switchUserTab = function(tabId, element) {
             document.getElementById('pUsername').value = user.username || '-';
             document.getElementById('pDept').value = user.department;
             document.getElementById('pPassword').value = '';
-            document.getElementById('profilePreview').src = user.profile_img || 'https://via.placeholder.com/150';
+            document.getElementById('profilePreview').src = user.profile_img || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/></svg>";
         }
     }
     if (tabId === 'guideTab') {
@@ -4529,3 +4529,42 @@ function initializeCertificateDownloadButtons() {
                 await downloadCertificateWithVerification(currentPassedCourse.id);
             }
         });
+    }
+
+    // Update result screen button (after post-test)
+    const resultCertBtn = document.getElementById('btnDownloadCert');
+    if (resultCertBtn) {
+        resultCertBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            if (currentClassCourse && currentClassCourse.id) {
+                await downloadCertificateWithVerification(currentClassCourse.id);
+            }
+        });
+    }
+}
+
+/**
+ * CHECK IF URL IS VALID HTTP/HTTPS URL
+ * 
+ * @param {string} url - URL to validate
+ * @returns {boolean} True if valid, false otherwise
+ */
+function isValidUrl_(url) {
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+    } catch(e) {
+        return false;
+    }
+}
+
+/**
+ * INITIALIZE ON PAGE LOAD
+ * Add this to your existing DOMContentLoaded event handler
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    // Call after a short delay to ensure all DOM elements are loaded
+    setTimeout(() => {
+        initializeCertificateDownloadButtons();
+    }, 500);
+});
