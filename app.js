@@ -1296,22 +1296,50 @@ async function loadAdminReport() {
     }
 }
 
+let currentReportSortColumn = -1;
+let currentReportSortAsc = true;
+let lastReportData = [];
+
 function filterAdminReport() {
     const selectedDept = document.getElementById('adminReportDeptFilter').value.trim();
     const selectedGroup = document.getElementById('adminReportGroupFilter').value;
     const selectedWorkingGroup = document.getElementById('adminReportWorkingGroupFilter').value.trim();
+    const selectedStatus = document.getElementById('adminReportStatusFilter') ? document.getElementById('adminReportStatusFilter').value : 'all';
 
     const filteredData = globalAdminReportData.filter(item => {
         const deptMatch = selectedDept === '' || item.department === selectedDept;
         const groupMatch = selectedGroup === 'all' || item.position_group === selectedGroup;
         const wgMatch = selectedWorkingGroup === '' || item.working_group === selectedWorkingGroup;
-        return deptMatch && groupMatch && wgMatch;
+        
+        let statusMatch = true;
+        if (selectedStatus === 'passed') {
+            statusMatch = item.is_passed === true;
+        } else if (selectedStatus === 'not_passed') {
+            statusMatch = item.is_passed !== true;
+        }
+        
+        return deptMatch && groupMatch && wgMatch && statusMatch;
     });
 
     renderReportTableAndChart(filteredData);
 }
 
 function renderReportTableAndChart(dataToShow) {
+    lastReportData = dataToShow;
+    
+    // Update KPI Summary Cards
+    const totalPersonnel = dataToShow.length;
+    const passedCriteria = dataToShow.filter(item => item.is_passed).length;
+    const notPassedCriteria = totalPersonnel - passedCriteria;
+
+    const kpiTotalEl = document.getElementById('kpiTotalPersonnel');
+    const kpiPassedEl = document.getElementById('kpiPassedCriteria');
+    const kpiNotPassedEl = document.getElementById('kpiNotPassedCriteria');
+
+    if (kpiTotalEl) kpiTotalEl.innerText = totalPersonnel;
+    if (kpiPassedEl) kpiPassedEl.innerText = passedCriteria;
+    if (kpiNotPassedEl) kpiNotPassedEl.innerText = notPassedCriteria;
+
     const tbody = document.getElementById('reportTableBody');
     tbody.innerHTML = '';
     
@@ -1392,14 +1420,29 @@ function renderReportTableAndChart(dataToShow) {
         if (!deptStatsMap[r.department]) deptStatsMap[r.department] = { passed: 0, failed: 0 };
         if (r.is_passed) deptStatsMap[r.department].passed++;
         else deptStatsMap[r.department].failed++;
+    });
 
+    renderReportTableOnly(dataToShow);
+    renderAdminChart(deptStatsMap);
+}
+
+function renderReportTableOnly(dataToShow) {
+    const tbody = document.getElementById('reportTableBody');
+    tbody.innerHTML = '';
+    
+    const formatHours = (val) => {
+        const num = parseFloat(val);
+        return isNaN(num) ? '0' : parseFloat(num.toFixed(2)).toString();
+    };
+
+    dataToShow.forEach(r => {
         let statusColor = '#EF4444';
         if (r.status_code === 'pass') statusColor = '#10B981';
         if (r.status_code === 'warning') statusColor = '#f59e0b';
 
-        const statusBadge = `<span class="badge" style="background: ${statusColor}; color: white;">${r.status}</span>`;
+        const statusBadge = `<span class="badge" style="background: ${statusColor}; color: white; border-radius:12px; padding:4px 10px; font-weight:bold;">${r.status}</span>`;
         const positionGroupLabel = r.position_group === 'professional' ? 'กลุ่มวิชาชีพ' : 'สายสนับสนุน';
-        const dayLabel = r.position_group === 'professional' ? r.totalDays : '-';
+        const dayLabel = r.position_group === 'professional' ? formatHours(r.totalDays) : '-';
         const mandatoryLabel = r.position_group === 'support'
             ? `${r.mandatory_completed}/${r.mandatory_total || 0}`
             : '-';
@@ -1412,29 +1455,95 @@ function renderReportTableAndChart(dataToShow) {
                 <td><strong>${r.name}</strong></td>
                 <td>${r.position || '-'}<br><small style="color: var(--text-light);">${r.department}</small></td>
                 <td>${positionGroupLabel}<br><small style="color: var(--text-light);">${r.criteria_type}</small></td>
-                <td>${r.internal}</td>
-                <td>${r.external}</td>
-                <td><strong>${r.totalHours}</strong></td>
+                <td>${formatHours(r.internal)}</td>
+                <td>${formatHours(r.external)}</td>
+                <td><strong>${formatHours(r.totalHours)}</strong></td>
                 <td><strong>${dayLabel}</strong></td>
                 <td><strong>${mandatoryLabel}</strong>${mandatoryHint}</td>
                 <td>${statusBadge}</td>
             </tr>
         `;
     });
+}
 
-    renderAdminChart(deptStatsMap);
+function sortReportTable(colIndex) {
+    if (currentReportSortColumn === colIndex) {
+        currentReportSortAsc = !currentReportSortAsc;
+    } else {
+        currentReportSortColumn = colIndex;
+        currentReportSortAsc = true;
+    }
+    
+    if (!lastReportData || lastReportData.length === 0) return;
+    
+    lastReportData.sort((a, b) => {
+        let valA, valB;
+        switch(colIndex) {
+            case 0:
+                valA = a.name || '';
+                valB = b.name || '';
+                return currentReportSortAsc ? valA.localeCompare(valB, 'th') : valB.localeCompare(valA, 'th');
+            case 1:
+                valA = (a.position || '') + ' ' + (a.department || '');
+                valB = (b.position || '') + ' ' + (b.department || '');
+                return currentReportSortAsc ? valA.localeCompare(valB, 'th') : valB.localeCompare(valA, 'th');
+            case 2:
+                valA = a.position_group || '';
+                valB = b.position_group || '';
+                return currentReportSortAsc ? valA.localeCompare(valB, 'th') : valB.localeCompare(valA, 'th');
+            case 3:
+                valA = parseFloat(a.internal) || 0;
+                valB = parseFloat(b.internal) || 0;
+                break;
+            case 4:
+                valA = parseFloat(a.external) || 0;
+                valB = parseFloat(b.external) || 0;
+                break;
+            case 5:
+                valA = parseFloat(a.totalHours) || 0;
+                valB = parseFloat(b.totalHours) || 0;
+                break;
+            case 6:
+                valA = parseFloat(a.totalDays) || 0;
+                valB = parseFloat(b.totalDays) || 0;
+                break;
+            case 7:
+                valA = parseFloat(a.mandatory_completed) || 0;
+                valB = parseFloat(b.mandatory_completed) || 0;
+                break;
+            case 8:
+                valA = a.status || '';
+                valB = b.status || '';
+                return currentReportSortAsc ? valA.localeCompare(valB, 'th') : valB.localeCompare(valA, 'th');
+            default:
+                return 0;
+        }
+        return currentReportSortAsc ? valA - valB : valB - valA;
+    });
+    
+    renderReportTableOnly(lastReportData);
 }
 
 // ฟังก์ชันวาดกราฟ Chart.js
 function renderAdminChart(deptStats) {
     const ctx = document.getElementById('passRateChart').getContext('2d');
     
-    // ลบกราฟเก่าทิ้งก่อน (ถ้ามี) ป้องกันบั๊กกราฟกระพริบซ้อนกัน
     if (adminChartInstance) adminChartInstance.destroy();
 
-    const labels = Object.keys(deptStats);
-    const passedData = labels.map(dept => deptStats[dept].passed);
-    const failedData = labels.map(dept => deptStats[dept].failed);
+    // Sort departments by passing percentage from highest to lowest
+    const deptList = Object.keys(deptStats).map(dept => {
+        const passed = deptStats[dept].passed;
+        const failed = deptStats[dept].failed;
+        const total = passed + failed;
+        const passRate = total > 0 ? (passed / total * 100) : 0;
+        return { dept, passed, failed, passRate };
+    });
+    
+    deptList.sort((a, b) => b.passRate - a.passRate);
+
+    const labels = deptList.map(item => item.dept);
+    const passedData = deptList.map(item => item.passed);
+    const failedData = deptList.map(item => item.failed);
 
     adminChartInstance = new Chart(ctx, {
         type: 'bar',
@@ -1446,11 +1555,12 @@ function renderAdminChart(deptStats) {
             ]
         },
         options: {
+            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             scales: { 
-                x: { stacked: true }, 
-                y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } // บังคับให้กราฟแนวตั้งเป็นเลขจำนวนเต็ม (คน)
+                x: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } }, 
+                y: { stacked: true }
             },
             plugins: { 
                 legend: { position: 'top' } 
@@ -2541,6 +2651,8 @@ document.getElementById('externalTrainingForm').addEventListener('submit', async
     reader.readAsDataURL(file); // เริ่มอ่านไฟล์
 });
 // ================= Admin: Approve External Training =================
+let globalAdminExtRequests = [];
+
 async function loadAdminExtRequests() {
     const tbody = document.getElementById('adminExtReqBody');
     tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
@@ -2548,6 +2660,7 @@ async function loadAdminExtRequests() {
     const res = await callAPI('getAdminExternalReq', {});
     
     if (res.status === 'success') {
+        globalAdminExtRequests = res.data;
         tbody.innerHTML = '';
         if (res.data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">ไม่มีรายการรออนุมัติ</td></tr>';
@@ -2566,12 +2679,67 @@ async function loadAdminExtRequests() {
                     <td>${dateStr}<br><span class="badge-hours">${req.hours} ชม.</span></td>
                     <td><a href="${req.cert_url}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-file-pdf"></i> ตรวจสอบไฟล์</a></td>
                     <td>
+                        <button class="btn btn-outline btn-sm" onclick="openExtEditModal('${req.ext_id}')" style="margin-right: 5px;"><i class="fas fa-edit"></i> แก้ไข</button>
                         <button class="btn btn-success btn-sm" onclick="handleExtReq('${req.ext_id}', 'approved')" style="margin-right: 5px;"><i class="fas fa-check"></i> อนุมัติ</button>
                         <button class="btn btn-sm" style="background:#EF4444; color:white;" onclick="handleExtReq('${req.ext_id}', 'rejected')"><i class="fas fa-times"></i> ปฏิเสธ</button>
                     </td>
                 </tr>
             `;
         });
+    }
+}
+
+function openExtEditModal(extId) {
+    const req = globalAdminExtRequests.find(r => r.ext_id === extId);
+    if (!req) return;
+    
+    document.getElementById('editExtReqId').value = req.ext_id;
+    document.getElementById('editExtTopic').value = req.topic;
+    
+    let formattedDate = '';
+    if (req.date) {
+        const dateObj = new Date(req.date);
+        if (!isNaN(dateObj)) {
+            // Convert to Local Timezone formatted string YYYY-MM-DD
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            formattedDate = `${year}-${month}-${day}`;
+        }
+    }
+    document.getElementById('editExtDate').value = formattedDate;
+    document.getElementById('editExtHours').value = req.hours;
+    
+    document.getElementById('extEditModal').classList.remove('hidden');
+}
+
+function closeExtEditModal() {
+    document.getElementById('extEditModal').classList.add('hidden');
+}
+
+async function saveExtReqEdit(event) {
+    event.preventDefault();
+    const extId = document.getElementById('editExtReqId').value;
+    const topic = document.getElementById('editExtTopic').value.trim();
+    const date = document.getElementById('editExtDate').value;
+    const hours = parseFloat(document.getElementById('editExtHours').value) || 0;
+    
+    showLoader();
+    const res = await callAPI('updateExternalStatus', { 
+        ext_id: extId, 
+        status: 'approved',
+        topic: topic,
+        date: date,
+        hours: hours
+    });
+    hideLoader();
+    
+    if (res.status === 'success') {
+        showAlert('สำเร็จ', 'บันทึกการแก้ไขและอนุมัติชั่วโมงอบรมเรียบร้อยแล้ว');
+        closeExtEditModal();
+        loadAdminExtRequests();
+    } else {
+        showAlert('ผิดพลาด', res.message);
     }
 }
 
