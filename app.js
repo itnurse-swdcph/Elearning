@@ -4174,3 +4174,191 @@ if (!document.querySelector('#certNotificationStyles')) {
     `;
     document.head.appendChild(style);
 }
+// ================= CERTIFICATE DOWNLOAD WITH VERIFICATION - FRONTEND (app.js) =================
+// Frontend: app.js
+// This file contains all functions needed to verify and download certificates
+// with automatic regeneration of missing files
+// ==========================================================================================
+
+/**
+ * DOWNLOAD CERTIFICATE WITH VERIFICATION
+ * Frontend function that handles certificate download with file verification
+ * If file is missing, backend automatically regenerates it seamlessly
+ * 
+ * Usage: Call this when user clicks "Download Certificate" button
+ * Example: onclick="downloadCertificateWithVerification(currentClassCourse.id)"
+ */
+async function downloadCertificateWithVerification(courseId) {
+    const user = JSON.parse(localStorage.getItem('swd_user'));
+    if (!user) {
+        showAlert('ข้อผิดพลาด', 'กรุณาเข้าสู่ระบบใหม่');
+        logout();
+        return;
+    }
+
+    const targetCourse = globalCourses.find(c => c.id === courseId);
+    if (!targetCourse) {
+        showAlert('ข้อผิดพลาด', 'ไม่พบข้อมูลหลักสูตรนี้');
+        return;
+    }
+
+    const enrollData = cachedUserEnrollments.find(e => e.course_id === courseId);
+    if (!enrollData || enrollData.status !== 'completed') {
+        showAlert('แจ้งเตือน', 'คุณยังเรียนไม่ผ่านหลักสูตรนี้');
+        return;
+    }
+
+    showLoader();
+    try {
+        // ===== STEP 1: CALL VERIFICATION API =====
+        const verifyRes = await Promise.race([
+            callAPI('verifyCertificateAndDownload', {
+                user_id: user.id,
+                course_id: courseId
+            }),
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Verification timeout')), 120000)
+            )
+        ]);
+
+        hideLoader();
+
+        // ===== STEP 2: HANDLE RESPONSE =====
+        if (verifyRes && verifyRes.status === 'success' && verifyRes.pdf_url) {
+            
+            // Update cache with latest URL
+            enrollData.cert_url = verifyRes.pdf_url;
+            
+            // Show status based on whether file was regenerated
+            if (verifyRes.file_regenerated) {
+                showAlert(
+                    '✓ ใบประกาศสร้างใหม่เรียบร้อย',
+                    'ไฟล์ต้นฉบับหายไป ระบบได้สร้างใบประกาศใหม่แล้ว\n\n' +
+                    'Certificate ID: ' + verifyRes.cert_id
+                );
+            } else if (verifyRes.file_verified) {
+                // File already existed - no action needed
+            }
+
+            // Open certificate in new tab
+            if (isValidUrl_(verifyRes.pdf_url)) {
+                window.open(verifyRes.pdf_url, '_blank', 'noopener,noreferrer');
+                console.log('Certificate opened: ' + verifyRes.cert_id);
+            } else {
+                throw new Error('Invalid PDF URL received');
+            }
+
+        } else {
+            // Error response
+            const errorMsg = (verifyRes && verifyRes.message) 
+                ? verifyRes.message
+                : 'ไม่สามารถตรวจสอบหรือดาวน์โหลดเกียรติบัตรได้';
+            
+            showAlert(
+                'ข้อผิดพลาด',
+                errorMsg + '\n\nกรุณา:\n' +
+                '1. ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต\n' +
+                '2. ทำการลองใหม่\n' +
+                '3. ติดต่อผู้ดูแลระบบหากปัญหายังคงเกิด'
+            );
+        }
+
+    } catch (error) {
+        hideLoader();
+        console.error('Certificate verification error:', error);
+
+        let friendlyMessage = 'ไม่สามารถตรวจสอบเกียรติบัตรได้';
+        
+        if (error.message && error.message.includes('timeout')) {
+            friendlyMessage = 'การขอหมดเวลา (2 นาที)\n\nระบบกำลังประมวลผล กรุณาลองใหม่ในอีกสักครู่';
+        } else if (error.message && error.message.includes('Invalid')) {
+            friendlyMessage = 'ข้อมูล URL ไม่ถูกต้อง\n\nติดต่อผู้ดูแลระบบ';
+        }
+
+        showAlert('ข้อผิดพลาด', friendlyMessage);
+    }
+}
+
+/**
+ * DOWNLOAD FROM PASSED COURSE MODAL
+ * Enhanced function for downloading certificate from "Passed Courses" modal
+ * 
+ * @param {string} courseId - The course ID to download certificate for
+ */
+async function downloadCertificateFromModal(courseId) {
+    const user = JSON.parse(localStorage.getItem('swd_user'));
+    if (!user) {
+        logout();
+        return;
+    }
+    
+    await downloadCertificateWithVerification(courseId);
+}
+
+/**
+ * INITIALIZE CERTIFICATE DOWNLOAD BUTTONS
+ * Setup event listeners on all certificate download buttons
+ * Call this once when page loads (in DOMContentLoaded handler)
+ */
+function initializeCertificateDownloadButtons() {
+    // Update all certificate download buttons with data attributes
+    const certButtons = document.querySelectorAll('[data-cert-action="download"]');
+    
+    certButtons.forEach(btn => {
+        btn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const courseId = this.getAttribute('data-course-id');
+            if (courseId) {
+                await downloadCertificateWithVerification(courseId);
+            }
+        });
+    });
+
+    // Update modal button (from passed courses)
+    const modalCertBtn = document.getElementById('btnPassedDownloadCert');
+    if (modalCertBtn) {
+        modalCertBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            if (currentPassedCourse && currentPassedCourse.id) {
+                await downloadCertificateWithVerification(currentPassedCourse.id);
+            }
+        });
+    }
+
+    // Update result screen button (after post-test)
+    const resultCertBtn = document.getElementById('btnDownloadCert');
+    if (resultCertBtn) {
+        resultCertBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            if (currentClassCourse && currentClassCourse.id) {
+                await downloadCertificateWithVerification(currentClassCourse.id);
+            }
+        });
+    }
+}
+
+/**
+ * CHECK IF URL IS VALID HTTP/HTTPS URL
+ * 
+ * @param {string} url - URL to validate
+ * @returns {boolean} True if valid, false otherwise
+ */
+function isValidUrl_(url) {
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+    } catch(e) {
+        return false;
+    }
+}
+
+/**
+ * INITIALIZE ON PAGE LOAD
+ * Add this to your existing DOMContentLoaded event handler
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    // Call after a short delay to ensure all DOM elements are loaded
+    setTimeout(() => {
+        initializeCertificateDownloadButtons();
+    }, 500);
+});
