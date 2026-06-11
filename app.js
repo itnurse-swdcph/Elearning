@@ -2225,102 +2225,163 @@ function nextQuestion() {
 
 // กดส่งคำตอบเพื่อตรวจ
 async function submitQuizData() {
-    if(!userAnswers[currentQIndex]) return showAlert('แจ้งเตือน', 'กรุณาเลือกคำตอบข้อสุดท้าย');
-    
-    let score = 0;
-    userQuizData.forEach((q, idx) => {
-        if(userAnswers[idx] === q.answer) score++;
-    });
-    
-    const maxScore = userQuizData.length;
-    const passingScoreReq = currentClassCourse.passing_score || 80; // ดึงเกณฑ์จากหลักสูตร (%)
-    const userPercent = (score / maxScore) * 100;
-    const isPassed = userPercent >= passingScoreReq;
-    
-    showLoader();
     const user = JSON.parse(localStorage.getItem('swd_user'));
-    
-    // ส่งข้อมูลไปบันทึก
-    await callAPI('submitQuiz', {
-        user_id: user.id,
-        course_id: currentClassCourse.id,
-        type: activeQuizType,
-        score: score,
-        is_passed: isPassed
-    });
-    hideLoader();
-    
-    // โชว์หน้าสรุปผล
+    if (!user) {
+        showAlert('ข้อผิดพลาด', 'ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่');
+        setTimeout(() => logout(), 2000);
+        return;
+    }
+
+    let correctCount = 0;
+    for (let qIdx = 0; qIdx < userQuizData.length; qIdx++) {
+        if (userAnswers[qIdx] === userQuizData[qIdx].answer) {
+            correctCount++;
+        }
+    }
+
+    const total = userQuizData.length;
+    const score = Math.round((correctCount / total) * 100);
+    const passingScore = currentClassCourse.passing_score || 80;
+    const isPassed = score >= passingScore;
+
+    // ===== SHOW RESULT SCREEN =====
     document.getElementById('quizContent').classList.add('hidden');
-    const resBox = document.getElementById('quizResult');
-    resBox.classList.remove('hidden');
+    document.getElementById('quizResult').classList.remove('hidden');
     
-    document.getElementById('resultScore').innerText = score;
-    document.getElementById('resultTotal').innerText = maxScore;
-    const certMeta = document.getElementById('resultCertMeta');
-    certMeta.classList.add('hidden');
-    certMeta.innerHTML = '';
-    
-    // ประกาศตัวแปรปุ่มดำเนินการต่อ เพื่อเรียกใช้ง่ายๆ
+    document.getElementById('resultScore').innerText = correctCount;
+    document.getElementById('resultTotal').innerText = total;
+    document.getElementById('resultPassScore').innerText = 
+        `(${passingScore}% ถือว่าผ่าน)`;
+
     const btnReturn = document.getElementById('btnReturnFromQuiz');
-    btnReturn.classList.remove('hidden'); // ให้โชว์เป็นค่าเริ่มต้นไว้ก่อน
-    
-    if(isPassed) {
+    const btnCert = document.getElementById('btnDownloadCert');
+    const certMeta = document.getElementById('resultCertMeta');
+
+    if (isPassed) {
         document.getElementById('resultTitle').style.color = '#10B981';
         document.getElementById('resultIcon').className = 'fas fa-check-circle';
         document.getElementById('resultIcon').style.color = '#10B981';
+        document.getElementById('resultStatusBadge').innerHTML = 
+            `<span style="display:inline-block; background:#dcfce7; color:#166534; padding:6px 12px; border-radius:999px; font-weight:700;">ผ่านการสอบ</span>`;
         
-        // --- เริ่มต้นการสร้าง PDF ---
-        document.getElementById('resultTitle').innerText = 'กำลังสร้างใบประกาศ... กรุณารอสักครู่';
-        document.getElementById('btnDownloadCert').classList.add('hidden');
-        
-        btnReturn.classList.add('hidden'); // <--- 1. ซ่อนปุ่ม "ดำเนินการต่อ" ตรงนี้! ป้องกันคนกดออก
-        
+        // KEEP USER LOGGED IN - Don't hide return button yet
+        btnReturn.classList.remove('hidden');
+        btnReturn.innerText = '⏳ กำลังสร้างใบประกาศ... กรุณารอสักครู่';
+        btnReturn.disabled = true;
+
+        // ===== GENERATE CERTIFICATE =====
         try {
+            // Submit quiz score first
+            await callAPI('submitQuiz', {
+                user_id: user.id,
+                course_id: currentClassCourse.id,
+                type: 'post',
+                score: score,
+                is_passed: true
+            });
+
+            // Then generate certificate with explicit timeout
             const certRes = await Promise.race([
                 callAPI('generateCert', {
                     user_id: user.id,
                     user_name: user.name,
                     course_id: currentClassCourse.id
                 }),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 60000))
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Certificate generation timeout')), 90000)
+                )
             ]);
-            
-            if (certRes && certRes.status === 'success') {
-                document.getElementById('resultTitle').innerText = 'ยินดีด้วย! คุณสอบผ่าน';
-                const btnCert = document.getElementById('btnDownloadCert');
-                btnCert.href = certRes.pdf_url;
-                btnCert.classList.remove('hidden'); // โชว์ปุ่มโหลด PDF
-                // Update cache
+
+            // ===== HANDLE CERTIFICATE RESPONSE =====
+            if (certRes && certRes.status === 'success' && certRes.pdf_url) {
+                // ✅ FIX: Store URL and open in new tab (doesn't redirect user)
+                enrollData.cert_url = certRes.pdf_url;
                 const enrollEntry = cachedUserEnrollments.find(e => e.course_id === currentClassCourse.id);
-                if (enrollEntry) enrollEntry.cert_url = certRes.pdf_url;
+                if (enrollEntry) {
+                    enrollEntry.cert_url = certRes.pdf_url;
+                }
+
+                // Display success message
+                document.getElementById('resultTitle').innerText = 'ยินดีด้วย! คุณสอบผ่าน และได้รับใบประกาศ';
+                document.getElementById('resultStatusBadge').innerHTML = 
+                    `<span style="display:inline-block; background:#dcfce7; color:#166534; padding:6px 12px; border-radius:999px; font-weight:700;">✓ ใบประกาศพร้อม</span>`;
+
+                // Show download button
+                btnCert.href = certRes.pdf_url;
+                btnCert.target = '_blank';
+                btnCert.rel = 'noopener noreferrer';
+                btnCert.classList.remove('hidden');
+
+                // Show certificate metadata
                 if (certRes.cert_id || certRes.verify_url) {
                     certMeta.innerHTML = `
-                        ${certRes.cert_id ? `Certificate ID: <strong>${certRes.cert_id}</strong><br>` : ''}
-                        ${certRes.verify_url ? `<a href="${certRes.verify_url}" target="_blank" rel="noopener">ตรวจสอบใบประกาศ</a>` : ''}
+                        ${certRes.cert_id ? `<strong>Certificate ID:</strong> ${certRes.cert_id}<br>` : ''}
+                        ${certRes.verify_url ? `<a href="${certRes.verify_url}" target="_blank" rel="noopener">🔍 ตรวจสอบใบประกาศ</a>` : ''}
                     `;
                     certMeta.classList.remove('hidden');
                 }
+                showCertificateReadyNotification(certRes.cert_id, certRes.verify_url);
+
+                // ✅ FIX: Auto-open PDF in new tab (not same window)
+                window.open(certRes.pdf_url, '_blank', 'noopener,noreferrer');
+
+                Logger.log('Certificate generated and opened: ' + certRes.cert_id);
             } else {
+                const errorMsg = (certRes && certRes.message) 
+                    ? certRes.message
+                    : 'ไม่สามารถสร้างเกียรติบัตรได้ กรุณาลองใหม่';
+                
                 document.getElementById('resultTitle').innerText = 'สอบผ่าน (แต่พบปัญหาสร้างใบประกาศ)';
-                const errMsg = (certRes && certRes.message) ? certRes.message : 'ไม่สามารถสร้างเกียรติบัตรได้';
-                showAlert('แจ้งเตือน', 'ไม่สามารถสร้างเกียรติบัตรได้ กรุณาตรวจสอบสิทธิ์หรือทดลองใหม่');
-                console.error('Certificate error:', errMsg);
+                document.getElementById('resultStatusBadge').innerHTML = 
+                    `<span style="display:inline-block; background:#fef3c7; color:#92400e; padding:6px 12px; border-radius:999px;">⚠️ ${escapeHtml_(errorMsg)}</span>`;
+                
+                showAlert('แจ้งเตือน', 'ไม่สามารถสร้างเกียรติบัตรได้ แต่คุณสอบผ่านแล้ว\n\nเหตุผล: ' + errorMsg);
             }
-        } catch (certError) {
-            document.getElementById('resultTitle').innerText = 'สอบผ่าน (แต่พบปัญหาสร้างใบประกาศ)';
-            showAlert('แจ้งเตือน', 'ไม่สามารถสร้างเกียรติบัตรได้ กรุณาตรวจสอบสิทธิ์หรือทดลองใหม่');
-            console.error('Certificate error:', certError);
+        } catch (error) {
+            console.error('Certificate error:', error);
+            
+            document.getElementById('resultTitle').innerText = 'สอบผ่าน (ข้อผิดพลาดการสร้างใบประกาศ)';
+            
+            let errorMsg = 'ข้อผิดพลาด: ' + error.toString();
+            if (error.message && error.message.includes('timeout')) {
+                errorMsg = 'หมดเวลารอ - โปรดลองใหม่อีกครั้ง';
+            }
+            
+            document.getElementById('resultStatusBadge').innerHTML = 
+                `<span style="display:inline-block; background:#fee2e2; color:#991b1b; padding:6px 12px; border-radius:999px;">❌ ${errorMsg}</span>`;
+            
+            showAlert('ข้อผิดพลาด', errorMsg + '\n\nกรุณาติดต่อผู้ดูแลระบบ');
+        } finally {
+            // ✅ FIX: Always restore button functionality
+            btnReturn.disabled = false;
+            btnReturn.innerText = '👈 ดำเนินการต่อ';
         }
-        
-        btnReturn.classList.remove('hidden'); // <--- 2. โชว์ปุ่ม "ดำเนินการต่อ" กลับมาเมื่อกระบวนการเสร็จสิ้น!
-        // --------------------------
-        
+
     } else {
-        document.getElementById('resultTitle').innerText = 'เสียใจด้วย คุณสอบไม่ผ่านเกณฑ์';
-        document.getElementById('resultTitle').style.color = '#EF4444';
+        // Failed
+        document.getElementById('resultTitle').innerText = 'ขออภัย! คุณสอบไม่ผ่าน';
+        document.getElementById('resultTitle').style.color = '#dc2626';
         document.getElementById('resultIcon').className = 'fas fa-times-circle';
-        document.getElementById('resultIcon').style.color = '#EF4444';
+        document.getElementById('resultIcon').style.color = '#dc2626';
+        document.getElementById('resultStatusBadge').innerHTML = 
+            `<span style="display:inline-block; background:#fee2e2; color:#991b1b; padding:6px 12px; border-radius:999px; font-weight:700;">ไม่ผ่าน (ต้องได้ ${passingScore}% ขึ้นไป)</span>`;
+
+        btnCert.classList.add('hidden');
+        btnReturn.classList.remove('hidden');
+        btnReturn.innerText = '🔄 ทำแบบทดสอบใหม่';
+
+        // Record failed attempt
+        try {
+            await callAPI('submitQuiz', {
+                user_id: user.id,
+                course_id: currentClassCourse.id,
+                type: 'post',
+                score: score,
+                is_passed: false
+            });
+        } catch(e) {
+            Logger.log('Failed to record quiz attempt: ' + e);
+        }
     }
 }
 
@@ -3142,20 +3203,31 @@ function renderCourseGrid(coursesToRender) {
  */
 async function downloadCertificate(courseId) {
     const user = JSON.parse(localStorage.getItem('swd_user'));
-    const targetCourse = globalCourses.find(c => c.id === courseId);
-    if (!targetCourse) return showAlert('ข้อผิดพลาด', 'ไม่พบข้อมูลหลักสูตรนี้');
-    
-    const enrollData = cachedUserEnrollments.find(e => e.course_id === courseId);
-    if (!enrollData || enrollData.status !== 'completed') {
-        return showAlert('แจ้งเตือน', 'คุณยังเรียนไม่ผ่านหลักสูตรนี้');
-    }
-    
-    // ✅ FIX: If certificate already exists, open directly
-    if (enrollData.cert_url) {
-        window.open(enrollData.cert_url, '_blank');
+    if (!user) {
+        showAlert('ข้อผิดพลาด', 'กรุณาเข้าสู่ระบบใหม่');
+        logout();
         return;
     }
-    
+
+    const targetCourse = globalCourses.find(c => c.id === courseId);
+    if (!targetCourse) {
+        showAlert('ข้อผิดพลาด', 'ไม่พบข้อมูลหลักสูตรนี้');
+        return;
+    }
+
+    const enrollData = cachedUserEnrollments.find(e => e.course_id === courseId);
+    if (!enrollData || enrollData.status !== 'completed') {
+        showAlert('แจ้งเตือน', 'คุณยังเรียนไม่ผ่านหลักสูตรนี้');
+        return;
+    }
+
+    // ===== IF CERTIFICATE ALREADY EXISTS =====
+    if (enrollData.cert_url && isValidUrl_(enrollData.cert_url)) {
+        window.open(enrollData.cert_url, '_blank', 'noopener,noreferrer');
+        return;
+    }
+
+    // ===== GENERATE NEW CERTIFICATE =====
     showLoader();
     try {
         const certRes = await Promise.race([
@@ -3164,34 +3236,53 @@ async function downloadCertificate(courseId) {
                 user_name: user.name,
                 course_id: courseId
             }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout after 60 seconds')), 60000))
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Certificate generation timeout after 90 seconds')), 90000)
+            )
         ]);
-        
-        // ✅ FIX: Better response validation
+
+        hideLoader();
+
         if (certRes && certRes.status === 'success' && certRes.pdf_url) {
-            enrollData.cert_url = certRes.pdf_url;
-            window.open(certRes.pdf_url, '_blank');
+            // ✅ FIX: Validate URL before opening
+            if (isValidUrl_(certRes.pdf_url)) {
+                enrollData.cert_url = certRes.pdf_url;
+                // Open in new tab WITHOUT redirecting current page
+                window.open(certRes.pdf_url, '_blank', 'noopener,noreferrer');
+                
+                showAlert('สำเร็จ', 'ใบประกาศกำลังเปิด...\n\nCertificate ID: ' + (certRes.cert_id || 'N/A'));
+            } else {
+                throw new Error('Invalid PDF URL received');
+            }
         } else {
             const errorMsg = (certRes && certRes.message) 
-                ? 'เกิดข้อผิดพลาด: ' + certRes.message
-                : 'ข้อผิดพลาด: ไม่สามารถสร้างเกียรติบัตรได้ โปรดลองใหม่อีกครั้ง';
-            showAlert('ข้อผิดพลาด', errorMsg);
+                ? certRes.message
+                : 'ไม่สามารถสร้างเกียรติบัตรได้';
+            
+            showAlert('ข้อผิดพลาด', errorMsg + '\n\nกรุณาตรวจสอบ:\n1. Template ID ได้รับการตั้งค่าแล้ว\n2. สิทธิ์การใช้งาน\n3. ลองใหม่อีกครั้ง');
         }
     } catch (error) {
+        hideLoader();
         console.error('Certificate download error:', error);
-        
-        // ✅ FIX: Specific error messages for common issues
+
         let friendlyMessage = 'ไม่สามารถสร้างเกียรติบัตรได้';
         
-        if (error.message.includes('Timeout')) {
-            friendlyMessage = 'การขอหมดเวลา - เซิร์ฟเวอร์ไม่ตอบสนอง โปรดลองใหม่อีกครั้ง';
-        } else if (error.message.includes('Template')) {
-            friendlyMessage = 'ข้อผิดพลาด: ไม่พบ Template ใบประกาศ โปรดติดต่อผู้ดูแลระบบ';
+        if (error.message && error.message.includes('timeout')) {
+            friendlyMessage = 'การขอหมดเวลา (90 วินาที) - โปรดลองใหม่อีกครั้ง';
+        } else if (error.message && error.message.includes('Template')) {
+            friendlyMessage = 'ข้อผิดพลาด: ไม่พบ Template ใบประกาศ\n\nโปรดติดต่อผู้ดูแลระบบ';
         }
-        
-        showAlert('ข้อผิดพลาด', friendlyMessage + ' (กรุณาตรวจสอบสิทธิ์หรือทดลองใหม่)');
-    } finally {
-        hideLoader(true);
+
+        showAlert('ข้อผิดพลาด', friendlyMessage);
+    }
+}
+
+function isValidUrl_(url) {
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+    } catch(e) {
+        return false;
     }
 }
 
@@ -4015,4 +4106,71 @@ function prevQuestion() {
         currentQIndex--;
         renderQuestion();
     }
+}
+/**
+ * Show notification when certificate is ready
+ */
+function showCertificateReadyNotification(certId, verifyUrl) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        color: white;
+        padding: 16px 20px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+        font-size: 14px;
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+        font-family: 'Prompt', sans-serif;
+    `;
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+            <i class="fas fa-check-circle" style="font-size: 20px;"></i>
+            <strong>✓ ใบประกาศพร้อมใช้งาน!</strong>
+        </div>
+        <div style="font-size: 12px; opacity: 0.95;">
+            Certificate ID: <strong>${certId}</strong>
+        </div>
+        ${verifyUrl ? `<div style="margin-top: 10px;"><a href="${verifyUrl}" target="_blank" style="color: white; text-decoration: underline;">🔍 ตรวจสอบ</a></div>` : ''}
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 8 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 8000);
+}
+
+// Add CSS animations
+if (!document.querySelector('#certNotificationStyles')) {
+    const style = document.createElement('style');
+    style.id = 'certNotificationStyles';
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
 }
