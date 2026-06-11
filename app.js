@@ -3560,11 +3560,44 @@ switchUserTab = function(tabId, element) {
     }
 };
 
+function toggleAdminMenu() {
+    const menu = document.getElementById('adminNavbarMenu');
+    const actions = document.getElementById('adminNavbarActions');
+    if (menu && actions) {
+        menu.classList.toggle('open');
+        actions.classList.toggle('open');
+    }
+}
+
 goToAdminPanel = function() {
+    const user = appState.user || getCurrentUser();
+    if (!user) return;
+
     document.getElementById('appSection').classList.add('hidden');
     document.getElementById('classroomSection').classList.add('hidden');
     document.getElementById('adminSection').classList.remove('hidden');
-    const reportMenu = document.querySelector('.admin-sidebar .sidebar-menu li');
+
+    const menus = document.querySelectorAll('.admin-navbar .navbar-menu li, .admin-sidebar .sidebar-menu li');
+    if (user.role === 'admin') {
+        menus.forEach(menu => {
+            menu.style.display = 'flex';
+        });
+    } else if (user.role === 'working_group_leader' || user.role === 'department_leader') {
+        menus.forEach(menu => {
+            const clickAttr = menu.getAttribute('onclick') || '';
+            if (clickAttr.indexOf('reportTab') !== -1 || clickAttr.indexOf('courseReportTab') !== -1) {
+                menu.style.display = 'flex';
+            } else {
+                menu.style.display = 'none';
+            }
+        });
+    }
+
+    const reportMenu = Array.from(menus).find(menu => {
+        const clickAttr = menu.getAttribute('onclick') || '';
+        return clickAttr.indexOf('reportTab') !== -1 && menu.style.display !== 'none';
+    }) || document.querySelector('.admin-navbar .navbar-menu li, .admin-sidebar .sidebar-menu li');
+
     switchAdminTab('reportTab', reportMenu);
 };
 
@@ -3572,7 +3605,7 @@ switchAdminTab = function(tabId, element = null) {
     const tabs = document.querySelectorAll('.admin-tab');
     tabs.forEach(tab => tab.classList.add('hidden'));
 
-    const menus = document.querySelectorAll('.admin-sidebar .sidebar-menu li');
+    const menus = document.querySelectorAll('.admin-navbar .navbar-menu li, .admin-sidebar .sidebar-menu li');
     menus.forEach(menu => menu.classList.remove('active'));
 
     const targetTab = document.getElementById(tabId);
@@ -3584,6 +3617,12 @@ switchAdminTab = function(tabId, element = null) {
         const fallback = Array.from(menus).find(menu => menu.getAttribute('onclick') && menu.getAttribute('onclick').includes(`'${tabId}'`));
         if (fallback) fallback.classList.add('active');
     }
+
+    // Close admin responsive navbar on choice
+    const adminNavbarMenu = document.getElementById('adminNavbarMenu');
+    const adminNavbarActions = document.getElementById('adminNavbarActions');
+    if (adminNavbarMenu) adminNavbarMenu.classList.remove('open');
+    if (adminNavbarActions) adminNavbarActions.classList.remove('open');
 
     if (tabId === 'reportTab') loadAdminReport();
     if (tabId === 'courseMgtTab') {
@@ -4490,42 +4529,3 @@ function initializeCertificateDownloadButtons() {
                 await downloadCertificateWithVerification(currentPassedCourse.id);
             }
         });
-    }
-
-    // Update result screen button (after post-test)
-    const resultCertBtn = document.getElementById('btnDownloadCert');
-    if (resultCertBtn) {
-        resultCertBtn.addEventListener('click', async function(e) {
-            e.preventDefault();
-            if (currentClassCourse && currentClassCourse.id) {
-                await downloadCertificateWithVerification(currentClassCourse.id);
-            }
-        });
-    }
-}
-
-/**
- * CHECK IF URL IS VALID HTTP/HTTPS URL
- * 
- * @param {string} url - URL to validate
- * @returns {boolean} True if valid, false otherwise
- */
-function isValidUrl_(url) {
-    try {
-        const parsed = new URL(url);
-        return parsed.protocol === 'https:' || parsed.protocol === 'http:';
-    } catch(e) {
-        return false;
-    }
-}
-
-/**
- * INITIALIZE ON PAGE LOAD
- * Add this to your existing DOMContentLoaded event handler
- */
-document.addEventListener('DOMContentLoaded', function() {
-    // Call after a short delay to ensure all DOM elements are loaded
-    setTimeout(() => {
-        initializeCertificateDownloadButtons();
-    }, 500);
-});
