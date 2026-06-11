@@ -1916,43 +1916,61 @@ function submitQuiz(sheet, payload) {
   }
   return responseJSON({ status: 'error', message: 'ไม่พบข้อมูลการลงทะเบียน' });
 }
-// ================= Certificate Generator API =================
+// ================= ENHANCED CERTIFICATE GENERATION =================
 
-// *** ใส่ ID ของโฟลเดอร์ Google Drive สำหรับเก็บ PDF ใบประกาศ ***
-const CERT_FOLDER_ID = '19Htb9AjawXDOzje5yVeyT_i7mkYh-k45'; 
+const CERT_FOLDER_ID = '19Htb9AjawXDOzje5yVeyT_i7mkYh-k45';
 
 function generateCertificate(sheet, payload) {
   const wsEnroll = sheet.getSheetByName('Enrollments');
-const wsCourse = getCoursesSheet_(sheet);
+  const wsCourse = getCoursesSheet_(sheet);
   const wsCert = getCertificateRegistrySheet_(sheet);
   
   const courseData = wsCourse.getDataRange().getValues();
   const enrollData = wsEnroll.getDataRange().getValues();
+  
   let courseTitle = '';
+  let courseCause = '';  // ← NEW: For {{CAUSE}} placeholder
   let templateId = '';
   let completionDate = '';
   let enrollmentRowIndex = 0;
   let enrollmentStatus = '';
   
+  // ===== STEP 1: FIND COURSE DATA =====
   for (let i = 1; i < courseData.length; i++) {
     if (courseData[i][0] === payload.course_id) {
       const course = buildCourseRecord_(courseData[i]);
       courseTitle = course.title;
+      courseCause = course.title;  // ← Use course title as cause
       templateId = course.cert_template;
       break;
     }
   }
-  
+
   if (!payload.user_name || String(payload.user_name).trim() === "") {
     return responseJSON({ status: 'error', message: 'ไม่พบข้อมูลชื่อ-นามสกุลของผู้เรียน' });
   }
-
   if (!courseTitle || String(courseTitle).trim() === "") {
     return responseJSON({ status: 'error', message: 'ไม่พบข้อมูลชื่อหลักสูตร' });
   }
+  if (!templateId || String(templateId).trim() === "") {
+    return responseJSON({ 
+      status: 'error', 
+      message: 'หลักสูตรนี้ยังไม่ได้ตั้งค่า Template ใบประกาศ (Slides Template ID)' 
+    });
+  }
 
-  if (!templateId) return responseJSON({ status: 'error', message: 'หลักสูตรนี้ยังไม่ได้ตั้งค่า Template ใบประกาศ' });
+  // ===== STEP 2: VERIFY TEMPLATE FILE =====
+  let templateFile;
+  try {
+    templateFile = DriveApp.getFileById(templateId);
+  } catch(e) {
+    return responseJSON({ 
+      status: 'error', 
+      message: 'ไม่สามารถเข้าถึง Template ใบประกาศได้: ' + e.toString() 
+    });
+  }
 
+  // ===== STEP 3: FIND ENROLLMENT RECORD =====
   for (let i = 1; i < enrollData.length; i++) {
     if (enrollData[i][1] === payload.user_id && enrollData[i][2] === payload.course_id) {
       enrollmentRowIndex = i + 1;
@@ -1965,7 +1983,6 @@ const wsCourse = getCoursesSheet_(sheet);
   if (!enrollmentRowIndex) {
     return responseJSON({ status: 'error', message: 'ไม่พบข้อมูลการลงทะเบียนสำหรับออกใบประกาศ' });
   }
-
   if (enrollmentStatus !== 'completed') {
     return responseJSON({ status: 'error', message: 'ไม่พบสถานะการเรียนจบหลักสูตรนี้' });
   }
@@ -1976,9 +1993,7 @@ const wsCourse = getCoursesSheet_(sheet);
     const verifyUrl = buildCertificateVerifyUrl_(certId);
     const issuedAt = new Date();
 
-    // 2. คัดลอกไฟล์ template มาเป็นไฟล์ชั่วคราวก่อน
-    const templateFile = DriveApp.getFileById(templateId);
-    // Fallback: if hardcoded folder ID fails, search or create 'E-Learning Certificates'
+    // ===== STEP 4: COPY & MODIFY TEMPLATE =====
     let destFolder;
     try {
       destFolder = DriveApp.getFolderById(CERT_FOLDER_ID);
@@ -1986,30 +2001,47 @@ const wsCourse = getCoursesSheet_(sheet);
       const certFolders = DriveApp.getFoldersByName('E-Learning Certificates');
       destFolder = certFolders.hasNext() ? certFolders.next() : DriveApp.createFolder('E-Learning Certificates');
     }
-    const tempFile = templateFile.makeCopy(`Cert_${certId}_${payload.user_name}_${courseTitle}`, destFolder);
+
+    const certFileName = `Cert_${certId}_${sanitizeFileName_(payload.user_name)}_${sanitizeFileName_(courseTitle)}`;
+    const tempFile = templateFile.makeCopy(certFileName, destFolder);
     const tempPresentation = SlidesApp.openById(tempFile.getId());
     const slide = tempPresentation.getSlides()[0];
     
-    // 3. แทนค่าข้อความลงในเทมเพลต
-    const today = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
-    slide.replaceAllText('{{NAME}}', payload.user_name);
-    slide.replaceAllText('{{COURSE}}', courseTitle);
-    slide.replaceAllText('{{DATE}}', today);
-    slide.replaceAllText('{{CERT_ID}}', certId);
-    slide.replaceAllText('{{VERIFY_URL}}', verifyUrl);
-    insertQrCodePlaceholders_(tempPresentation, verifyUrl);
-    tempPresentation.saveAndClose(); // เซฟงานก่อนแปลงไฟล์
-    
-    // 4. แปลงไฟล์เป็น PDF
+    const today = new Date().toLocaleDateString('th-TH', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+
+    // ===== STEP 5: REPLACE ALL TEXT PLACEHOLDERS =====
+    try {
+      slide.replaceAllText('{{NAME}}', payload.user_name);
+      slide.replaceAllText('{{COURSE}}', courseTitle);
+      slide.replaceAllText('{{CAUSE}}', courseCause);  // ← FIX: Replace {{CAUSE}} with course name
+      slide.replaceAllText('{{DATE}}', today);
+      slide.replaceAllText('{{CERT_ID}}', certId);
+      slide.replaceAllText('{{VERIFY_URL}}', verifyUrl);
+    } catch(re) {
+      Logger.log('Text replacement warning: ' + re.toString());
+    }
+
+    // ===== STEP 6: INSERT QR CODE =====
+    try {
+      insertQrCodePlaceholders_(tempPresentation, verifyUrl);
+    } catch(qe) {
+      Logger.log('QR Code insertion failed (non-critical): ' + qe.toString());
+      // Continue - certificate still valid without QR
+    }
+
+    // ===== STEP 7: SAVE & CONVERT TO PDF =====
+    tempPresentation.saveAndClose();
     const pdfBlob = tempFile.getAs('application/pdf').setName(certId + '.pdf');
     const pdfFile = destFolder.createFile(pdfBlob);
     pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    
-    // 5. ลบไฟล์ชั่วคราวหลังสร้าง PDF แล้ว
+
+    // ===== STEP 8: CLEANUP & RECORD =====
     tempFile.setTrashed(true);
-    
-    // 6. บันทึกลิงก์ PDF ลงในชีต Enrollments
-    wsEnroll.getRange(enrollmentRowIndex, 8).setValue(pdfFile.getUrl()); // บันทึกลิงก์ไว้ที่คอลัมน์ H
+    wsEnroll.getRange(enrollmentRowIndex, 8).setValue(pdfFile.getUrl());
 
     upsertCertificateRecord_(wsCert, {
       rowIndex: existingCert ? existingCert.rowIndex : 0,
@@ -2023,25 +2055,83 @@ const wsCourse = getCoursesSheet_(sheet);
       pdfUrl: pdfFile.getUrl(),
       verifyUrl: verifyUrl
     });
-    
-    return responseJSON({ status: 'success', pdf_url: pdfFile.getUrl(), cert_id: certId, verify_url: verifyUrl });
-    
+
+    Logger.log('Certificate generated successfully: ' + certId);
+    return responseJSON({ 
+      status: 'success', 
+      pdf_url: pdfFile.getUrl(), 
+      cert_id: certId, 
+      verify_url: verifyUrl,
+      course_name: courseTitle  // ← NEW: Return course name for verification
+    });
+
   } catch (error) {
-    return responseJSON({ status: 'error', message: 'สร้างใบประกาศไม่สำเร็จ: ' + error.toString() });
+    Logger.log('Certificate generation error: ' + error.toString());
+    return responseJSON({ 
+      status: 'error', 
+      message: 'สร้างใบประกาศไม่สำเร็จ: ' + error.toString() 
+    });
   }
 }
-// ฟังก์ชันทดสอบการอนุญาตสิทธิ์ Drive และ Slides
-function forceAuthorizeFull() {
-  // สร้างไฟล์ตัวอย่างเพื่อบังคับให้ Google ขอสิทธิ์ที่จำเป็น
-  DriveApp.createFile("test_auth.txt", "test");
-  SlidesApp.create("test_slide");
+
+// ===== ENHANCED QR CODE INSERTION =====
+function insertQrCodePlaceholders_(presentation, verifyUrl) {
+  const placeholder = '{{QR_CODE}}';
+  const slides = presentation.getSlides();
+  
+  let qrBlob;
+  try {
+    qrBlob = buildQrCodeBlob_(verifyUrl);
+  } catch(e) {
+    Logger.log('QR code generation failed: ' + e.toString());
+    return; // Continue without QR code
+  }
+
+  slides.forEach(function(slide) {
+    const elements = slide.getPageElements();
+    // Iterate backwards to safely remove elements
+    for (let i = elements.length - 1; i >= 0; i--) {
+      try {
+        const element = elements[i];
+        
+        // Only process text shapes
+        if (element.getPageElementType() !== SlidesApp.PageElementType.SHAPE) continue;
+        
+        const shape = element.asShape();
+        const textRange = shape.getText();
+        if (!textRange) continue;
+        
+        const rawText = textRange.asString();
+        if (rawText.indexOf(placeholder) === -1) continue;
+
+        // Get element position for image placement
+        const left = element.getLeft();
+        const top = element.getTop();
+        const width = element.getWidth();
+        const height = element.getHeight();
+
+        // Remove placeholder text
+        if (rawText.trim() === placeholder) {
+          element.remove();
+        } else {
+          textRange.replaceAllText(placeholder, '');
+        }
+
+        // Insert QR code image
+        slide.insertImage(qrBlob.copyBlob(), left, top, width, height);
+        Logger.log('QR code inserted at position: left=' + left + ', top=' + top);
+      } catch(e) {
+        Logger.log('QR insertion element error: ' + e.toString());
+        // Continue to next element
+      }
+    }
+  });
 }
 
-function authorizeResetPasswordMail() {
-  return {
-    remainingMailQuota: MailApp.getRemainingDailyQuota(),
-    webAppUrl: ScriptApp.getService().getUrl()
-  };
+function sanitizeFileName_(name) {
+  return String(name)
+    .replace(/[\/\\?*:|"<>]/g, '')
+    .substring(0, 50);
 }
 // ================= User History API =================
 function getUserHistory(sheet, payload) {
