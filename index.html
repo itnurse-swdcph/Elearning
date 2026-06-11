@@ -1056,7 +1056,9 @@
                 <p id="resultPassScore" style="color: var(--text-light); font-size: 0.9rem;"></p>
                 <p id="resultCertMeta" class="hidden" style="margin-top: 10px; color: var(--text-light); line-height: 1.7;"></p>
                 <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:18px;">
-                    <a id="btnDownloadCert" href="#" target="_blank" class="btn btn-success hidden"><i class="fas fa-download"></i> ดาวน์โหลดใบประกาศ</a>
+                    <button id="btnDownloadCert" class="btn btn-success hidden" onclick="downloadCertificateWithVerification(currentClassCourse.id)">
+                        <i class="fas fa-download"></i> ดาวน์โหลดใบประกาศ
+                    </button>
                     <button id="btnReturnFromQuiz" class="btn btn-primary" onclick="closeQuiz()"><i class="fas fa-home"></i> กลับหน้าหลักหลักสูตร</button>
                 </div>
             </div>
@@ -1121,7 +1123,9 @@
             <h3 style="margin-bottom:8px;">คุณผ่านหลักสูตรนี้แล้ว!</h3>
             <p id="passedCourseTitle" style="color:var(--text-light); margin-bottom:18px;"></p>
             <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                <a id="btnPassedDownloadCert" href="#" target="_blank" class="btn btn-success hidden"><i class="fas fa-download"></i> ดาวน์โหลดใบประกาศ</a>
+                <button id="btnPassedDownloadCert" class="btn btn-primary" onclick="downloadCertificateWithVerification(currentPassedCourse.id)">
+                    <i class="fas fa-download"></i> ดาวน์โหลดใบประกาศ
+                </button>
                 <button class="btn btn-primary" id="btnPassedReview" onclick="closePassedCourseModal(); enrollAndEnterCourse(currentPassedCourse)"><i class="fas fa-book-reader"></i> เรียนต่อ / ทบทวน</button>
                 <button class="btn btn-outline" onclick="closePassedCourseModal()">ปิด</button>
             </div>
