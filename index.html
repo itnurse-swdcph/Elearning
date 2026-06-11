@@ -18,6 +18,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
     <div id="sidebarOverlay" class="sidebar-overlay hidden" onclick="toggleSidebar()"></div>
@@ -100,6 +101,11 @@
             <form id="registerForm" class="hidden">
                 <div class="input-group"><input type="text" id="regName" placeholder="ชื่อ-นามสกุล" required></div>
                 <div class="input-group"><input type="text" id="regPosition" placeholder="ตำแหน่ง" required></div>
+                <div class="input-group">
+                    <select id="regWorkingGroup" required onchange="onWorkingGroupChange('regWorkingGroup','regDept')">
+                        <option value="">เลือกกลุ่มงาน</option>
+                    </select>
+                </div>
                 <div class="input-group">
                     <select id="regDept" required>
                         <option value="">เลือกหน่วยงาน</option>
@@ -621,6 +627,13 @@
 
                     <div id="externalTab" class="user-tab hidden">
                         <div class="tab-header"><h3><i class="fas fa-file-upload"></i> บันทึกประวัติการอบรมภายนอก</h3></div>
+
+                        <!-- Mode Toggle Tabs -->
+                        <div style="display:flex; gap:8px; margin-bottom:18px;">
+                            <button type="button" id="btnModeA" class="btn btn-primary" onclick="switchExtMode('A')"><i class="fas fa-calendar-day"></i> โหมด A: ระบุวันที่และชั่วโมง</button>
+                            <button type="button" id="btnModeB" class="btn btn-outline" onclick="switchExtMode('B')"><i class="fas fa-calendar-alt"></i> โหมด B: ระบุช่วงวันที่อบรม</button>
+                        </div>
+
                         <form id="externalTrainingForm" class="admin-form">
                             <div class="form-grid">
                                 <div class="input-group" style="grid-column: 1 / -1;">
@@ -630,18 +643,33 @@
                                     </select>
                                     <small id="extRecSelectHint" style="color: var(--text-light); display: block; margin-top: 6px;">ถ้าเลือกจากรายการแนะนำ ระบบจะดึงชื่อหลักสูตร หน่วยงาน และชั่วโมงให้อัตโนมัติ เหลือกรอกวันที่กับแนบหลักฐาน</small>
                                 </div>
-                                <div class="input-group" style="grid-column: 1 / -1;"><label>ชื่อหลักสูตร</label><input type="text" id="extTopic" placeholder="เช่น CPR" required></div>
+                                <div class="input-group" style="grid-column: 1 / -1;"><label>ชื่อหลักสูตร / หัวข้ออบรม</label><input type="text" id="extTopic" placeholder="เช่น CPR Advanced" required></div>
                                 <div class="input-group"><label>หน่วยงานที่จัด</label><input type="text" id="extOrganizer" required></div>
-                                <div class="input-group"><label>วันที่จัดอบรม</label><input type="date" id="extDate" required></div>
-                                <div class="input-group time-input-group" id="extManualDurationGroup">
-                                    <label>ระยะเวลา (ชั่วโมง : นาที)</label><br>
-                                    <input type="number" id="extHours" placeholder="ชม." min="0" required> :
-                                    <input type="number" id="extMins" placeholder="นาที" min="0" max="59" required>
+
+                                <!-- Mode A fields -->
+                                <div id="extModeAFields">
+                                    <div class="input-group"><label>วันที่จัดอบรม</label><input type="date" id="extDate" onkeydown="return false" required></div>
+                                    <div class="input-group time-input-group" id="extManualDurationGroup">
+                                        <label>ระยะเวลา (ชั่วโมง : นาที)</label><br>
+                                        <input type="number" id="extHours" placeholder="ชม." min="0" required> :
+                                        <input type="number" id="extMins" placeholder="นาที" min="0" max="59" required>
+                                    </div>
+                                    <div class="input-group hidden" id="extPresetDurationGroup"><label>ชั่วโมงการอบรม</label><input type="text" id="extDurationDisplay" class="readonly-field" readonly></div>
                                 </div>
-                                <div class="input-group hidden" id="extPresetDurationGroup"><label>ชั่วโมงการอบรม</label><input type="text" id="extDurationDisplay" class="readonly-field" readonly></div>
-                                <div class="input-group"><label>แนบไฟล์ใบประกาศ / หลักฐาน (PDF/รูป)</label><input type="file" id="extCertFile" accept=".pdf, image/*" required></div>
+
+                                <!-- Mode B fields (date range) -->
+                                <div id="extModeBFields" style="display:none; grid-column: 1 / -1;">
+                                    <div class="form-grid">
+                                        <div class="input-group"><label>วันที่เริ่มอบรม</label><input type="date" id="extDateStart" onkeydown="return false"></div>
+                                        <div class="input-group"><label>วันที่สิ้นสุดอบรม</label><input type="date" id="extDateEnd" onkeydown="return false"></div>
+                                        <div class="input-group"><label>ชั่วโมงรวม (คำนวณอัตโนมัติ 7 ชม./วัน)</label><input type="text" id="extHoursCalc" class="readonly-field" readonly placeholder="ระบบคำนวณให้อัตโนมัติ"></div>
+                                    </div>
+                                    <small style="color: var(--text-light);">ระบบจะคำนวณจำนวนวัน x 7 ชั่วโมง โดยอัตโนมัติ</small>
+                                </div>
+
+                                <div class="input-group" style="grid-column: 1 / -1;"><label>แนบไฟล์ใบประกาศ / หลักฐาน (PDF/รูป)</label><input type="file" id="extCertFile" accept=".pdf, image/*"></div>
                             </div>
-                            <button type="submit" class="btn btn-primary" style="margin-top: 15px;"><i class="fas fa-paper-plane"></i> บันทึกข้อมูลเข้า Portfolio</button>
+                            <button type="button" class="btn btn-primary" style="margin-top: 15px;" onclick="previewExternalTraining()"><i class="fas fa-eye"></i> ตรวจสอบข้อมูลก่อนบันทึก</button>
                         </form>
                     </div>
 
@@ -657,7 +685,18 @@
                                 <div class="input-group"><label>ชื่อ-นามสกุล</label><input type="text" id="pName" required></div>
                                 <div class="input-group"><label>ตำแหน่ง</label><input type="text" id="pPosition" required></div>
                                 <div class="input-group"><label>ชื่อผู้ใช้งาน (Username)</label><input type="text" id="pUsername" readonly style="background: #e2e8f0; cursor: not-allowed;"></div>
-                                <div class="input-group"><label>หน่วยงาน</label><input type="text" id="pDept" list="deptList" required></div>
+                                <div class="input-group">
+                                    <label>กลุ่มงาน</label>
+                                    <select id="pWorkingGroup" onchange="onWorkingGroupChange('pWorkingGroup','pDept')">
+                                        <option value="">เลือกกลุ่มงาน</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label>หน่วยงาน</label>
+                                    <select id="pDept">
+                                        <option value="">เลือกหน่วยงาน</option>
+                                    </select>
+                                </div>
                                 <div class="input-group"><label>รหัสผ่านใหม่ (เว้นว่างไว้ถ้าไม่เปลี่ยน)</label><input type="text" id="pPassword"></div>
                             </div>
                             <button type="submit" class="btn btn-primary" style="margin-top: 15px;"><i class="fas fa-save"></i> บันทึกข้อมูล</button>
@@ -680,12 +719,14 @@
                                 <table class="admin-table">
                                     <thead>
                                         <tr>
-                                            <th style="width: 15%; text-align: center;">วันที่</th>
-                                            <th style="width: 30%;">หลักสูตร / หัวข้อการอบรม</th>
-                                            <th style="width: 25%;">หน่วยงานที่จัด</th>
-                                            <th style="width: 15%; text-align: center;">รูปแบบ</th>
+                                            <th style="width: 12%; text-align: center;">วันที่</th>
+                                            <th style="width: 28%;">หลักสูตร / หัวข้อการอบรม</th>
+                                            <th style="width: 20%;">หน่วยงานที่จัด</th>
+                                            <th style="width: 12%; text-align: center;">รูปแบบ</th>
                                             <th style="width: 5%; text-align: center;">ชั่วโมง</th>
-                                            <th style="width: 10%; text-align: center;">หลักฐาน</th>
+                                            <th style="width: 8%; text-align: center;">สถานะ</th>
+                                            <th style="width: 8%; text-align: center;">หลักฐาน</th>
+                                            <th style="width: 7%; text-align: center;" class="no-print">จัดการ</th>
                                         </tr>
                                     </thead>
                                     <tbody id="historyTableBody"></tbody>
@@ -727,20 +768,26 @@
                     <div id="reportTab" class="admin-tab hidden">
                         <div class="tab-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                             <h3>รายงานเกณฑ์การอบรมรายหน่วยงาน</h3>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <select id="adminReportGroupFilter" onchange="filterAdminReport()" style="padding: 8px 15px; border-radius: 6px; border: 1px solid #cbd5e1; min-width: 220px;">
+                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap:wrap;">
+                                <select id="adminReportGroupFilter" onchange="filterAdminReport()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
                                     <option value="all">ทุกกลุ่มตำแหน่ง</option>
-                                    <option value="nurse">พยาบาลวิชาชีพ</option>
+                                    <option value="professional">กลุ่มวิชาชีพ</option>
                                     <option value="support">สายสนับสนุน</option>
                                 </select>
-                                <input type="text" id="adminReportDeptFilter" list="deptList" placeholder="ค้นหาหน่วยงาน" oninput="filterAdminReport()" style="padding: 8px 15px; border-radius: 6px; border: 1px solid #cbd5e1; min-width: 200px;">
+                                <select id="adminReportWorkingGroupFilter" onchange="filterAdminReport()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; min-width:180px;">
+                                    <option value="">ทุกกลุ่มงาน</option>
+                                </select>
+                                <select id="adminReportDeptFilter" onchange="filterAdminReport()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; min-width:180px;">
+                                    <option value="">ทุกหน่วยงาน</option>
+                                </select>
                                 <button class="btn btn-primary" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Export</button>
                             </div>
                         </div>
-                        <p style="color: var(--text-light); margin-bottom: 15px;">พยาบาลวิชาชีพใช้เกณฑ์ `10 วัน/คน/ปี` ส่วนบุคลากรสายสนับสนุนใช้เกณฑ์ `ผ่านหลักสูตรบังคับ` และสามารถกรองแยกดูเป็นรายกลุ่มตำแหน่งได้</p>
+                        <p style="color: var(--text-light); margin-bottom: 15px;">พยาบาลวิชาชีพใช้เกณฑ์ <strong>10 วัน/คน/ปี</strong> ส่วนบุคลากรสายสนับสนุนใช้เกณฑ์ <strong>ผ่านหลักสูตรบังคับ</strong> และสามารถกรองแยกดูเป็นรายกลุ่มตำแหน่งได้</p>
                         <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; height: 350px;">
                             <canvas id="passRateChart"></canvas>
                         </div>
+                        <div id="reportSummaryDiv" style="display:none; margin-bottom:20px;"></div>
                         <div class="table-responsive">
                             <table class="admin-table" id="adminReportTable">
                                 <thead>
@@ -815,10 +862,11 @@
                                 </div>
                                 <div class="input-group time-input-group">
                                     <label>หน่วยกิต (ชม : น)</label><br>
-                                    <input type="number" id="cHours" placeholder="ชม" min="0" required> : 
+                                    <input type="number" id="cHours" placeholder="ชม" min="0" required> :
                                     <input type="number" id="cMins" placeholder="นาที" min="0" max="59" required>
                                 </div>
                                 <div class="input-group"><label>เกณฑ์ผ่าน (%)</label><input type="number" id="cPassingScore" value="80" required></div>
+                                <div class="input-group"><label>คะแนน MOU (กรณีเป็นหลักสูตร MOU)</label><input type="number" id="cMOU" placeholder="0" min="0" step="0.5" value="0"></div>
                                 <div class="input-group" style="grid-column: 1 / -1;">
                                     <label style="display: flex; align-items: center; gap: 10px;">
                                         <input type="checkbox" id="cIsMandatory" style="width: auto; margin-bottom: 0;">
@@ -827,9 +875,10 @@
                                 </div>
                                 <div class="input-group" style="grid-column: 1 / -1;">
                                     <label>รูปหน้าปก</label>
-                                    <input type="file" id="cCoverUpload" accept="image/*">
-                                    <input type="hidden" id="cCover" required>
+                                    <input type="file" id="cCoverUpload" accept="image/*" onchange="previewCoverImage(this)">
+                                    <input type="hidden" id="cCover">
                                     <small id="cCoverStatus"></small>
+                                    <img id="cCoverPreview" src="" alt="ตัวอย่างรูปหน้าปก" style="display:none; max-width:200px; max-height:120px; border-radius:8px; margin-top:10px; border:1px solid #e2e8f0;">
                                 </div>
                                 <div class="input-group" style="grid-column: 1 / -1;"><label>Slides Template ID</label><input type="text" id="cCertTemplate" required></div>
                             </div>
@@ -915,21 +964,37 @@
                                     <div class="input-group"><label>ชื่อ-นามสกุล</label><input type="text" id="euName" required></div>
                                     <div class="input-group"><label>Username</label><input type="text" id="euUsername" readonly style="background: #e2e8f0;"></div>
                                     <div class="input-group"><label>ตำแหน่ง</label><input type="text" id="euPosition" required></div>
-                                    <div class="input-group"><label>หน่วยงาน</label><input type="text" id="euDept" list="deptList" required></div>
-                                    
+                                    <div class="input-group">
+                                        <label>กลุ่มงาน</label>
+                                        <select id="euWorkingGroup" onchange="onWorkingGroupChange('euWorkingGroup','euDept')">
+                                            <option value="">เลือกกลุ่มงาน</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>หน่วยงาน</label>
+                                        <select id="euDept">
+                                            <option value="">เลือกหน่วยงาน</option>
+                                        </select>
+                                    </div>
                                     <div class="input-group">
                                         <label>อีเมล</label>
                                         <input type="email" id="euEmail" readonly style="background: #e2e8f0;" title="อีเมลไม่สามารถแก้ไขได้">
                                     </div>
-                        
                                     <div class="input-group">
                                         <label>สิทธิ์การใช้งาน</label>
-                                        <select id="euRole">
-                                            <option value="user">User</option>
-                                            <option value="admin">Admin</option>
+                                        <select id="euRole" onchange="togglePermissionsSection()">
+                                            <option value="user">User (ผู้ใช้ทั่วไป)</option>
+                                            <option value="admin">Admin (ผู้ดูแลระบบ)</option>
+                                            <option value="working_group_leader">Working Group Leader (หัวหน้ากลุ่มงาน)</option>
+                                            <option value="department_leader">Department Leader (หัวหน้าหน่วยงาน)</option>
                                         </select>
                                     </div>
                                     <div class="input-group"><label>รหัสผ่าน</label><input type="text" id="euPassword" required></div>
+                                    <div class="input-group" id="euPermissionsSection" style="grid-column: 1 / -1; display:none;">
+                                        <label>กลุ่มงาน/หน่วยงานที่รับผิดชอบ (คั่นด้วย Enter หรือ , )</label>
+                                        <textarea id="euPermissions" rows="3" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-family:inherit; resize:vertical;" placeholder="เช่น กลุ่มงานการพยาบาลผู้ป่วยหนัก"></textarea>
+                                        <small style="color:var(--text-light);">กรอกชื่อกลุ่มงาน หรือ หน่วยงาน ที่ผู้ใช้นี้มีสิทธิ์ดูรายงาน (แต่ละรายการขึ้นบรรทัดใหม่หรือคั่นด้วยจุลภาค)</small>
+                                    </div>
                                 </div>
                                 <div style="display: flex; gap: 10px; margin-top: 15px;">
                                     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> บันทึกการแก้ไข</button>
@@ -946,7 +1011,10 @@
                     </div>
 
                     <div id="approveExtTab" class="admin-tab hidden">
-                        <div class="tab-header"><h3>ตรวจสอบประวัติอบรมภายนอก</h3></div>
+                        <div class="tab-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                            <h3>ตรวจสอบประวัติอบรมภายนอก</h3>
+                            <input type="text" id="approveExtSearch" placeholder="ค้นหาชื่อ/หัวข้อ..." oninput="filterApproveExtReq()" style="padding:8px 14px; border-radius:6px; border:1px solid #cbd5e1; min-width:200px;">
+                        </div>
                         <div class="table-responsive">
                             <table class="admin-table">
                                 <thead><tr><th>ชื่อผู้ขอ</th><th>หัวข้อ</th><th>วันที่/ชม.</th><th>หลักฐาน</th><th>จัดการ</th></tr></thead>
@@ -967,20 +1035,30 @@
             </div>
             <div id="quizContent" style="padding: 30px;">
                 <div id="quizProgressText" style="margin-bottom: 10px;">ข้อที่ 1 / 10</div>
+                <div style="height: 6px; background: #e2e8f0; border-radius: 4px; margin-bottom: 18px;">
+                    <div id="quizProgressBar" style="height:100%; background: var(--primary-color); border-radius:4px; width:0%; transition:width .3s;"></div>
+                </div>
                 <h3 id="questionText">คำถาม...?</h3>
                 <div id="optionsContainer" class="options-list"></div>
-                <div style="margin-top: 30px; display: flex; justify-content: flex-end;">
-                    <button id="btnNextQuestion" class="btn btn-primary" onclick="nextQuestion()">ข้อถัดไป</button>
-                    <button id="btnSubmitQuiz" class="btn btn-success hidden" onclick="submitQuizData()">ส่งคำตอบ</button>
+                <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center;">
+                    <button id="btnPrevQuestion" class="btn btn-outline hidden" onclick="prevQuestion()"><i class="fas fa-arrow-left"></i> ข้อก่อนหน้า</button>
+                    <div style="display:flex; gap:8px;">
+                        <button id="btnNextQuestion" class="btn btn-primary" onclick="nextQuestion()">ข้อถัดไป <i class="fas fa-arrow-right"></i></button>
+                        <button id="btnSubmitQuiz" class="btn btn-success hidden" onclick="submitQuizData()"><i class="fas fa-paper-plane"></i> ส่งคำตอบ</button>
+                    </div>
                 </div>
             </div>
             <div id="quizResult" class="hidden result-screen">
                 <i id="resultIcon" class="fas fa-check-circle"></i>
                 <h2 id="resultTitle">ทำแบบทดสอบเสร็จสิ้น!</h2>
-                <p>คุณได้คะแนน <strong id="resultScore">0</strong> / <span id="resultTotal">0</span></p>
+                <p id="resultStatusBadge" style="margin: 8px 0;"></p>
+                <p>คุณได้คะแนน <strong id="resultScore">0</strong> / <span id="resultTotal">0</span> คะแนน</p>
+                <p id="resultPassScore" style="color: var(--text-light); font-size: 0.9rem;"></p>
                 <p id="resultCertMeta" class="hidden" style="margin-top: 10px; color: var(--text-light); line-height: 1.7;"></p>
-                <a id="btnDownloadCert" href="#" target="_blank" class="btn btn-success hidden">ดาวน์โหลดใบประกาศ</a><br>
-                <button id="btnReturnFromQuiz" class="btn btn-primary" onclick="closeQuiz()">ดำเนินการต่อ</button>
+                <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:18px;">
+                    <a id="btnDownloadCert" href="#" target="_blank" class="btn btn-success hidden"><i class="fas fa-download"></i> ดาวน์โหลดใบประกาศ</a>
+                    <button id="btnReturnFromQuiz" class="btn btn-primary" onclick="closeQuiz()"><i class="fas fa-home"></i> กลับหน้าหลักหลักสูตร</button>
+                </div>
             </div>
         </div>
     </section>
@@ -1023,6 +1101,32 @@
     </section>
 
     <datalist id="deptList"></datalist>
+
+    <!-- External Training Preview Modal -->
+    <div id="extPreviewModal" class="modal hidden">
+        <div class="modal-content" style="max-width:520px; text-align:left;">
+            <h3 style="margin-bottom:16px;"><i class="fas fa-eye"></i> กรุณาตรวจสอบข้อมูลก่อนบันทึก</h3>
+            <div id="extPreviewContent" style="background:#f8fafc; border-radius:10px; padding:16px; margin-bottom:18px; line-height:1.9;"></div>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button class="btn btn-outline" onclick="closeExtPreview()">แก้ไขข้อมูล</button>
+                <button class="btn btn-primary" id="btnConfirmExtSave" onclick="confirmSaveExternalTraining()"><i class="fas fa-save"></i> ยืนยันบันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Passed Course Modal -->
+    <div id="passedCourseModal" class="modal hidden">
+        <div class="modal-content" style="max-width:460px; text-align:center;">
+            <i class="fas fa-trophy" style="font-size:3rem; color:#f59e0b; margin-bottom:14px;"></i>
+            <h3 style="margin-bottom:8px;">คุณผ่านหลักสูตรนี้แล้ว!</h3>
+            <p id="passedCourseTitle" style="color:var(--text-light); margin-bottom:18px;"></p>
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                <a id="btnPassedDownloadCert" href="#" target="_blank" class="btn btn-success hidden"><i class="fas fa-download"></i> ดาวน์โหลดใบประกาศ</a>
+                <button class="btn btn-primary" id="btnPassedReview" onclick="closePassedCourseModal(); enrollAndEnterCourse(currentPassedCourse)"><i class="fas fa-book-reader"></i> เรียนต่อ / ทบทวน</button>
+                <button class="btn btn-outline" onclick="closePassedCourseModal()">ปิด</button>
+            </div>
+        </div>
+    </div>
 
     <footer class="main-footer">
         <div class="footer-content">
