@@ -20,6 +20,30 @@ let loaderCount = 0;
 let courseRequestToken = 0;
 let externalRecommendationRequestToken = 0;
 
+let orgStructure = [];
+let mouScoreDefault = 0;
+let currentExtMode = 'A';
+let pendingExtPayload = null;
+let editingExtTrainingId = null;
+let currentPassedCourse = null;
+
+function classifyPositionGroup(position) {
+    const normalized = String(position || '').trim();
+    const profKeywords = [
+        'พยาบาลวิชาชีพ',
+        'นักวิชาการสาธารณสุข',
+        'นักฉุกเฉินการแพทย์',
+        'เจ้าพนักงานสาธารณสุข',
+        'เจ้าพนักงานฉุกเฉินการแพทย์'
+    ];
+    for (let i = 0; i < profKeywords.length; i++) {
+        if (normalized.indexOf(profKeywords[i]) !== -1) {
+            return 'professional';
+        }
+    }
+    return 'support';
+}
+
 function ensureForgotPasswordModal() {
     if (document.getElementById('forgotPasswordModal')) return;
 
@@ -255,49 +279,129 @@ function ensureForgotPasswordTrigger() {
     switchForm.insertAdjacentElement('afterend', trigger);
 }
 
-function populateDepartmentOptions(departments) {
-    const normalizedDepartments = Array.from(new Set(
-        (Array.isArray(departments) ? departments : [])
-            .map((department) => String(department || '').trim())
-            .filter(Boolean)
-    ));
-
+function populateOrgStructureDropdowns() {
+    // Populate Working Group dropdowns
+    const workingGroups = Array.from(new Set(orgStructure.map(item => item.working_group).filter(Boolean)));
+    
+    const wgs = ['regWorkingGroup', 'pWorkingGroup', 'euWorkingGroup', 'adminReportWorkingGroupFilter'];
+    wgs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            const defaultText = id === 'adminReportWorkingGroupFilter' ? 'ทุกกลุ่มงาน' : 'เลือกกลุ่มงาน';
+            el.innerHTML = `<option value="">${defaultText}</option>`;
+            workingGroups.forEach(wg => {
+                const opt = document.createElement('option');
+                opt.value = wg;
+                opt.textContent = wg;
+                el.appendChild(opt);
+            });
+        }
+    });
+    
+    // Populate deptList (datalist) with all unique departments
+    const departments = Array.from(new Set(orgStructure.map(item => item.department).filter(Boolean)));
     const deptList = document.getElementById('deptList');
     if (deptList) {
         deptList.innerHTML = '';
-        normalizedDepartments.forEach((department) => {
-            const option = document.createElement('option');
-            option.value = department;
-            deptList.appendChild(option);
+        departments.forEach(dept => {
+            const opt = document.createElement('option');
+            opt.value = dept;
+            deptList.appendChild(opt);
         });
     }
 
-    const registerDept = document.getElementById('regDept');
-    if (registerDept) {
-        registerDept.innerHTML = '<option value="">เน€เธฅเธทเธญเธเธซเธเนเธงเธขเธเธฒเธ</option>';
-        normalizedDepartments.forEach((department) => {
-            const option = document.createElement('option');
-            option.value = department;
-            option.textContent = department;
-            registerDept.appendChild(option);
+    // Also populate adminReportDeptFilter
+    const adminReportDeptFilter = document.getElementById('adminReportDeptFilter');
+    if (adminReportDeptFilter) {
+        adminReportDeptFilter.innerHTML = '<option value="">ทุกหน่วยงาน</option>';
+        departments.forEach(dept => {
+            const opt = document.createElement('option');
+            opt.value = dept;
+            opt.textContent = dept;
+            adminReportDeptFilter.appendChild(opt);
         });
-        registerDept.disabled = normalizedDepartments.length === 0;
     }
 }
 
-async function loadDepartments() {
+async function loadOrgStructure() {
     try {
         const res = await callAPI('getSettings', {});
         if (res && res.status === 'success') {
-            populateDepartmentOptions(res.data);
-            return;
+            orgStructure = res.org_structure || [];
+            mouScoreDefault = res.mou_score_default || 0;
+            populateOrgStructureDropdowns();
         }
     } catch (err) {
-        console.error("เธฃเธฐเธเธเนเธกเนเธชเธฒเธกเธฒเธฃเธ–เนเธซเธฅเธ”เธฃเธฒเธขเธเธฒเธฃเธซเธเนเธงเธขเธเธฒเธเนเธ”เน:", err);
+        console.error("ระบบไม่สามารถโหลดโครงสร้างหน่วยงานได้:", err);
     }
-
-    populateDepartmentOptions([]);
 }
+
+function onWorkingGroupChange(wgSelectId, deptSelectId) {
+    const wgSelect = document.getElementById(wgSelectId);
+    const deptSelect = document.getElementById(deptSelectId);
+    if (!wgSelect || !deptSelect) return;
+    
+    const selectedWg = wgSelect.value;
+    const defaultText = (deptSelectId === 'adminReportDeptFilter') ? 'ทุกหน่วยงาน' : 'เลือกหน่วยงาน';
+    deptSelect.innerHTML = `<option value="">${defaultText}</option>`;
+    
+    let filteredDepts = [];
+    if (selectedWg) {
+        filteredDepts = orgStructure
+            .filter(item => item.working_group === selectedWg)
+            .map(item => item.department)
+            .filter(Boolean);
+    } else {
+        // if no working group selected, show all departments
+        filteredDepts = Array.from(new Set(orgStructure.map(item => item.department).filter(Boolean)));
+    }
+    
+    // remove duplicates
+    filteredDepts = Array.from(new Set(filteredDepts));
+    
+    filteredDepts.forEach(dept => {
+        const opt = document.createElement('option');
+        opt.value = dept;
+        opt.textContent = dept;
+        deptSelect.appendChild(opt);
+    });
+    
+    if (wgSelectId === 'adminReportWorkingGroupFilter') {
+        filterAdminReport();
+    }
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+    initializeAuthEnhancements();
+    const years = document.querySelectorAll('.current-year');
+    const thisYear = new Date().getFullYear();
+    years.forEach(el => el.innerText = thisYear);
+    await loadOrgStructure();
+
+    // Bind event listeners for Mode B calculator
+    const extDateStart = document.getElementById('extDateStart');
+    const extDateEnd = document.getElementById('extDateEnd');
+    if (extDateStart) extDateStart.addEventListener('input', calculateModeBHours);
+    if (extDateEnd) extDateEnd.addEventListener('input', calculateModeBHours);
+
+    // Bind event listener for course cover image preview
+    const cCover = document.getElementById('cCover');
+    if (cCover) {
+        cCover.addEventListener('input', () => {
+            const coverPreview = document.getElementById('cCoverPreview');
+            if (coverPreview) {
+                const val = cCover.value.trim();
+                if (val) {
+                    coverPreview.src = getDriveImageUrl(val);
+                    coverPreview.classList.remove('hidden');
+                } else {
+                    coverPreview.src = '';
+                    coverPreview.classList.add('hidden');
+                }
+            }
+        });
+    }
+});
 
 function initializeAuthEnhancements() {
     ensureForgotPasswordModal();
@@ -361,46 +465,7 @@ async function handleForgotPasswordRequest(e) {
     }
 }
 
-// โหลดข้อมูลพื้นฐานเมื่อเปิดเว็บ
-window.addEventListener('DOMContentLoaded', async () => {
-    // 1. อัปเดตปีใน Footer ทันที (ทุกจุดที่ใช้คลาส current-year)
-    initializeAuthEnhancements();
-    const years = document.querySelectorAll('.current-year');
-    const thisYear = new Date().getFullYear();
-    years.forEach(el => el.innerText = thisYear);
-    await loadDepartments();
 
-    // 2. โหลดรายชื่อหน่วยงานสำหรับช่องเลือกและ datalist ที่ยังใช้งานอยู่
-    try {
-        const res = await callAPI('getSettings', {});
-        if(res && res.status === 'success') {
-            const departments = Array.isArray(res.data) ? res.data : [];
-            const deptList = document.getElementById('deptList');
-            if (deptList) {
-                deptList.innerHTML = '';
-                departments.forEach((department) => {
-                    const option = document.createElement('option');
-                    option.value = department;
-                    deptList.appendChild(option);
-                });
-            }
-
-            const registerDept = document.getElementById('regDept');
-            if (registerDept) {
-                registerDept.innerHTML = '<option value="">เลือกหน่วยงาน</option>';
-                departments.forEach((department) => {
-                    const option = document.createElement('option');
-                    option.value = department;
-                    option.textContent = department;
-                    registerDept.appendChild(option);
-                });
-                registerDept.disabled = departments.length === 0;
-            }
-        }
-    } catch (err) {
-        console.error("ระบบไม่สามารถโหลดรายการหน่วยงานได้:", err);
-    }
-});
 
 // ตรวจสอบสถานะการล็อกอินเมื่อเปิดหน้าเว็บ
 
@@ -534,6 +599,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     const payload = {
         name: document.getElementById('regName').value.trim(), 
         position: position, 
+        working_group: document.getElementById('regWorkingGroup').value.trim(),
         department: document.getElementById('regDept').value.trim(),
         username: document.getElementById('regUsername').value.trim(),
         email: document.getElementById('regEmail').value.trim(), 
@@ -592,15 +658,66 @@ function renderCurrentUser(user) {
         avatar.innerHTML = '<i class="fas fa-user-nurse"></i>';
     }
 
-    if (user.role === 'admin') document.getElementById('adminBtn').classList.remove('hidden');
-    else document.getElementById('adminBtn').classList.add('hidden');
+    const adminRoles = ['admin', 'working_group_leader', 'department_leader'];
+    if (adminRoles.indexOf(user.role) !== -1) {
+        document.getElementById('adminBtn').classList.remove('hidden');
+    } else {
+        document.getElementById('adminBtn').classList.add('hidden');
+    }
 }
 
 function renderDashboardStats(stats) {
     if (!stats) return;
-    document.querySelectorAll('.stat-number')[0].innerText = stats.inProgress;
-    document.querySelectorAll('.stat-number')[1].innerText = stats.certCount;
-    document.getElementById('totalHoursDisplay').innerText = stats.totalHours;
+    const user = appState.user || getCurrentUser();
+    const positionGroup = user ? classifyPositionGroup(user.position) : 'support';
+    
+    const statsRow = document.querySelector('.stats-row');
+    if (!statsRow) return;
+    
+    if (positionGroup === 'professional') {
+        const completedHours = parseFloat(stats.totalHours) || 0;
+        const remainingHours = Math.max(0, 70 - completedHours).toFixed(2);
+        const statusText = completedHours >= 70 ? '<span class="text-success" style="font-weight:bold;">ผ่านเกณฑ์ 10 วัน/ปี</span>' : `<span class="text-danger" style="font-weight:bold;">ยังไม่ผ่านเกณฑ์ (ขาดอีก ${remainingHours} ชม.)</span>`;
+        
+        statsRow.innerHTML = `
+            <div class="stat-card">
+                <i class="fas fa-book-reader"></i>
+                <div><h4>หลักสูตรที่กำลังเรียน</h4><p class="stat-number">${stats.inProgress}</p></div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-certificate text-success"></i>
+                <div><h4>ใบประกาศนียบัตรที่ได้รับ</h4><p class="stat-number">${stats.certCount}</p></div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-clock text-info"></i>
+                <div><h4>ชั่วโมงสะสม (เกณฑ์ 70 ชม.)</h4><p class="stat-number">${completedHours.toFixed(2)}</p></div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-tasks text-warning"></i>
+                <div><h4>สถานะพัฒนาตนเอง</h4><p style="font-size: 1.1rem; margin-top: 5px;">${statusText}</p></div>
+            </div>
+        `;
+    } else {
+        statsRow.innerHTML = `
+            <div class="stat-card">
+                <i class="fas fa-book-reader"></i>
+                <div><h4>หลักสูตรที่กำลังเรียน</h4><p class="stat-number">${stats.inProgress}</p></div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-certificate text-success"></i>
+                <div><h4>ใบประกาศนียบัตรที่ได้รับ</h4><p class="stat-number">${stats.certCount}</p></div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-clock text-primary"></i>
+                <div><h4>ชั่วโมงสะสมรวม</h4><p class="stat-number">${parseFloat(stats.totalHours).toFixed(2)}</p></div>
+            </div>
+        `;
+    }
+    
+    const totalHoursDisplay = document.getElementById('totalHoursDisplay');
+    if (totalHoursDisplay) {
+        totalHoursDisplay.innerText = parseFloat(stats.totalHours).toFixed(2);
+    }
 }
 
 async function loadDashboardStats(force = false) {
@@ -629,6 +746,9 @@ async function loadDashboardStats(force = false) {
 }
 
 async function refreshDashboardData(force = false) {
+    const user = appState.user || getCurrentUser();
+    if (!user) return;
+
     const shouldRefresh = force || appState.dashboardNeedsRefresh || !appState.dashboardStats || globalCourses.length === 0 || !appState.externalRecommendationsLoaded;
     if (!shouldRefresh) {
         filterCourses();
@@ -636,13 +756,86 @@ async function refreshDashboardData(force = false) {
         return;
     }
 
-    const refreshMode = force || appState.dashboardNeedsRefresh;
-    await Promise.all([
-        loadDashboardStats(refreshMode),
-        loadCourses(refreshMode),
-        loadExternalRecommendations(refreshMode)
-    ]);
-    appState.dashboardNeedsRefresh = false;
+    showLoader();
+    const loaderEl = document.getElementById('loader');
+    if (loaderEl) {
+        const loaderText = loaderEl.querySelector('.loader-text');
+        if (loaderText) loaderText.textContent = 'กำลังโหลดข้อมูล...';
+    }
+
+    const TIMEOUT_MS = 25000;
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+        timedOut = true;
+        hideLoader(true);
+        showAlert('แจ้งเตือน', 'ระบบใช้เวลานานกว่าปกติ กรุณาลองใหม่');
+    }, TIMEOUT_MS);
+
+    try {
+        const res = await callAPI('loadInitialData', { user_id: user.id });
+        clearTimeout(timeoutId);
+        if (timedOut) return;
+
+        if (res && res.status === 'success') {
+            // Update user profile from server (profile_img may have changed)
+            if (res.user) {
+                const storedUser = getCurrentUser();
+                const mergedUser = Object.assign({}, storedUser, res.user);
+                localStorage.setItem('swd_user', JSON.stringify(mergedUser));
+                appState.user = mergedUser;
+                renderCurrentUser(mergedUser);
+            }
+
+            // Stats
+            if (res.stats) {
+                appState.dashboardStats = res.stats;
+                renderDashboardStats(res.stats);
+            }
+
+            // Courses
+            if (res.courses) {
+                globalCourses = res.courses;
+                appState.coursesLoaded = true;
+            }
+
+            // Enrollments
+            if (res.enrollments) {
+                cachedUserEnrollments = res.enrollments;
+            }
+
+            // External recommendations
+            if (res.externalRecommendations) {
+                externalRecommendationCourses = res.externalRecommendations;
+                appState.externalRecommendationsLoaded = true;
+            }
+
+            // Org structure & settings
+            if (res.org_structure) {
+                orgStructure = res.org_structure;
+                mouScoreDefault = res.mou_score_default || 0;
+                populateOrgStructureDropdowns();
+            }
+
+            appState.dashboardNeedsRefresh = false;
+            filterCourses();
+            renderExternalRecommendationGrid(externalRecommendationCourses);
+        } else {
+            // Fallback: load separately
+            await Promise.all([
+                loadDashboardStats(true),
+                loadCourses(true),
+                loadExternalRecommendations(true)
+            ]);
+            appState.dashboardNeedsRefresh = false;
+        }
+    } catch (err) {
+        clearTimeout(timeoutId);
+        if (!timedOut) {
+            showAlert('ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่');
+        }
+    } finally {
+        hideLoader();
+    }
 }
 
 async function initApp(options = {}) {
@@ -742,6 +935,7 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
         user_id: user.id, 
         name: document.getElementById('pName').value,
         position: position,
+        working_group: document.getElementById('pWorkingGroup').value,
         department: document.getElementById('pDept').value, 
         password: document.getElementById('pPassword').value,
         profile_img: profileUrl
@@ -751,6 +945,7 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
     if(res.status === 'success') {
         user.name = document.getElementById('pName').value;
         user.position = position;
+        user.working_group = document.getElementById('pWorkingGroup').value;
         user.department = document.getElementById('pDept').value;
         user.profile_img = profileUrl;
         localStorage.setItem('swd_user', JSON.stringify(user));
@@ -786,7 +981,11 @@ function switchUserTab(tabId, element) {
         document.getElementById('pName').value = user.name;
         setPositionFieldValue('pPosition', 'pPositionOther', user.position || '');
         document.getElementById('pUsername').value = user.username || '-';
-        document.getElementById('pDept').value = user.department;
+        
+        document.getElementById('pWorkingGroup').value = user.working_group || '';
+        onWorkingGroupChange('pWorkingGroup', 'pDept');
+        document.getElementById('pDept').value = user.department || '';
+        
         document.getElementById('pPassword').value = '';
         if(user.profile_img) document.getElementById('profilePreview').src = user.profile_img;
     }
@@ -798,44 +997,68 @@ async function loadTrainingHistory() {
     const tbody = document.getElementById('historyTableBody');
     if(!tbody) return;
     
-    // เปลี่ยน colspan เป็น 6 เพราะเราเพิ่มคอลัมน์
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">กำลังดึงข้อมูลประวัติการอบรม...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-light);">กำลังดึงข้อมูลประวัติการอบรม...</td></tr>';
     const res = await callAPI('getUserHistory', { user_id: user.id });
     
     if (res.status === 'success') {
         tbody.innerHTML = ''; 
         if (res.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">ยังไม่มีประวัติการอบรมในระบบครับ</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-light);">ยังไม่มีประวัติการอบรมในระบบครับ</td></tr>';
             return;
         }
         
         res.data.forEach(item => {
-            // บังคับไม่ให้ปุ่มตกบรรทัด (white-space: nowrap)
             const certBtn = item.cert_url && item.cert_url.trim() !== '' 
                 ? `<a href="${item.cert_url}" target="_blank" class="btn btn-outline" style="padding: 5px 10px; font-size: 0.85rem; white-space: nowrap;"><i class="fas fa-file-pdf text-danger"></i> หลักฐาน</a>`
                 : '<span style="color: #94a3b8; font-size: 0.85rem; white-space: nowrap;">ไม่มีไฟล์</span>';
             
-            // ป้ายกำกับสถานะสำหรับอบรมภายนอก
             let statusBadge = '';
-            if(item.status === 'pending') statusBadge = '<span class="badge" style="background:#f59e0b; color:white; font-size: 0.7rem; white-space: nowrap;">รอตรวจ</span>';
-            else if(item.status === 'rejected') statusBadge = '<span class="badge" style="background:#ef4444; color:white; font-size: 0.7rem; white-space: nowrap;">ไม่อนุมัติ</span>';
+            let actionBtns = '-';
+            
+            if (item.source === 'internal') {
+                statusBadge = '<span class="badge" style="background:#10b981; color:white; font-size: 0.7rem; white-space: nowrap;">ผ่านแล้ว</span>';
+            } else {
+                if (item.status === 'pending') {
+                    statusBadge = '<span class="badge" style="background:#f59e0b; color:white; font-size: 0.7rem; white-space: nowrap;">รอตรวจ</span>';
+                    actionBtns = `
+                        <div style="display:flex; gap:4px; justify-content:center;">
+                            <button class="btn btn-primary btn-sm" onclick="editExtTraining('${item.ext_id}')" style="padding: 2px 6px; font-size: 0.75rem;"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm" onclick="deleteExtTraining('${item.ext_id}')" style="background:#ef4444; color:white; padding: 2px 6px; font-size: 0.75rem;"><i class="fas fa-trash"></i></button>
+                        </div>
+                    `;
+                } else if (item.status === 'rejected') {
+                    const rejReason = item.rejection_reason ? ` <i class="fas fa-info-circle text-danger" title="เหตุผล: ${item.rejection_reason}"></i>` : '';
+                    statusBadge = `<span class="badge" style="background:#ef4444; color:white; font-size: 0.7rem; white-space: nowrap;">ไม่อนุมัติ</span>${rejReason}`;
+                    actionBtns = `
+                        <div style="display:flex; gap:4px; justify-content:center;">
+                            <button class="btn btn-primary btn-sm" onclick="editExtTraining('${item.ext_id}')" style="padding: 2px 6px; font-size: 0.75rem;"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm" onclick="deleteExtTraining('${item.ext_id}')" style="background:#ef4444; color:white; padding: 2px 6px; font-size: 0.75rem;"><i class="fas fa-trash"></i></button>
+                        </div>
+                    `;
+                } else {
+                    statusBadge = '<span class="badge" style="background:#10b981; color:white; font-size: 0.7rem; white-space: nowrap;">อนุมัติ</span>';
+                }
+            }
                 
             tbody.innerHTML += `
                 <tr>
                     <td style="text-align: center; white-space: nowrap;">${item.date || '-'}</td>
-                    <td><strong>${item.title}</strong> ${statusBadge}</td>
-                    <td>${item.organizer || '-'}</td> <td style="text-align: center; white-space: nowrap;"><span class="badge-hours" style="background: #f1f5f9; color: var(--text-light); box-shadow: none; white-space: nowrap;">${item.type}</span></td>
+                    <td><strong>${item.title}</strong></td>
+                    <td>${item.organizer || '-'}</td>
+                    <td style="text-align: center; white-space: nowrap;"><span class="badge-hours" style="background: #f1f5f9; color: var(--text-light); box-shadow: none; white-space: nowrap;">${item.type}</span></td>
                     <td style="text-align: center;"><strong>${item.hours}</strong></td>
+                    <td style="text-align: center;">${statusBadge}</td>
                     <td style="text-align: center; white-space: nowrap;">${certBtn}</td>
+                    <td style="text-align: center;" class="no-print">${actionBtns}</td>
                 </tr>
             `;
         });
         
-        const certCount = res.data.filter(i => i.status === 'approved').length;
+        const certCount = res.data.filter(i => i.status === 'approved' || i.source === 'internal').length;
         document.querySelectorAll('.stat-number')[1].innerText = certCount;
         
     } else {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #EF4444;">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #EF4444;">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่</td></tr>';
     }
 }
 // ================= Course Display & Search Logic =================
@@ -916,15 +1139,87 @@ function renderCourseGrid(coursesToRender) {
 // ตรวจสอบสถานะการล็อกอินเมื่อเปิดหน้าเว็บ
 // ================= Admin Logic =================
 
+function restrictAdminFilters() {
+    const user = appState.user || getCurrentUser();
+    if (!user) return;
+    
+    const wgFilter = document.getElementById('adminReportWorkingGroupFilter');
+    const deptFilter = document.getElementById('adminReportDeptFilter');
+    if (!wgFilter || !deptFilter) return;
+    
+    if (user.role === 'admin') {
+        wgFilter.disabled = false;
+        deptFilter.disabled = false;
+        return;
+    }
+    
+    const targets = user.permissions || [];
+    
+    if (user.role === 'working_group_leader') {
+        wgFilter.innerHTML = '';
+        targets.forEach(tg => {
+            const opt = document.createElement('option');
+            opt.value = tg;
+            opt.textContent = tg;
+            wgFilter.appendChild(opt);
+        });
+        wgFilter.value = targets[0] || '';
+        wgFilter.disabled = targets.length <= 1;
+        
+        onWorkingGroupChange('adminReportWorkingGroupFilter', 'adminReportDeptFilter');
+        deptFilter.disabled = false;
+        
+    } else if (user.role === 'department_leader') {
+        wgFilter.innerHTML = '<option value="">-</option>';
+        wgFilter.value = '';
+        wgFilter.disabled = true;
+        
+        deptFilter.innerHTML = '';
+        targets.forEach(tg => {
+            const opt = document.createElement('option');
+            opt.value = tg;
+            opt.textContent = tg;
+            deptFilter.appendChild(opt);
+        });
+        deptFilter.value = targets[0] || '';
+        deptFilter.disabled = targets.length <= 1;
+    }
+}
+
 function goToAdminPanel() {
+    const user = appState.user || getCurrentUser();
+    if (!user) return;
+    
     document.getElementById('appSection').classList.add('hidden');
     document.getElementById('adminSection').classList.remove('hidden');
-    loadAdminReport(); // โหลดข้อมูลตารางสถิติทันทีที่เข้าหน้าแอดมิน
+    
+    // Control sidebar menu visibility
+    const menus = document.querySelectorAll('.admin-sidebar .sidebar-menu li');
+    if (user.role === 'admin') {
+        menus.forEach(menu => {
+            if (!menu.classList.contains('logout-menu')) {
+                menu.style.display = 'block';
+            }
+        });
+    } else if (user.role === 'working_group_leader' || user.role === 'department_leader') {
+        // Hide all config/approval/user management tabs
+        menus.forEach(menu => {
+            if (menu.classList.contains('logout-menu')) return;
+            const clickAttr = menu.getAttribute('onclick') || '';
+            if (clickAttr.indexOf('reportTab') !== -1 || clickAttr.indexOf('courseReportTab') !== -1) {
+                menu.style.display = 'block';
+            } else {
+                menu.style.display = 'none';
+            }
+        });
+    }
+    
+    // Automatically switch to first visible tab
+    switchAdminTab('reportTab');
 }
 
 // ออกจากระบบแอดมิน (กลับหน้าผู้ใช้งานและรีเฟรช)
 function exitAdmin() {
-    // เรียกใช้ระบบกลับหน้าหลักแบบรีเฟรชข้อมูล
     returnToDashboard();
 }
 
@@ -934,7 +1229,7 @@ function switchAdminTab(tabId, element = null) {
     tabs.forEach(tab => tab.classList.add('hidden'));
     
     // ลบ Active menu
-    const menus = document.querySelectorAll('.admin-sidebar li'); // เช็คให้ตรงกับคลาสเมนูของคุณ (เช่น .admin-sidebar li หรือ .sidebar-menu li)
+    const menus = document.querySelectorAll('.admin-sidebar li'); 
     menus.forEach(menu => menu.classList.remove('active'));
     
     // โชว์ Tab ที่เลือก
@@ -944,12 +1239,21 @@ function switchAdminTab(tabId, element = null) {
     // เพิ่มสี Active ให้เมนูที่ถูกคลิก (แบบป้องกัน Error)
     if (element) {
         element.classList.add('active');
-    } else if (window.event && window.event.currentTarget) {
-        window.event.currentTarget.classList.add('active');
+    } else {
+        const sidebarMenus = document.querySelectorAll('.admin-sidebar .sidebar-menu li');
+        sidebarMenus.forEach(m => {
+            const clickAttr = m.getAttribute('onclick') || '';
+            if (clickAttr.indexOf(tabId) !== -1) {
+                m.classList.add('active');
+            }
+        });
     }
     
     // โหลดข้อมูลตามหน้า Tab ที่เลือก
-    if(tabId === 'reportTab') loadAdminReport();
+    if(tabId === 'reportTab') {
+        restrictAdminFilters();
+        loadAdminReport();
+    }
     if(tabId === 'courseMgtTab') {
         appState.coursesLoaded = false;
         setDashboardRefreshNeeded();
@@ -966,6 +1270,7 @@ function switchAdminTab(tabId, element = null) {
         loadAdminUsersTable();
     }
     if(tabId === 'courseReportTab') {
+        restrictAdminFilters();
         initCourseReportAdmin(); // โหลดรายชื่อวิชาใส่ Dropdown
     }
 }
@@ -980,7 +1285,8 @@ async function loadAdminReport() {
     if(!tbody) return;
     
     tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">กำลังโหลดข้อมูลสถิติ...</td></tr>';
-    const res = await callAPI('getAdminReport', {});
+    const user = appState.user || getCurrentUser();
+    const res = await callAPI('getAdminReport', { user_id: user ? user.id : '' });
     
     if (res.status === 'success') {
         globalAdminReportData = res.data; 
@@ -993,11 +1299,13 @@ async function loadAdminReport() {
 function filterAdminReport() {
     const selectedDept = document.getElementById('adminReportDeptFilter').value.trim();
     const selectedGroup = document.getElementById('adminReportGroupFilter').value;
+    const selectedWorkingGroup = document.getElementById('adminReportWorkingGroupFilter').value.trim();
 
     const filteredData = globalAdminReportData.filter(item => {
         const deptMatch = selectedDept === '' || item.department === selectedDept;
         const groupMatch = selectedGroup === 'all' || item.position_group === selectedGroup;
-        return deptMatch && groupMatch;
+        const wgMatch = selectedWorkingGroup === '' || item.working_group === selectedWorkingGroup;
+        return deptMatch && groupMatch && wgMatch;
     });
 
     renderReportTableAndChart(filteredData);
@@ -1007,26 +1315,91 @@ function renderReportTableAndChart(dataToShow) {
     const tbody = document.getElementById('reportTableBody');
     tbody.innerHTML = '';
     
+    const summaryDiv = document.getElementById('reportSummaryDiv');
+    if (summaryDiv) {
+        if (dataToShow.length > 0) {
+            let totalCount = dataToShow.length;
+            let passedCount = dataToShow.filter(item => item.is_passed).length;
+            let totalPassRate = (passedCount / totalCount * 100).toFixed(1);
+            
+            let wgStats = {};
+            let deptStats = {};
+            
+            dataToShow.forEach(item => {
+                const wg = item.working_group || 'ไม่ระบุกลุ่มงาน';
+                const dept = item.department || 'ไม่ระบุหน่วยงาน';
+                
+                if (!wgStats[wg]) wgStats[wg] = { total: 0, passed: 0 };
+                if (!deptStats[dept]) deptStats[dept] = { total: 0, passed: 0 };
+                
+                wgStats[wg].total++;
+                deptStats[dept].total++;
+                if (item.is_passed) {
+                    wgStats[wg].passed++;
+                    deptStats[dept].passed++;
+                }
+            });
+            
+            let wgHtml = '';
+            for (let wg in wgStats) {
+                let rate = (wgStats[wg].passed / wgStats[wg].total * 100).toFixed(1);
+                wgHtml += `<div class="stat-card" style="padding: 12px; margin-bottom: 0;">
+                    <strong>${wg}</strong><br>
+                    ผ่านเกณฑ์: ${wgStats[wg].passed}/${wgStats[wg].total} คน (${rate}%)
+                </div>`;
+            }
+            
+            let deptHtml = '';
+            for (let dept in deptStats) {
+                let rate = (deptStats[dept].passed / deptStats[dept].total * 100).toFixed(1);
+                deptHtml += `<div class="stat-card" style="padding: 12px; margin-bottom: 0;">
+                    <strong>${dept}</strong><br>
+                    ผ่านเกณฑ์: ${deptStats[dept].passed}/${deptStats[dept].total} คน (${rate}%)
+                </div>`;
+            }
+            
+            summaryDiv.innerHTML = `
+                <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 12px;"><i class="fas fa-chart-pie"></i> สรุปผลผ่านเกณฑ์รายหน่วยงาน</h4>
+                    <p style="font-size: 1.1rem; margin-bottom: 15px;"><strong>ภาพรวมทั้งหมด:</strong> ผ่านเกณฑ์ ${passedCount} จาก ${totalCount} คน (${totalPassRate}%)</p>
+                    
+                    <h5 style="margin-bottom: 8px;">สรุปรายกลุ่มงาน</h5>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                        ${wgHtml}
+                    </div>
+                    
+                    <h5 style="margin-bottom: 8px;">สรุปรายหน่วยงาน</h5>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                        ${deptHtml}
+                    </div>
+                </div>
+            `;
+            summaryDiv.style.display = 'block';
+        } else {
+            summaryDiv.style.display = 'none';
+        }
+    }
+
     if (dataToShow.length === 0) {
         tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">ไม่มีข้อมูลผู้ใช้งานตามเงื่อนไขที่เลือก</td></tr>';
-        renderAdminChart({}); // วาดกราฟเปล่า
+        renderAdminChart({}); 
         return;
     }
     
-    let deptStats = {}; // เก็บสถิติทำกราฟ
+    let deptStatsMap = {}; 
     
     dataToShow.forEach(r => {
-        if (!deptStats[r.department]) deptStats[r.department] = { passed: 0, failed: 0 };
-        if (r.is_passed) deptStats[r.department].passed++;
-        else deptStats[r.department].failed++;
+        if (!deptStatsMap[r.department]) deptStatsMap[r.department] = { passed: 0, failed: 0 };
+        if (r.is_passed) deptStatsMap[r.department].passed++;
+        else deptStatsMap[r.department].failed++;
 
         let statusColor = '#EF4444';
         if (r.status_code === 'pass') statusColor = '#10B981';
         if (r.status_code === 'warning') statusColor = '#f59e0b';
 
         const statusBadge = `<span class="badge" style="background: ${statusColor}; color: white;">${r.status}</span>`;
-        const positionGroupLabel = r.position_group === 'nurse' ? 'พยาบาลวิชาชีพ' : 'สายสนับสนุน';
-        const dayLabel = r.position_group === 'nurse' ? r.totalDays : '-';
+        const positionGroupLabel = r.position_group === 'professional' ? 'กลุ่มวิชาชีพ' : 'สายสนับสนุน';
+        const dayLabel = r.position_group === 'professional' ? r.totalDays : '-';
         const mandatoryLabel = r.position_group === 'support'
             ? `${r.mandatory_completed}/${r.mandatory_total || 0}`
             : '-';
@@ -1049,8 +1422,7 @@ function renderReportTableAndChart(dataToShow) {
         `;
     });
 
-    // วาดกราฟ
-    renderAdminChart(deptStats);
+    renderAdminChart(deptStatsMap);
 }
 
 // ฟังก์ชันวาดกราฟ Chart.js
@@ -1191,6 +1563,18 @@ function editCourse(courseId) {
     document.getElementById('cDeliveryType').value = course.delivery_type || 'video';
     document.getElementById('cAudience').value = course.audience || 'all';
     document.getElementById('cIsMandatory').checked = !!course.is_mandatory;
+    document.getElementById('cMOU').value = course.mou_score || 0;
+
+    const coverPreview = document.getElementById('cCoverPreview');
+    if (coverPreview) {
+        if (course.cover_image) {
+            coverPreview.src = getDriveImageUrl(course.cover_image);
+            coverPreview.style.display = 'block';
+        } else {
+            coverPreview.src = '';
+            coverPreview.style.display = 'none';
+        }
+    }
 
     const hr = Math.floor(course.hours);
     const min = Math.round((course.hours - hr) * 60);
@@ -1221,6 +1605,13 @@ function resetCourseForm() {
     document.getElementById('cDeliveryType').value = 'video';
     document.getElementById('cAudience').value = 'all';
     document.getElementById('cIsMandatory').checked = false;
+    document.getElementById('cMOU').value = 0;
+    
+    const coverPreview = document.getElementById('cCoverPreview');
+    if (coverPreview) {
+        coverPreview.src = '';
+        coverPreview.style.display = 'none';
+    }
     
     document.getElementById('unitsContainer').innerHTML = '';
     addUnitField();
@@ -1261,7 +1652,8 @@ document.getElementById('addCourseForm').addEventListener('submit', async (e) =>
         units: unitsData,
         delivery_type: deliveryType,
         audience: document.getElementById('cAudience').value,
-        is_mandatory: document.getElementById('cIsMandatory').checked
+        is_mandatory: document.getElementById('cIsMandatory').checked,
+        mou_score: parseFloat(document.getElementById('cMOU').value) || 0
     };
     
     const editId = document.getElementById('editCourseId').value;
@@ -1323,41 +1715,128 @@ function saveProgressToDB() {
 }
 
 // 2. กดเข้าเรียน
+// 2. กดเข้าเรียน
+let isCourseLoading = false;
+
 async function enrollCourse(courseId) {
+    if (isCourseLoading) return;
+    isCourseLoading = true;
+
     const user = JSON.parse(localStorage.getItem('swd_user'));
     
     const targetCourse = globalCourses.find(c => c.id === courseId);
-    if(!targetCourse) return showAlert('ข้อผิดพลาด', 'ไม่พบข้อมูลหลักสูตรนี้');
+    if(!targetCourse) {
+        isCourseLoading = false;
+        return showAlert('ข้อผิดพลาด', 'ไม่พบข้อมูลหลักสูตรนี้');
+    }
+
+    const enrollData = cachedUserEnrollments.find(e => e.course_id === courseId);
+    if (enrollData && enrollData.status === 'completed') {
+        showPassedCourseModal(targetCourse, enrollData);
+        isCourseLoading = false;
+        return;
+    }
 
     showLoader();
-    const enrollRes = await callAPI('enrollCourse', { user_id: user.id, course_id: courseId });
-    hideLoader();
+    try {
+        const enrollRes = await Promise.race([
+            callAPI('enrollCourse', { user_id: user.id, course_id: courseId }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000))
+        ]);
+        hideLoader();
+        isCourseLoading = false;
 
-    if(enrollRes.status === 'success') {
-        const progData = enrollRes.data || {}; 
-        completedUnits = progData.completed || [];
-        resumeTimes = progData.resumeTimes || {};
-        currentClassCourse = targetCourse;
-        currentCourseFlow = isClassroomCourse(targetCourse) ? 'classroom' : 'video';
-        
-        try { currentUnits = JSON.parse(targetCourse.units || '[]'); } 
-        catch(e) { currentUnits = []; }
+        if(enrollRes.status === 'success') {
+            const progData = enrollRes.data || {}; 
+            completedUnits = progData.completed || [];
+            resumeTimes = progData.resumeTimes || {};
+            currentClassCourse = targetCourse;
+            currentCourseFlow = isClassroomCourse(targetCourse) ? 'classroom' : 'video';
+            
+            try { currentUnits = JSON.parse(targetCourse.units || '[]'); } 
+            catch(e) { currentUnits = []; }
 
-        if (currentCourseFlow === 'classroom') {
-            const confirmed = await showConfirm(
-                'หลักสูตรอบรมในห้อง',
-                'หลักสูตรนี้ไม่มีวิดีโอในระบบ ผู้เข้าอบรมต้องผ่านการอบรมในห้องเรียนก่อน แล้วจึงทำแบบทดสอบหลังเรียนในระบบเพื่อรับใบประกาศ'
-            );
-            if (!confirmed) return;
-            startQuiz('post');
-            return;
+            if (currentCourseFlow === 'classroom') {
+                const confirmed = await showConfirm(
+                    'หลักสูตรอบรมในห้อง',
+                    'หลักสูตรนี้ไม่มีวิดีโอในระบบ ผู้เข้าอบรมต้องผ่านการอบรมในห้องเรียนก่อน แล้วจึงทำแบบทดสอบหลังเรียนในระบบเพื่อรับใบประกาศ'
+                );
+                if (!confirmed) return;
+                startQuiz('post');
+                return;
+            }
+
+            if(currentUnits.length === 0) return showAlert('แจ้งเตือน', 'หลักสูตรนี้ยังไม่มีวิดีโอเนื้อหาครับ');
+
+            enterClassroom();
+        } else {
+            showAlert('ข้อผิดพลาดจากระบบ', enrollRes.message);
         }
+    } catch (error) {
+        hideLoader(true);
+        isCourseLoading = false;
+        showAlert('ข้อผิดพลาด', 'ไม่สามารถโหลดบทเรียนได้ กรุณาลองใหม่');
+    }
+}
 
-        if(currentUnits.length === 0) return showAlert('แจ้งเตือน', 'หลักสูตรนี้ยังไม่มีวิดีโอเนื้อหาครับ');
-
-        enterClassroom();
+function showPassedCourseModal(course, enrollData) {
+    currentPassedCourse = course;
+    document.getElementById('passedCourseTitle').innerText = course.title;
+    
+    const btnDownload = document.getElementById('btnPassedDownloadCert');
+    if (enrollData && enrollData.cert_url) {
+        btnDownload.href = enrollData.cert_url;
+        btnDownload.classList.remove('hidden');
     } else {
-        showAlert('ข้อผิดพลาดจากระบบ', enrollRes.message);
+        btnDownload.classList.add('hidden');
+    }
+    
+    document.getElementById('passedCourseModal').classList.remove('hidden');
+}
+
+function closePassedCourseModal() {
+    document.getElementById('passedCourseModal').classList.add('hidden');
+    currentPassedCourse = null;
+}
+
+async function enrollAndEnterCourse(course) {
+    if (isCourseLoading) return;
+    isCourseLoading = true;
+
+    closePassedCourseModal();
+    const user = JSON.parse(localStorage.getItem('swd_user'));
+    showLoader();
+    try {
+        const enrollRes = await Promise.race([
+            callAPI('enrollCourse', { user_id: user.id, course_id: course.id }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000))
+        ]);
+        hideLoader();
+        isCourseLoading = false;
+        
+        if (enrollRes.status === 'success') {
+            const progData = enrollRes.data || {};
+            completedUnits = progData.completed || [];
+            resumeTimes = progData.resumeTimes || {};
+            currentClassCourse = course;
+            currentCourseFlow = isClassroomCourse(course) ? 'classroom' : 'video';
+            
+            try { currentUnits = JSON.parse(course.units || '[]'); }
+            catch (e) { currentUnits = []; }
+            
+            if (currentCourseFlow === 'classroom') {
+                startQuiz('post');
+                return;
+            }
+            
+            enterClassroom();
+        } else {
+            showAlert('ข้อผิดพลาดจากระบบ', enrollRes.message);
+        }
+    } catch (error) {
+        hideLoader(true);
+        isCourseLoading = false;
+        showAlert('ข้อผิดพลาด', 'ไม่สามารถโหลดบทเรียนได้ กรุณาลองใหม่');
     }
 }
 
@@ -1688,6 +2167,19 @@ function renderQuestion() {
     document.getElementById('quizProgressText').innerText = `ข้อที่ ${currentQIndex + 1} / ${userQuizData.length}`;
     document.getElementById('questionText').innerText = `${currentQIndex + 1}. ${q.question}`;
     
+    const pct = Math.round((currentQIndex / userQuizData.length) * 100);
+    const progressEl = document.getElementById('quizProgressBar');
+    if (progressEl) progressEl.style.width = pct + '%';
+    
+    const btnPrev = document.getElementById('btnPrevQuestion');
+    if (btnPrev) {
+        if (currentQIndex > 0) {
+            btnPrev.classList.remove('hidden');
+        } else {
+            btnPrev.classList.add('hidden');
+        }
+    }
+    
     const ans = userAnswers[currentQIndex] || '';
     
     const optionsHtml = `
@@ -1784,27 +2276,41 @@ async function submitQuizData() {
         
         btnReturn.classList.add('hidden'); // <--- 1. ซ่อนปุ่ม "ดำเนินการต่อ" ตรงนี้! ป้องกันคนกดออก
         
-        const certRes = await callAPI('generateCert', {
-            user_id: user.id,
-            user_name: user.name,
-            course_id: currentClassCourse.id
-        });
-        
-        if(certRes.status === 'success') {
-            document.getElementById('resultTitle').innerText = 'ยินดีด้วย! คุณสอบผ่าน';
-            const btnCert = document.getElementById('btnDownloadCert');
-            btnCert.href = certRes.pdf_url;
-            btnCert.classList.remove('hidden'); // โชว์ปุ่มโหลด PDF
-            if (certRes.cert_id || certRes.verify_url) {
-                certMeta.innerHTML = `
-                    ${certRes.cert_id ? `Certificate ID: <strong>${certRes.cert_id}</strong><br>` : ''}
-                    ${certRes.verify_url ? `<a href="${certRes.verify_url}" target="_blank" rel="noopener">ตรวจสอบใบประกาศ</a>` : ''}
-                `;
-                certMeta.classList.remove('hidden');
+        try {
+            const certRes = await Promise.race([
+                callAPI('generateCert', {
+                    user_id: user.id,
+                    user_name: user.name,
+                    course_id: currentClassCourse.id
+                }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 60000))
+            ]);
+            
+            if (certRes && certRes.status === 'success') {
+                document.getElementById('resultTitle').innerText = 'ยินดีด้วย! คุณสอบผ่าน';
+                const btnCert = document.getElementById('btnDownloadCert');
+                btnCert.href = certRes.pdf_url;
+                btnCert.classList.remove('hidden'); // โชว์ปุ่มโหลด PDF
+                // Update cache
+                const enrollEntry = cachedUserEnrollments.find(e => e.course_id === currentClassCourse.id);
+                if (enrollEntry) enrollEntry.cert_url = certRes.pdf_url;
+                if (certRes.cert_id || certRes.verify_url) {
+                    certMeta.innerHTML = `
+                        ${certRes.cert_id ? `Certificate ID: <strong>${certRes.cert_id}</strong><br>` : ''}
+                        ${certRes.verify_url ? `<a href="${certRes.verify_url}" target="_blank" rel="noopener">ตรวจสอบใบประกาศ</a>` : ''}
+                    `;
+                    certMeta.classList.remove('hidden');
+                }
+            } else {
+                document.getElementById('resultTitle').innerText = 'สอบผ่าน (แต่พบปัญหาสร้างใบประกาศ)';
+                const errMsg = (certRes && certRes.message) ? certRes.message : 'ไม่สามารถสร้างเกียรติบัตรได้';
+                showAlert('แจ้งเตือน', 'ไม่สามารถสร้างเกียรติบัตรได้ กรุณาตรวจสอบสิทธิ์หรือทดลองใหม่');
+                console.error('Certificate error:', errMsg);
             }
-        } else {
+        } catch (certError) {
             document.getElementById('resultTitle').innerText = 'สอบผ่าน (แต่พบปัญหาสร้างใบประกาศ)';
-            console.error(certRes.message);
+            showAlert('แจ้งเตือน', 'ไม่สามารถสร้างเกียรติบัตรได้ กรุณาตรวจสอบสิทธิ์หรือทดลองใหม่');
+            console.error('Certificate error:', certError);
         }
         
         btnReturn.classList.remove('hidden'); // <--- 2. โชว์ปุ่ม "ดำเนินการต่อ" กลับมาเมื่อกระบวนการเสร็จสิ้น!
@@ -2099,13 +2605,22 @@ document.getElementById('editUserForm').addEventListener('submit', async (e) => 
         return;
     }
     
+    const role = document.getElementById('euRole').value;
+    let permissions = [];
+    if (role === 'working_group_leader' || role === 'department_leader') {
+        const rawPerms = document.getElementById('euPermissions').value || '';
+        permissions = rawPerms.split(/[\n,]+/).map(p => p.trim()).filter(Boolean);
+    }
+    
     const payload = {
         id: document.getElementById('editUserId').value,
         name: document.getElementById('euName').value,
         position: position,
+        working_group: document.getElementById('euWorkingGroup').value,
         department: document.getElementById('euDept').value,
-        role: document.getElementById('euRole').value,
-        password: document.getElementById('euPassword').value
+        role: role,
+        password: document.getElementById('euPassword').value,
+        permissions: permissions
     };
     
     const isConfirmed = await showConfirm('ยืนยันการแก้ไข', 'คุณต้องการบันทึกการเปลี่ยนแปลงข้อมูลผู้ใช้นี้ใช่หรือไม่?');
@@ -2596,6 +3111,13 @@ function renderCourseGrid(coursesToRender) {
             ? (course.note || 'ไม่มีวิดีโอในระบบ ผู้เข้าอบรมทำแบบทดสอบหลังอบรมในห้องเรียน')
             : (course.note || 'เรียนตามหน่วยวิดีโอในระบบ และทำแบบทดสอบหลังเรียนเมื่อเรียนครบ');
 
+        const isCompleted = enrollData && enrollData.status === 'completed';
+        const statusHtml = isCompleted ? `<div style="margin-top: 10px; margin-bottom: 10px; color: #10B981; font-weight: bold; font-size: 0.95rem;"><i class="fas fa-check-circle"></i> สถานะ: เรียนจบแล้ว</div>` : '';
+        const buttonsHtml = isCompleted 
+            ? `<button class="btn ${btnClass} w-100" style="margin-bottom: 8px;" onclick="enrollCourse('${course.id}')">${btnText}</button>
+               <button class="btn btn-success w-100" onclick="downloadCertificate('${course.id}')"><i class="fas fa-download"></i> ดาวน์โหลดเกียรติบัตร</button>`
+            : `<button class="btn ${btnClass} w-100" onclick="enrollCourse('${course.id}')">${btnText}</button>`;
+
         grid.innerHTML += `
             <div class="course-card">
                 <img src="${getDriveImageUrl(course.image)}" class="course-img" alt="${course.title}">
@@ -2607,11 +3129,51 @@ function renderCourseGrid(coursesToRender) {
                         <span><i class="fas fa-clock"></i> ${formatHoursLabel(course.hours)}</span>
                         <span><i class="fas fa-circle-info"></i> ${courseHint}</span>
                     </div>
-                    <button class="btn ${btnClass} w-100" onclick="enrollCourse('${course.id}')">${btnText}</button>
+                    ${statusHtml}
+                    ${buttonsHtml}
                 </div>
             </div>
         `;
     });
+}
+
+async function downloadCertificate(courseId) {
+    const user = JSON.parse(localStorage.getItem('swd_user'));
+    const targetCourse = globalCourses.find(c => c.id === courseId);
+    if (!targetCourse) return showAlert('ข้อผิดพลาด', 'ไม่พบข้อมูลหลักสูตรนี้');
+    
+    const enrollData = cachedUserEnrollments.find(e => e.course_id === courseId);
+    if (!enrollData || enrollData.status !== 'completed') {
+        return showAlert('แจ้งเตือน', 'คุณยังเรียนไม่ผ่านหลักสูตรนี้');
+    }
+    
+    if (enrollData.cert_url) {
+        window.open(enrollData.cert_url, '_blank');
+        return;
+    }
+    
+    showLoader();
+    try {
+        const certRes = await Promise.race([
+            callAPI('generateCert', {
+                user_id: user.id,
+                user_name: user.name,
+                course_id: courseId
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 60000))
+        ]);
+        
+        if (certRes && certRes.status === 'success' && certRes.pdf_url) {
+            enrollData.cert_url = certRes.pdf_url;
+            window.open(certRes.pdf_url, '_blank');
+        } else {
+            showAlert('ข้อผิดพลาด', 'ไม่สามารถสร้างเกียรติบัตรได้ กรุณาตรวจสอบสิทธิ์หรือทดลองใหม่');
+        }
+    } catch (error) {
+        showAlert('ข้อผิดพลาด', 'ไม่สามารถสร้างเกียรติบัตรได้ กรุณาตรวจสอบสิทธิ์หรือทดลองใหม่');
+    } finally {
+        hideLoader(true);
+    }
 }
 
 async function loadExternalRecommendations(force = false) {
@@ -3025,9 +3587,413 @@ editAdminUser = function(userId) {
     document.getElementById('euName').value = user.name;
     document.getElementById('euUsername').value = user.username;
     setPositionFieldValue('euPosition', 'euPositionOther', user.position || '');
+    
+    document.getElementById('euWorkingGroup').value = user.working_group || '';
+    onWorkingGroupChange('euWorkingGroup', 'euDept');
     document.getElementById('euDept').value = user.department || '';
+    
     document.getElementById('euEmail').value = user.email || '';
     document.getElementById('euPassword').value = user.password || '';
     document.getElementById('euRole').value = user.role || 'user';
+    document.getElementById('euPermissions').value = (user.permissions || []).join('\n');
+    togglePermissionsSection();
+    
     document.getElementById('editUserSection').scrollIntoView({ behavior: 'smooth' });
 };
+
+function togglePermissionsSection() {
+    const role = document.getElementById('euRole').value;
+    const section = document.getElementById('euPermissionsSection');
+    if (section) {
+        if (role === 'working_group_leader' || role === 'department_leader') {
+            section.style.display = 'block';
+        } else {
+            section.style.display = 'none';
+        }
+    }
+}
+
+function switchExtMode(mode) {
+    currentExtMode = mode;
+    const btnA = document.getElementById('btnModeA');
+    const btnB = document.getElementById('btnModeB');
+    const fieldsA = document.getElementById('extModeAFields');
+    const fieldsB = document.getElementById('extModeBFields');
+    
+    if (mode === 'A') {
+        if (btnA) btnA.className = 'btn btn-primary';
+        if (btnB) btnB.className = 'btn btn-outline';
+        if (fieldsA) fieldsA.style.display = 'block';
+        if (fieldsB) fieldsB.style.display = 'none';
+        
+        document.getElementById('extDate').required = true;
+        if (!selectedExternalTrainingRecommendation) {
+            document.getElementById('extHours').required = true;
+            document.getElementById('extMins').required = true;
+        }
+        
+        document.getElementById('extDateStart').required = false;
+        document.getElementById('extDateEnd').required = false;
+    } else {
+        if (btnA) btnA.className = 'btn btn-outline';
+        if (btnB) btnB.className = 'btn btn-primary';
+        if (fieldsA) fieldsA.style.display = 'none';
+        if (fieldsB) fieldsB.style.display = 'block';
+        
+        document.getElementById('extDate').required = false;
+        document.getElementById('extHours').required = false;
+        document.getElementById('extMins').required = false;
+        
+        document.getElementById('extDateStart').required = true;
+        document.getElementById('extDateEnd').required = true;
+    }
+}
+
+function convertThaiDateToISODate(thaiDateStr) {
+    if (!thaiDateStr) return '';
+    const months = {
+        'ม.ค.': '01', 'ก.พ.': '02', 'มี.ค.': '03', 'เม.ย.': '04', 'พ.ค.': '05', 'มิ.ย.': '06',
+        'ก.ค.': '07', 'ส.ค.': '08', 'ก.ย.': '09', 'ต.ค.': '10', 'พ.ย.': '11', 'ธ.ค.': '12'
+    };
+    const parts = String(thaiDateStr).trim().split(/\s+/);
+    if (parts.length !== 3) return '';
+    const day = parts[0].padStart(2, '0');
+    const month = months[parts[1]];
+    const year = parseInt(parts[2], 10) - 543;
+    if (!month || isNaN(year)) return '';
+    return `${year}-${month}-${day}`;
+}
+
+function convertISODateToThaiDate(isoDateStr) {
+    if (!isoDateStr) return '';
+    const parts = isoDateStr.split('-');
+    if (parts.length !== 3) return '';
+    const year = parseInt(parts[0], 10) + 543;
+    const monthIndex = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    return `${day} ${months[monthIndex]} ${year}`;
+}
+
+function validateThaiDate(dateStr) {
+    // If it's standard ISO format YYYY-MM-DD from calendar:
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return true;
+    const regex = /^\d{1,2}\s+(ม\.ค\.|ก\.พ\.|มี\.ค\.|เม\.ย\.|พ\.ค\.|มิ\.ย\.|ก\.ค\.|ส\.ค\.|ก\.ย\.|ต\.ค\.|พ\.ย\.|ธ\.ค\.)\s+\d{4}$/;
+    return regex.test(String(dateStr || '').trim());
+}
+
+function parseThaiDate(dateStr) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        return new Date(dateStr);
+    }
+    const months = {
+        'ม.ค.': 0, 'ก.พ.': 1, 'มี.ค.': 2, 'เม.ย.': 3, 'พ.ค.': 4, 'มิ.ย.': 5,
+        'ก.ค.': 6, 'ส.ค.': 7, 'ก.ย.': 8, 'ต.ค.': 9, 'พ.ย.': 10, 'ธ.ค.': 11
+    };
+    const parts = String(dateStr || '').trim().split(/\s+/);
+    if (parts.length !== 3) return null;
+    const day = parseInt(parts[0], 10);
+    const monthStr = parts[1];
+    const year = parseInt(parts[2], 10) - 543; // Buddhist year to AD
+    if (isNaN(day) || isNaN(year) || months[monthStr] === undefined) return null;
+    return new Date(year, months[monthStr], day);
+}
+
+function calculateModeBHours() {
+    const startStr = document.getElementById('extDateStart').value.trim();
+    const endStr = document.getElementById('extDateEnd').value.trim();
+    const calcInput = document.getElementById('extHoursCalc');
+    if (!calcInput) return;
+    
+    if (startStr && endStr) {
+        const start = new Date(startStr);
+        const end = new Date(endStr);
+        if (end >= start) {
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // inclusive
+            const totalHours = diffDays * 7;
+            calcInput.value = `${totalHours} ชม. (${diffDays} วัน)`;
+        } else {
+            calcInput.value = '';
+        }
+    } else {
+        calcInput.value = '';
+    }
+}
+
+function previewExternalTraining() {
+    const topic = document.getElementById('extTopic').value.trim();
+    const organizer = document.getElementById('extOrganizer').value.trim();
+    
+    if (!topic || !organizer) {
+        return Swal.fire({
+            icon: 'warning',
+            title: 'แจ้งเตือน',
+            text: 'กรุณากรอกชื่อหลักสูตรและหน่วยงานที่จัด',
+            confirmButtonText: 'ตกลง'
+        });
+    }
+    
+    let dateStr = '';
+    let hours = 0;
+    
+    if (currentExtMode === 'A') {
+        const dateVal = document.getElementById('extDate').value.trim();
+        if (!dateVal || !/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'แจ้งเตือน',
+                text: 'รูปแบบวันที่ไม่ถูกต้อง กรุณาเลือกวันที่จากปฏิทิน',
+                confirmButtonText: 'ตกลง'
+            });
+        }
+        dateStr = convertISODateToThaiDate(dateVal);
+        
+        if (selectedExternalTrainingRecommendation) {
+            hours = parseFloat(selectedExternalTrainingRecommendation.hours) || 0;
+        } else {
+            const hr = parseFloat(document.getElementById('extHours').value) || 0;
+            const min = parseFloat(document.getElementById('extMins').value) || 0;
+            hours = +(hr + (min / 60)).toFixed(2);
+            if (hours <= 0) {
+                return Swal.fire({
+                    icon: 'warning',
+                    title: 'แจ้งเตือน',
+                    text: 'กรุณาระบุชั่วโมงการอบรม',
+                    confirmButtonText: 'ตกลง'
+                });
+            }
+        }
+    } else {
+        const startVal = document.getElementById('extDateStart').value.trim();
+        const endVal = document.getElementById('extDateEnd').value.trim();
+        if (!startVal || !/^\d{4}-\d{2}-\d{2}$/.test(startVal) || !endVal || !/^\d{4}-\d{2}-\d{2}$/.test(endVal)) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'แจ้งเตือน',
+                text: 'รูปแบบวันที่ไม่ถูกต้อง กรุณาเลือกวันที่จากปฏิทิน',
+                confirmButtonText: 'ตกลง'
+            });
+        }
+        const start = new Date(startVal);
+        const end = new Date(endVal);
+        if (end < start) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'แจ้งเตือน',
+                text: 'วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่มอบรม',
+                confirmButtonText: 'ตกลง'
+            });
+        }
+        dateStr = `${convertISODateToThaiDate(startVal)} ถึง ${convertISODateToThaiDate(endVal)}`;
+        
+        const diffTime = Math.abs(end - start);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        hours = diffDays * 7;
+    }
+    
+    const fileInput = document.getElementById('extCertFile');
+    if (!editingExtTrainingId && fileInput.files.length === 0) {
+        return Swal.fire({
+            icon: 'warning',
+            title: 'แจ้งเตือน',
+            text: 'กรุณาแนบไฟล์ใบประกาศ / หลักฐาน',
+            confirmButtonText: 'ตกลง'
+        });
+    }
+    
+    if (fileInput.files.length > 0 && fileInput.files[0].size > 5 * 1024 * 1024) {
+        return Swal.fire({
+            icon: 'warning',
+            title: 'แจ้งเตือน',
+            text: 'ขนาดไฟล์ใหญ่เกินไป (ต้องไม่เกิน 5MB) กรุณาบีบอัดไฟล์ครับ',
+            confirmButtonText: 'ตกลง'
+        });
+    }
+    
+    // Display preview in modal
+    const previewContent = document.getElementById('extPreviewContent');
+    if (previewContent) {
+        previewContent.innerHTML = `
+            <strong>ชื่อหลักสูตร/หัวข้อ:</strong> ${topic}<br>
+            <strong>หน่วยงานที่จัด:</strong> ${organizer}<br>
+            <strong>วันที่อบรม:</strong> ${dateStr}<br>
+            <strong>จำนวนชั่วโมงสะสม:</strong> ${hours} ชั่วโมง<br>
+            <strong>หลักฐานที่แนบ:</strong> ${fileInput.files.length > 0 ? fileInput.files[0].name : (editingExtTrainingId ? 'ใช้หลักฐานเดิม' : 'ไม่มี')}
+        `;
+    }
+    
+    pendingExtPayload = {
+        topic,
+        organizer,
+        date: dateStr,
+        hours,
+        recommendation_id: selectedExternalTrainingRecommendation ? selectedExternalTrainingRecommendation.rec_id : ''
+    };
+    
+    document.getElementById('extPreviewModal').classList.remove('hidden');
+}
+
+function closeExtPreview() {
+    document.getElementById('extPreviewModal').classList.add('hidden');
+}
+
+async function confirmSaveExternalTraining() {
+    if (!pendingExtPayload) return;
+    
+    document.getElementById('extPreviewModal').classList.add('hidden');
+    showLoader();
+    
+    const user = JSON.parse(localStorage.getItem('swd_user'));
+    const fileInput = document.getElementById('extCertFile');
+    
+    const sendSaveRequest = async (fileUrl = '') => {
+        let action = 'addExternalTraining';
+        const payload = {
+            user_id: user.id,
+            topic: pendingExtPayload.topic,
+            organizer: pendingExtPayload.organizer,
+            date: pendingExtPayload.date,
+            hours: pendingExtPayload.hours,
+            recommendation_id: pendingExtPayload.recommendation_id
+        };
+        
+        if (fileUrl) {
+            payload.file_url = fileUrl;
+            payload.fileData = fileUrl;
+        }
+        
+        if (editingExtTrainingId) {
+            action = 'updateExternalTrainingByUser';
+            payload.ext_id = editingExtTrainingId;
+        }
+        
+        const res = await callAPI(action, payload);
+        hideLoader();
+        
+        if (res.status === 'success') {
+            showAlert('สำเร็จ', editingExtTrainingId ? 'แก้ไขและส่งคำขอใหม่เรียบร้อยแล้ว' : 'บันทึกประวัติอบรมภายนอกสำเร็จ (รอการอนุมัติ)');
+            document.getElementById('externalTrainingForm').reset();
+            handleExternalTrainingRecommendationChange('');
+            editingExtTrainingId = null;
+            pendingExtPayload = null;
+            switchUserTab('historyTab');
+        } else {
+            showAlert('ข้อผิดพลาด', res.message);
+        }
+    };
+    
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const base64Data = e.target.result;
+            
+            if (editingExtTrainingId) {
+                const uploadRes = await callAPI('uploadFile', {
+                    fileName: user.name + '_ExtCert_' + file.name,
+                    fileData: base64Data
+                });
+                if (uploadRes.status === 'success') {
+                    sendSaveRequest(uploadRes.url);
+                } else {
+                    hideLoader();
+                    showAlert('ข้อผิดพลาด', 'อัปโหลดไฟล์ล้มเหลว: ' + uploadRes.message);
+                }
+            } else {
+                let payload = {
+                    user_id: user.id,
+                    topic: pendingExtPayload.topic,
+                    organizer: pendingExtPayload.organizer,
+                    date: pendingExtPayload.date,
+                    hours: pendingExtPayload.hours,
+                    recommendation_id: pendingExtPayload.recommendation_id,
+                    fileName: user.name + '_ExtCert_' + file.name,
+                    fileData: base64Data
+                };
+                const res = await callAPI('addExternalTraining', payload);
+                hideLoader();
+                if (res.status === 'success') {
+                    showAlert('สำเร็จ', 'บันทึกประวัติอบรมภายนอกสำเร็จ (รอการอนุมัติ)');
+                    document.getElementById('externalTrainingForm').reset();
+                    handleExternalTrainingRecommendationChange('');
+                    pendingExtPayload = null;
+                    switchUserTab('historyTab');
+                } else {
+                    showAlert('ข้อผิดพลาด', res.message);
+                }
+            }
+        };
+        reader.readAsDataURL(file);
+    } else {
+        sendSaveRequest('');
+    }
+}
+
+async function editExtTraining(extId) {
+    showLoader();
+    const user = getCurrentUser();
+    const res = await callAPI('getUserHistory', { user_id: user.id });
+    hideLoader();
+    
+    if (res.status !== 'success') {
+        return showAlert('ข้อผิดพลาด', 'ไม่สามารถดึงข้อมูลเพื่อแก้ไขได้');
+    }
+    
+    const record = res.data.find(item => item.ext_id === extId);
+    if (!record) return showAlert('ข้อผิดพลาด', 'ไม่พบข้อมูลที่ต้องการแก้ไข');
+    
+    editingExtTrainingId = extId;
+    
+    document.getElementById('extTopic').value = record.title || '';
+    document.getElementById('extOrganizer').value = record.organizer || '';
+    
+    if (record.date.includes(' ถึง ')) {
+        switchExtMode('B');
+        const dates = record.date.split(' ถึง ');
+        document.getElementById('extDateStart').value = convertThaiDateToISODate(dates[0]) || '';
+        document.getElementById('extDateEnd').value = convertThaiDateToISODate(dates[1]) || '';
+        calculateModeBHours();
+    } else {
+        switchExtMode('A');
+        document.getElementById('extDate').value = convertThaiDateToISODate(record.date) || '';
+        
+        if (record.recommendation_id) {
+            document.getElementById('extRecSelect').value = record.recommendation_id;
+            handleExternalTrainingRecommendationChange(record.recommendation_id);
+        } else {
+            document.getElementById('extRecSelect').value = '';
+            handleExternalTrainingRecommendationChange('');
+            const hr = Math.floor(record.hours);
+            const min = Math.round((record.hours - hr) * 60);
+            document.getElementById('extHours').value = hr;
+            document.getElementById('extMins').value = min;
+        }
+    }
+    
+    switchUserTab('externalTab');
+}
+
+async function deleteExtTraining(extId) {
+    const confirmed = await showConfirm('ยืนยันการลบ', 'คุณแน่ใจหรือไม่ว่าต้องการลบรายการคำขอนี้?');
+    if (!confirmed) return;
+    
+    showLoader();
+    const user = getCurrentUser();
+    const res = await callAPI('deleteExternalTraining', { ext_id: extId, user_id: user.id });
+    hideLoader();
+    
+    if (res.status === 'success') {
+        showAlert('สำเร็จ', 'ลบรายการคำขอเรียบร้อยแล้ว');
+        loadTrainingHistory();
+    } else {
+        showAlert('ข้อผิดพลาด', res.message);
+    }
+}
+
+function prevQuestion() {
+    if (currentQIndex > 0) {
+        currentQIndex--;
+        renderQuestion();
+    }
+}
