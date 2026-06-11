@@ -3137,6 +3137,9 @@ function renderCourseGrid(coursesToRender) {
     });
 }
 
+/**
+ * Download certificate with better error messaging
+ */
 async function downloadCertificate(courseId) {
     const user = JSON.parse(localStorage.getItem('swd_user'));
     const targetCourse = globalCourses.find(c => c.id === courseId);
@@ -3147,6 +3150,7 @@ async function downloadCertificate(courseId) {
         return showAlert('แจ้งเตือน', 'คุณยังเรียนไม่ผ่านหลักสูตรนี้');
     }
     
+    // ✅ FIX: If certificate already exists, open directly
     if (enrollData.cert_url) {
         window.open(enrollData.cert_url, '_blank');
         return;
@@ -3160,17 +3164,32 @@ async function downloadCertificate(courseId) {
                 user_name: user.name,
                 course_id: courseId
             }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 60000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout after 60 seconds')), 60000))
         ]);
         
+        // ✅ FIX: Better response validation
         if (certRes && certRes.status === 'success' && certRes.pdf_url) {
             enrollData.cert_url = certRes.pdf_url;
             window.open(certRes.pdf_url, '_blank');
         } else {
-            showAlert('ข้อผิดพลาด', 'ไม่สามารถสร้างเกียรติบัตรได้ กรุณาตรวจสอบสิทธิ์หรือทดลองใหม่');
+            const errorMsg = (certRes && certRes.message) 
+                ? 'เกิดข้อผิดพลาด: ' + certRes.message
+                : 'ข้อผิดพลาด: ไม่สามารถสร้างเกียรติบัตรได้ โปรดลองใหม่อีกครั้ง';
+            showAlert('ข้อผิดพลาด', errorMsg);
         }
     } catch (error) {
-        showAlert('ข้อผิดพลาด', 'ไม่สามารถสร้างเกียรติบัตรได้ กรุณาตรวจสอบสิทธิ์หรือทดลองใหม่');
+        console.error('Certificate download error:', error);
+        
+        // ✅ FIX: Specific error messages for common issues
+        let friendlyMessage = 'ไม่สามารถสร้างเกียรติบัตรได้';
+        
+        if (error.message.includes('Timeout')) {
+            friendlyMessage = 'การขอหมดเวลา - เซิร์ฟเวอร์ไม่ตอบสนอง โปรดลองใหม่อีกครั้ง';
+        } else if (error.message.includes('Template')) {
+            friendlyMessage = 'ข้อผิดพลาด: ไม่พบ Template ใบประกาศ โปรดติดต่อผู้ดูแลระบบ';
+        }
+        
+        showAlert('ข้อผิดพลาด', friendlyMessage + ' (กรุณาตรวจสอบสิทธิ์หรือทดลองใหม่)');
     } finally {
         hideLoader(true);
     }
