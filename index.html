@@ -741,28 +741,28 @@
 
     <section id="adminSection" class="hidden">
         <div class="admin-layout">
-            <aside class="admin-sidebar">
-                <div class="sidebar-header">
-                    <img src="mooc-logo.png" alt="Logo MOOC" class="sidebar-logo mooc-sidebar-logo">
-                    <h3>Admin Panel</h3>
+            <nav class="admin-navbar">
+                <div class="nav-brand" onclick="returnToDashboard()">
+                    <img src="mooc-logo.png" alt="Logo MOOC" class="nav-logo mooc-topbar-logo">
+                    <span class="brand-text">Admin Panel</span>
                 </div>
-                <ul class="sidebar-menu">
+                <div class="menu-toggle" id="adminMenuToggle" onclick="toggleAdminMenu()"><i class="fas fa-bars"></i></div>
+                <ul class="navbar-menu" id="adminNavbarMenu">
                     <li class="active" onclick="switchAdminTab('reportTab', this)"><i class="fas fa-chart-bar"></i> รายงานเกณฑ์การอบรม</li>
-                    <li onclick="switchAdminTab('courseMgtTab')"><i class="fas fa-video"></i> จัดการหลักสูตร</li>
-                    <li onclick="switchAdminTab('examMgtTab')"><i class="fas fa-tasks"></i> คลังข้อสอบ</li>
+                    <li onclick="switchAdminTab('courseMgtTab', this)"><i class="fas fa-video"></i> จัดการหลักสูตร</li>
+                    <li onclick="switchAdminTab('examMgtTab', this)"><i class="fas fa-tasks"></i> คลังข้อสอบ</li>
                     <li onclick="switchAdminTab('courseReportTab', this)"><i class="fas fa-chart-line"></i> รายงานผลรายหลักสูตร</li>
-                    <li onclick="switchAdminTab('userMgtTab')"><i class="fas fa-users"></i> จัดการผู้ใช้งาน</li>
-                    <li onclick="switchAdminTab('approveExtTab')"><i class="fas fa-check-circle"></i> ตรวจสอบ/อนุมัติอบรมภายนอก</li>
-                    <li class="logout-menu" onclick="logout()"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</li>
+                    <li onclick="switchAdminTab('userMgtTab', this)"><i class="fas fa-users"></i> จัดการผู้ใช้งาน</li>
+                    <li onclick="switchAdminTab('approveExtTab', this)"><i class="fas fa-check-circle"></i> ตรวจสอบ/อนุมัติอบรมภายนอก</li>
                 </ul>
-            </aside>
+                <div class="navbar-actions" id="adminNavbarActions">
+                    <button class="btn btn-outline" onclick="exitAdmin()"><i class="fas fa-user-cog"></i> กลับหน้าผู้ใช้</button>
+                    <button class="btn btn-outline logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</button>
+                </div>
+            </nav>
 
             <main class="admin-content">
-                <header class="admin-topbar">
-                    <div class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
-                    <h2><i class="fas fa-cogs"></i> ระบบจัดการหลังบ้าน</h2>
-                    <button class="btn btn-outline" onclick="exitAdmin()">กลับหน้าผู้ใช้</button>
-                </header>
+
 
                 <div class="admin-body">
                     <div id="reportTab" class="admin-tab hidden">
@@ -1193,7 +1193,7 @@
         <div class="footer-content">
             <p>&copy; <span class="current-year"></span> <strong>Nurse SWD E-Learning & Portfolio</strong></p>
             <p>โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน | Developed By Natnarinthorn</p>
-            <div class="footer-version">Version 1.0.1 (Stable Build) เริ่มใช้งานเมื่อ พฤษภาคม 2569</div>
+            <div class="footer-version">Version 1.0.1 (Stable Build)</div>
         </div>
     </footer>
 
