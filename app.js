@@ -2295,10 +2295,9 @@ async function submitQuizData() {
             // ===== HANDLE CERTIFICATE RESPONSE =====
             if (certRes && certRes.status === 'success' && certRes.pdf_url) {
                 // ✅ FIX: Store URL and open in new tab (doesn't redirect user)
-                enrollData.cert_url = certRes.pdf_url;
-                const enrollEntry = cachedUserEnrollments.find(e => e.course_id === currentClassCourse.id);
-                if (enrollEntry) {
-                    enrollEntry.cert_url = certRes.pdf_url;
+                const enrollData = cachedUserEnrollments.find(e => e.course_id === currentClassCourse.id);
+                if (enrollData) {
+                    enrollData.cert_url = certRes.pdf_url;
                 }
 
                 // Display success message
