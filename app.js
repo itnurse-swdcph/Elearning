@@ -1612,12 +1612,14 @@ function exportToExcel() {
 // ==================== Course Management UI & Logic ====================
 let adminCoursesData = [];
 
-function toggleAdminForm(containerId, forceOpen = false) {
+function toggleAdminForm(containerId, forceState = null) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    if (forceOpen) {
+    if (forceState === true) {
         container.classList.remove('hidden');
+    } else if (forceState === false) {
+        container.classList.add('hidden');
     } else {
         container.classList.toggle('hidden');
     }
@@ -1721,7 +1723,7 @@ function resetCourseForm() {
     toggleCourseDeliveryFields();
     
     // ซ่อนฟอร์มกลับไปเมื่อกดยกเลิก
-    toggleAdminForm('internalCourseFormContainer');
+    toggleAdminForm('internalCourseFormContainer', false);
 }
 
 function displayAdminCourseList() {
@@ -1800,7 +1802,7 @@ function resetExternalRecommendationForm() {
     document.getElementById('extRecCover').value = '';
 
     // ซ่อนฟอร์มกลับไปเมื่อกดยกเลิก
-    toggleAdminForm('externalCourseFormContainer');
+    toggleAdminForm('externalCourseFormContainer', false);
 }
 
 function displayAdminExternalCourseList() {
@@ -3832,17 +3834,17 @@ loadAdminCoursesTable = async function() {
     const tbody = document.getElementById('adminCourseListBody');
     if (!tbody) return;
 
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
     const res = await callAPI('getAdminCourses', {});
 
     if (res.status !== 'success') {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">โหลดข้อมูลไม่สำเร็จ</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ef4444;">โหลดข้อมูลไม่สำเร็จ</td></tr>';
         return;
     }
 
     adminCoursesData = (res.data || []).filter(course => (course.status || 'active') !== 'deleted');
     if (adminCoursesData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">ยังไม่มีหลักสูตรในระบบ</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">ยังไม่มีหลักสูตรในระบบ</td></tr>';
         return;
     }
 
@@ -3853,18 +3855,20 @@ loadAdminCoursesTable = async function() {
         const mandatoryBadge = course.is_mandatory
             ? '<span class="table-status-badge active" style="margin-top: 6px;">บังคับ</span>'
             : '<span class="table-status-badge inactive" style="margin-top: 6px;">ไม่บังคับ</span>';
+        const mouScore = course.mou_score || (typeof calculateMOUScore === 'function' ? calculateMOUScore(course.hours * 60) : 0);
 
         tbody.innerHTML += `
             <tr>
-                <td><strong>${course.title}</strong></td>
+                <td class="td-title"><strong>${course.title}</strong></td>
                 <td>
                     ${getCourseDeliveryLabel(course.delivery_type)}<br>
                     <small style="color: var(--text-light);">${getCourseAudienceLabel(course.audience)}</small><br>
                     ${mandatoryBadge}
                 </td>
-                <td>${formatHoursLabel(course.hours)}</td>
-                <td>${getStatusBadge(status)}</td>
-                <td>
+                <td class="text-center">${formatHoursLabel(course.hours)}</td>
+                <td class="text-center" style="font-weight: 600; color: var(--primary-color);">${mouScore} คะแนน</td>
+                <td class="text-center">${getStatusBadge(status)}</td>
+                <td class="td-actions text-center">
                     <div class="table-actions">
                         <button class="btn btn-action btn-edit" onclick="editCourse('${course.course_id}')"><i class="fas fa-edit"></i> แก้ไข</button>
                         <button class="btn btn-action ${toggleAction.className}" onclick="changeCourseStatus('${course.course_id}', '${toggleAction.nextStatus}')"><i class="fas ${toggleAction.icon}"></i> ${toggleAction.label}</button>
@@ -3908,17 +3912,17 @@ loadAdminExternalRecommendationsTable = async function() {
     const tbody = document.getElementById('adminExternalCourseListBody');
     if (!tbody) return;
 
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
     const res = await callAPI('getExternalRecommendations', { admin_view: true });
 
     if (res.status !== 'success') {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ef4444;">โหลดข้อมูลไม่สำเร็จ</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #ef4444;">โหลดข้อมูลไม่สำเร็จ</td></tr>';
         return;
     }
 
     adminExternalRecommendationsData = (res.data || []).filter(course => (course.status || 'active') !== 'deleted');
     if (adminExternalRecommendationsData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">ยังไม่มีหลักสูตรภายนอกแนะนำ</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-light);">ยังไม่มีหลักสูตรภายนอกแนะนำ</td></tr>';
         return;
     }
 
@@ -3926,15 +3930,17 @@ loadAdminExternalRecommendationsTable = async function() {
     adminExternalRecommendationsData.forEach(course => {
         const status = course.status || 'active';
         const toggleAction = getToggleRegistrationAction(status);
+        const mouScore = course.mou_score || (typeof calculateMOUScore === 'function' ? calculateMOUScore(course.hours * 60) : 0);
 
         tbody.innerHTML += `
             <tr>
-                <td><strong>${course.title}</strong></td>
+                <td class="td-title"><strong>${course.title}</strong></td>
                 <td>${course.organizer || '-'}</td>
-                <td>${formatHoursLabel(course.hours)}</td>
-                <td><a href="${normalizeExternalUrl(course.register_url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">เปิดลิงก์</a></td>
-                <td>${getStatusBadge(status)}</td>
-                <td>
+                <td class="text-center">${formatHoursLabel(course.hours)}</td>
+                <td class="text-center" style="font-weight: 600; color: var(--primary-color);">${mouScore} คะแนน</td>
+                <td class="text-center"><a href="${normalizeExternalUrl(course.register_url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">เปิดลิงก์</a></td>
+                <td class="text-center">${getStatusBadge(status)}</td>
+                <td class="td-actions text-center">
                     <div class="table-actions">
                         <button class="btn btn-action btn-edit" onclick="editExternalRecommendation('${course.rec_id}')"><i class="fas fa-edit"></i> แก้ไข</button>
                         <button class="btn btn-action ${toggleAction.className}" onclick="changeExternalRecommendationStatus('${course.rec_id}', '${toggleAction.nextStatus}')"><i class="fas ${toggleAction.icon}"></i> ${toggleAction.label}</button>
