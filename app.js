@@ -3493,6 +3493,7 @@ function renderCourseGrid(coursesToRender) {
                     <div class="course-meta">
                         <span><i class="fas fa-building"></i> ${course.organizer || '-'}</span>
                         <span><i class="fas fa-clock"></i> ${formatHoursLabel(course.hours)}</span>
+                        ${course.mou_score > 0 ? `<span class="badge-mou"><i class="fas fa-star"></i> MOU: ${course.mou_score} คะแนน</span>` : ''}
                         <span><i class="fas fa-circle-info"></i> ${courseHint}</span>
                     </div>
                     ${statusHtml}
