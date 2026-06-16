@@ -1,4 +1,6 @@
 // ==================== GLOBAL VARIABLES ====================
+// นำ URL Web App ที่ได้จากตอน Deploy Google Apps Script มาใส่ตรงนี้
+const API_URL = "https://script.google.com/macros/s/AKfycbxlfD-5saP7FtUX_YxuBe3gowToA38b0qc0jW5JuWjMN9XotTlqRfc0LuaWtibYNwMp1Q/exec";
 let adminCoursesData = [];
 let adminExternalCourseData = [];
 let currentUser = null;
@@ -168,7 +170,7 @@ function initializeMOUCalculation() {
 }
 
 // ==================== Authentication Functions ====================
-function handleLogin(e) {
+async function handleLogin(e) {
     e.preventDefault();
     const username = document.getElementById('loginUsername').value.trim();
     const password = document.getElementById('loginPassword').value;
@@ -178,69 +180,111 @@ function handleLogin(e) {
         return;
     }
 
-    // Simulate login (replace with actual backend call)
-    console.log('Login attempt:', username);
-    
-    // Check localStorage for test data
-    const users = JSON.parse(localStorage.getItem('elearning_users')) || [];
-    const user = users.find(u => u.username === username && u.password === password);
+    // ทำปุ่มให้โหลดระหว่างรอ API ตอบกลับ
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังตรวจสอบ...';
+    submitBtn.disabled = true;
 
-    if (user) {
-        currentUser = user;
-        sessionStorage.setItem('currentUser', JSON.stringify(user));
-        showDashboard();
-    } else {
-        showAlert('เข้าสู่ระบบไม่สำเร็จ', 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
+    try {
+        // ยิงข้อมูลไปให้ Google Apps Script (code.gs) ตรวจสอบ
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'login',
+                payload: {
+                    username: username,
+                    password: password
+                }
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            // ดึงข้อมูล User จาก Google Sheet มาบันทึกใน Session
+            currentUser = result.user; 
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            showDashboard();
+        } else {
+            // หากไม่มีผู้ใช้ในระบบ หรือ รหัสผิด
+            showAlert('เข้าสู่ระบบไม่สำเร็จ', result.message || 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        showAlert('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง');
+    } finally {
+        // คืนค่าปุ่มกลับสู่สถานะปกติ
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
     }
 }
 
-function handleRegister(e) {
+async function handleRegister(e) {
     e.preventDefault();
-    const name = document.getElementById('regName').value.trim();
+
+    // ดึงค่าจากฟอร์มสมัครสมาชิก (อ้างอิง ID จาก index.html)
+    const fullName = document.getElementById('regName').value.trim();
     const position = document.getElementById('regPosition').value.trim();
     const workingGroup = document.getElementById('regWorkingGroup').value;
-    const dept = document.getElementById('regDept').value;
+    const department = document.getElementById('regDept').value;
     const username = document.getElementById('regUsername').value.trim();
     const email = document.getElementById('regEmail').value.trim();
     const password = document.getElementById('regPassword').value;
-    const confirmPassword = document.getElementById('regConfirmPassword')?.value;
 
-    if (!name || !position || !workingGroup || !dept || !username || !email || !password) {
-        showAlert('ข้อมูลไม่ครบ', 'กรุณากรอกข้อมูลให้ครบทั้งหมด');
+    // ตรวจสอบความครบถ้วนของข้อมูล
+    if (!fullName || !position || !workingGroup || !department || !username || !email || !password) {
+        showAlert('ข้อมูลไม่ครบ', 'กรุณากรอกข้อมูลให้ครบทุกช่อง');
         return;
     }
 
-    if (password !== confirmPassword) {
-        showAlert('รหัสผ่านไม่ตรงกัน', 'กรุณายืนยันรหัสผ่านให้ถูกต้อง');
-        return;
+    // เปลี่ยนสถานะปุ่มเพื่อป้องกันผู้ใช้กด Submit ซ้ำระหว่างรอข้อมูล
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังลงทะเบียน...';
+    submitBtn.disabled = true;
+
+    try {
+        // ส่งข้อมูลไปยัง Google Apps Script (Action: 'register')
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'register',
+                payload: {
+                    fullName: fullName,
+                    position: position,
+                    workingGroup: workingGroup,
+                    department: department,
+                    username: username,
+                    email: email,
+                    password: password
+                }
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            // สมัครสำเร็จ -> ล้างข้อมูลในฟอร์ม และสลับกลับไปหน้า Login
+            showAlert('ลงทะเบียนสำเร็จ', 'คุณสามารถเข้าสู่ระบบด้วยชื่อผู้ใช้งานและรหัสผ่านที่ตั้งไว้ได้เลย');
+            document.getElementById('registerForm').reset();
+            
+            // เรียกฟังก์ชันสลับไปหน้าเข้าสู่ระบบที่มีอยู่แล้ว
+            if (typeof toggleAuth === 'function') {
+                toggleAuth(); 
+            }
+        } else {
+            // กรณีชื่อผู้ใช้หรืออีเมลซ้ำ ระบบหลังบ้านจะส่งข้อความแจ้งเตือนกลับมา
+            showAlert('ลงทะเบียนไม่สำเร็จ', result.message || 'เกิดข้อผิดพลาดในการลงทะเบียน');
+        }
+    } catch (error) {
+        console.error('Register error:', error);
+        showAlert('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง');
+    } finally {
+        // คืนสถานะปุ่มกลับเป็นเหมือนเดิม
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
     }
-
-    // Save to localStorage (replace with actual backend call)
-    const users = JSON.parse(localStorage.getItem('elearning_users')) || [];
-    
-    if (users.find(u => u.username === username)) {
-        showAlert('ชื่อผู้ใช้งานซ้ำ', 'ชื่อผู้ใช้งานนี้ถูกใช้ไปแล้ว');
-        return;
-    }
-
-    const newUser = {
-        id: Date.now().toString(),
-        name,
-        position,
-        workingGroup,
-        dept,
-        username,
-        email,
-        password,
-        role: 'user',
-        createdAt: new Date().toISOString()
-    };
-
-    users.push(newUser);
-    localStorage.setItem('elearning_users', JSON.stringify(users));
-    
-    showAlert('ลงทะเบียนสำเร็จ', 'กรุณาเข้าสู่ระบบด้วยชื่อผู้ใช้งานและรหัสผ่านของคุณ');
-    toggleAuth();
 }
 
 function toggleAuth() {
@@ -284,9 +328,29 @@ function logout() {
     }
 }
 
-function loadDashboardData() {
-    // Load courses and other data
-    console.log('Loading dashboard data for user:', currentUser?.name);
+async function loadDashboardData() {
+    if (!currentUser) return;
+    
+    console.log('Loading real dashboard data for user:', currentUser.name);
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'getDashboardStats',
+                payload: { userId: currentUser.id } // อ้างอิง ID ของผู้ใช้งาน
+            })
+        });
+
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            // โค้ดสำหรับนำ result.data มาแสดงผลในหน้าเว็บ เช่น จำนวนคอร์สที่เรียนจบ, ชั่วโมงอบรม ฯลฯ
+            console.log('Dashboard Data:', result.data);
+        }
+    } catch (error) {
+        console.error('Error loading dashboard:', error);
+    }
 }
 
 // ==================== Tab Navigation ====================
@@ -380,12 +444,46 @@ function ensureForgotPasswordModal() {
     document.body.appendChild(modal);
 }
 
-function handleForgotPasswordRequest(e) {
+async function handleForgotPasswordRequest(e) {
     e.preventDefault();
-    const email = document.getElementById('forgotPasswordEmail').value;
-    showAlert('ระบบประมวลผลการขอรีเซ็ตรหัสผ่าน', 'ลิงก์รีเซ็ตจะถูกส่งไปยัง ' + email + ' ในไม่ช้า');
-    closeForgotPasswordModal();
-    document.getElementById('forgotPasswordForm').reset();
+    const email = document.getElementById('forgotPasswordEmail').value.trim();
+    
+    if (!email) {
+        showAlert('ข้อมูลไม่ครบ', 'กรุณากรอกอีเมล');
+        return;
+    }
+
+    // เปลี่ยนสถานะปุ่มขณะรอโหลด
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังดำเนินการ...';
+    submitBtn.disabled = true;
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'requestPasswordReset',
+                payload: { email: email }
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            showAlert('ส่งลิงก์สำเร็จ', `ระบบได้ส่งลิงก์รีเซ็ตรหัสผ่านไปที่ ${email} เรียบร้อยแล้ว`);
+            closeForgotPasswordModal();
+            document.getElementById('forgotPasswordForm').reset();
+        } else {
+            showAlert('เกิดข้อผิดพลาด', result.message || 'ไม่พบอีเมลนี้ในระบบ');
+        }
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        showAlert('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
+    } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
 }
 
 function ensureForgotPasswordTrigger() {
