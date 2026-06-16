@@ -716,18 +716,30 @@
                                 <p id="pdfUserName" style="font-size: 1.1rem; line-height: 1.6;"></p>
                                 <hr style="margin-top: 15px; border: 0; border-top: 1px solid #ccc;">
                             </div>
-                            <div class="table-responsive">
-                                <table class="admin-table">
+                            <div class="table-responsive portfolio-table-wrap">
+                                <table class="admin-table portfolio-table">
+                                    <colgroup>
+                                        <col class="pcol-date">
+                                        <col class="pcol-title">
+                                        <col class="pcol-org">
+                                        <col class="pcol-type">
+                                        <col class="pcol-hours">
+                                        <col class="pcol-mou">
+                                        <col class="pcol-status">
+                                        <col class="pcol-cert">
+                                        <col class="pcol-action no-print">
+                                    </colgroup>
                                     <thead>
                                         <tr>
-                                            <th style="width: 12%; text-align: center;">วันที่</th>
-                                            <th style="width: 28%;">หลักสูตร / หัวข้อการอบรม</th>
-                                            <th style="width: 20%;">หน่วยงานที่จัด</th>
-                                            <th style="width: 12%; text-align: center;">รูปแบบ</th>
-                                            <th style="width: 5%; text-align: center;">ชั่วโมง</th>
-                                            <th style="width: 8%; text-align: center;">สถานะ</th>
-                                            <th style="width: 8%; text-align: center;">หลักฐาน</th>
-                                            <th style="width: 7%; text-align: center;" class="no-print">จัดการ</th>
+                                            <th style="text-align: center;">วันที่</th>
+                                            <th>หลักสูตร / หัวข้อการอบรม</th>
+                                            <th>หน่วยงานที่จัด</th>
+                                            <th style="text-align: center;">รูปแบบ</th>
+                                            <th style="text-align: center;">ชั่วโมง</th>
+                                            <th style="text-align: center;">คะแนน MOU</th>
+                                            <th style="text-align: center;">สถานะ</th>
+                                            <th style="text-align: center;">หลักฐาน</th>
+                                            <th style="text-align: center;" class="no-print">จัดการ</th>
                                         </tr>
                                     </thead>
                                     <tbody id="historyTableBody"></tbody>
