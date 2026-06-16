@@ -1529,3 +1529,119 @@ body { background-color: var(--bg-color); color: var(--text-main); }
     color: var(--accent-color);
     transform: scale(1.1);
 }
+
+/* ==================== Portfolio Table (historyTab) ==================== */
+
+/* Wrapper: รองรับ scroll แนวนอนบนมือถือ แต่บนจอใหญ่ fit-to-screen */
+.portfolio-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    padding: 1px;
+    width: 100%;
+}
+
+/* ตารางหลัก: ขยายเต็มพื้นที่ ไม่บังคับ min-width เกินจำเป็น */
+.portfolio-table {
+    width: 100%;
+    table-layout: auto;
+    border-collapse: collapse;
+    white-space: nowrap;
+}
+
+/* กำหนดสัดส่วนคอลัมน์ด้วย <col> */
+.portfolio-table .pcol-date   { width: 10%; }
+.portfolio-table .pcol-title  { width: 30%; white-space: normal; }
+.portfolio-table .pcol-org    { width: 17%; }
+.portfolio-table .pcol-type   { width: 9%; }
+.portfolio-table .pcol-hours  { width: 6%; }
+.portfolio-table .pcol-mou    { width: 8%; }
+.portfolio-table .pcol-status { width: 7%; }
+.portfolio-table .pcol-cert   { width: 8%; }
+.portfolio-table .pcol-action { width: 5%; }
+
+/* Cell defaults */
+.portfolio-table th,
+.portfolio-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.875rem;
+    vertical-align: middle;
+}
+
+.portfolio-table th {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.portfolio-table tr:hover { background-color: #f9f9f9; }
+
+/* ชื่อหลักสูตร: ตัดขึ้นบรรทัดใหม่ได้ ไม่ดัน layout */
+.portfolio-table .pcell-title {
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.5;
+}
+
+/* เซลล์กึ่งกลาง */
+.portfolio-table .pcell-center {
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* เซลล์วันที่ */
+.portfolio-table .pcell-date {
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* เซลล์หน่วยงาน */
+.portfolio-table .pcell-org {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Badge คะแนน MOU ในตาราง */
+.badge-mou-score {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* MOU column header — เน้นให้เห็นชัด */
+.portfolio-table th:nth-child(6) {
+    background-color: #1d4ed8; /* เข้มขึ้นเล็กน้อยเพื่อแยกคอลัมน์ใหม่ */
+}
+
+/* ==================== Responsive: Portfolio Table บนมือถือ ==================== */
+@media (max-width: 900px) {
+    .portfolio-table-wrap {
+        margin: 0 -15px;
+        width: calc(100% + 30px);
+        border-radius: 0;
+    }
+    /* บังคับ min-width ให้รูดได้สะดวก */
+    .portfolio-table {
+        min-width: 780px;
+    }
+}
+
+/* ==================== Print / PDF: ซ่อนคอลัมน์ "จัดการ" ==================== */
+@media print {
+    .no-print { display: none !important; }
+    .portfolio-table-wrap { box-shadow: none; overflow: visible; }
+    .portfolio-table { min-width: unset; }
+    .portfolio-table th { background-color: #1e3a5f !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
