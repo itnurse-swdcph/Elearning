@@ -569,7 +569,7 @@ body { background-color: var(--bg-color); color: var(--text-main); }
 }
 .table-actions {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 8px;
 }
 /* ================= Classroom Layout ================= */
@@ -676,6 +676,33 @@ body { background-color: var(--bg-color); color: var(--text-main); }
     padding: 8px 15px; border-radius: 20px; font-weight: 600; font-size: 0.9rem;
     box-shadow: var(--shadow-gold);
 }
+/* MOU topbar badge */
+.badge-mou-topbar {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+    margin-left: 8px;
+}
+.badge-mou-topbar i { color: #f59e0b; margin-right: 4px; }
+/* MOU badge on course cards */
+.badge-mou {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.badge-mou i { color: #f59e0b; font-size: 0.72rem; }
 .user-body { padding: 30px; max-width: 1200px; margin: 0 auto; width: 100%; }
 .stat-number { font-size: 1.8rem; font-weight: 700; color: var(--primary-color); margin-top: 5px; }
 .text-success { color: #10B981 !important; }
