@@ -1670,99 +1670,6 @@ function removeUnitField(btn) {
     btn.closest('.unit-box').remove();
 }
 
-function toggleCourseDeliveryFields() {
-    const deliveryType = document.getElementById('cDeliveryType').value;
-    const unitsSection = document.getElementById('courseUnitsSection');
-    const classroomHint = document.getElementById('courseClassroomHint');
-    const unitsContainer = document.getElementById('unitsContainer');
-
-    if (deliveryType === 'classroom') {
-        unitsSection.classList.add('hidden');
-        classroomHint.classList.remove('hidden');
-        unitsContainer.innerHTML = '';
-        return;
-    }
-
-    unitsSection.classList.remove('hidden');
-    classroomHint.classList.add('hidden');
-    if (unitsContainer.children.length === 0) {
-        addUnitField();
-    }
-}
-
-// นำข้อมูลลงฟอร์มเพื่อเตรียมแก้ไข
-function editCourse(courseId) {
-    const course = adminCoursesData.find(c => c.course_id === courseId);
-    if(!course) return;
-
-    // เปลี่ยนหน้าตา UI
-    document.getElementById('courseFormTitle').innerHTML = '<i class="fas fa-edit"></i> แก้ไขข้อมูลหลักสูตร';
-    document.getElementById('btnSubmitCourse').innerHTML = '<i class="fas fa-save"></i> บันทึกการแก้ไข';
-    document.getElementById('btnCancelEdit').classList.remove('hidden');
-    document.getElementById('editCourseId').value = course.course_id;
-
-    document.getElementById('cTitle').value = course.title;
-    document.getElementById('cOrganizer').value = course.organizer;
-    document.getElementById('cPassingScore').value = course.passing_score;
-    document.getElementById('cCover').value = course.cover_image;
-    document.getElementById('cCertTemplate').value = course.cert_template || '';
-    document.getElementById('cDeliveryType').value = course.delivery_type || 'video';
-    document.getElementById('cAudience').value = course.audience || 'all';
-    document.getElementById('cIsMandatory').checked = !!course.is_mandatory;
-    document.getElementById('cMOU').value = course.mou_score || 0;
-
-    const coverPreview = document.getElementById('cCoverPreview');
-    if (coverPreview) {
-        if (course.cover_image) {
-            coverPreview.src = getDriveImageUrl(course.cover_image);
-            coverPreview.style.display = 'block';
-        } else {
-            coverPreview.src = '';
-            coverPreview.style.display = 'none';
-        }
-    }
-
-    const hr = Math.floor(course.hours);
-    const min = Math.round((course.hours - hr) * 60);
-    document.getElementById('cHours').value = hr;
-    document.getElementById('cMins').value = min;
-
-    document.getElementById('unitsContainer').innerHTML = '';
-    if ((course.delivery_type || 'video') === 'video') {
-        const units = JSON.parse(course.units || '[]');
-        if(units.length === 0) {
-            addUnitField();
-        } else {
-            units.forEach(u => addUnitField(u.title, u.video_url, u.min_time));
-        }
-    }
-    toggleCourseDeliveryFields();
-    
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// ล้างฟอร์มกลับเป็นโหมดเพิ่มหลักสูตร
-function resetCourseForm() {
-    document.getElementById('addCourseForm').reset();
-    document.getElementById('courseFormTitle').innerHTML = '<i class="fas fa-plus-circle"></i> เพิ่มหลักสูตรใหม่';
-    document.getElementById('btnSubmitCourse').innerHTML = '<i class="fas fa-save"></i> บันทึกหลักสูตร';
-    document.getElementById('btnCancelEdit').classList.add('hidden');
-    document.getElementById('editCourseId').value = '';
-    document.getElementById('cDeliveryType').value = 'video';
-    document.getElementById('cAudience').value = 'all';
-    document.getElementById('cIsMandatory').checked = false;
-    document.getElementById('cMOU').value = 0;
-    
-    const coverPreview = document.getElementById('cCoverPreview');
-    if (coverPreview) {
-        coverPreview.src = '';
-        coverPreview.style.display = 'none';
-    }
-    
-    document.getElementById('unitsContainer').innerHTML = '';
-    addUnitField();
-    toggleCourseDeliveryFields();
-}
 
 // ฟังก์ชันบันทึกหลักสูตร (จัดการทั้งตอนเพิ่มใหม่ และตอนแก้ไข)
 document.getElementById('addCourseForm').addEventListener('submit', async (e) => {
@@ -3707,21 +3614,6 @@ async function loadAdminExternalRecommendationsTable() {
             </tr>
         `;
     });
-}
-
-function resetExternalRecommendationForm() {
-    const form = document.getElementById('externalRecommendationForm');
-    if (!form) return;
-
-    form.reset();
-    document.getElementById('editExtRecId').value = '';
-    document.getElementById('extRecCover').value = '';
-    document.getElementById('extRecCoverStatus').innerText = '';
-    document.getElementById('extRecHours').value = '';
-    document.getElementById('extRecMins').value = '';
-    document.getElementById('externalRecFormTitle').innerHTML = '<i class="fas fa-link"></i> เพิ่มหลักสูตรภายนอกแนะนำ';
-    document.getElementById('btnSubmitExternalRec').innerHTML = '<i class="fas fa-save"></i> บันทึกหลักสูตรภายนอก';
-    document.getElementById('btnCancelExternalRecEdit').classList.add('hidden');
 }
 
 function editExternalRecommendation(recId) {
