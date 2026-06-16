@@ -373,18 +373,22 @@ function onWorkingGroupChange(wgSelectId, deptSelectId) {
 
 window.addEventListener('DOMContentLoaded', async () => {
     initializeAuthEnhancements();
+    
+    // 1. จัดการปีปัจจุบัน
     const years = document.querySelectorAll('.current-year');
     const thisYear = new Date().getFullYear();
     years.forEach(el => el.innerText = thisYear);
+    
+    // 2. โหลดโครงสร้างองค์กร
     await loadOrgStructure();
 
-    // Bind event listeners for Mode B calculator
+    // 3. Bind event listeners for Mode B calculator
     const extDateStart = document.getElementById('extDateStart');
     const extDateEnd = document.getElementById('extDateEnd');
     if (extDateStart) extDateStart.addEventListener('input', calculateModeBHours);
     if (extDateEnd) extDateEnd.addEventListener('input', calculateModeBHours);
 
-    // Bind event listener for course cover image preview
+    // 4. Bind event listener for course cover image preview
     const cCover = document.getElementById('cCover');
     if (cCover) {
         cCover.addEventListener('input', () => {
@@ -399,6 +403,24 @@ window.addEventListener('DOMContentLoaded', async () => {
                     coverPreview.classList.add('hidden');
                 }
             }
+        });
+    }
+
+    // 5. [เพิ่มใหม่] คำนวณคะแนน MOU อัตโนมัติ (Internal Course)
+    const cHoursInput = document.getElementById('cHours');
+    const cMouScoreInput = document.getElementById('cMouScore');
+    if (cHoursInput && cMouScoreInput) {
+        cHoursInput.addEventListener('input', () => {
+            cMouScoreInput.value = calculateMOUScore(cHoursInput.value);
+        });
+    }
+
+    // 6. [เพิ่มใหม่] คำนวณคะแนน MOU อัตโนมัติ (External Recommendation)
+    const extHoursInput = document.getElementById('extHours');
+    const extMouScoreInput = document.getElementById('extMouScore');
+    if (extHoursInput && extMouScoreInput) {
+        extHoursInput.addEventListener('input', () => {
+            extMouScoreInput.value = calculateMOUScore(extHoursInput.value);
         });
     }
 });
@@ -1763,7 +1785,7 @@ document.getElementById('addCourseForm').addEventListener('submit', async (e) =>
         delivery_type: deliveryType,
         audience: document.getElementById('cAudience').value,
         is_mandatory: document.getElementById('cIsMandatory').checked,
-        mou_score: parseFloat(document.getElementById('cMOU').value) || 0
+        mou_score: parseFloat(document.getElementById('cMouScore').value) || 0
     };
     
     const editId = document.getElementById('editCourseId').value;
@@ -3722,7 +3744,8 @@ if (externalRecommendationForm) {
             hours: totalHours,
             cover_image: document.getElementById('extRecCover').value.trim(),
             register_url: normalizeExternalUrl(document.getElementById('extRecUrl').value.trim()),
-            status: currentRecommendation ? (currentRecommendation.status || 'active') : 'active'
+            status: currentRecommendation ? (currentRecommendation.status || 'active') : 'active',
+            mou_score: parseFloat(document.getElementById('extMouScore').value) || 0
         };
 
         if (!payload.title || !payload.organizer || !payload.cover_image || !payload.register_url) {
@@ -4573,20 +4596,13 @@ document.addEventListener('DOMContentLoaded', function() {
  * @param {number} totalHours - จำนวนหน่วยกิต/ชั่วโมงที่ได้ (รองรับทศนิยม เช่น 1.5 = 1 ชั่วโมง 30 นาที)
  * @returns {number} - คะแนน MOU ที่คำนวณได้
  */
+// ฟังก์ชันคำนวณคะแนน MOU (วางไว้นอก event listener เพื่อเรียกใช้ซ้ำได้)
 function calculateMOUScore(totalHours) {
-    // แปลงชั่วโมงที่กรอกให้เป็นนาทีทั้งหมด
     const totalMinutes = parseFloat(totalHours || 0) * 60;
-    
-    // ป้องกันกรณีไม่ได้กรอก หรือกรอกค่า 0
     if (totalMinutes <= 0) return 0;
-    
-    // เกณฑ์: น้อยกว่า 1 ชั่วโมง (< 60 นาที) ให้ 1 คะแนน
     if (totalMinutes < 60) return 1;
-    
-    // เกณฑ์: 1 ชม. = 2 คะแนน, 2 ชม. = 4 คะแนน, 3 ชม. = 6 คะแนน (วนลูปสัดส่วนเดิม)
-    // ใช้ Math.floor ตัดเศษนาทีทิ้ง เพื่อหาจำนวนชั่วโมงเต็ม
-    const fullHours = Math.floor(totalMinutes / 60);
-    return fullHours * 2;
+    // สัดส่วน: 1 ชม. = 2, 2 ชม. = 4, 3 ชม. = 6...
+    return Math.floor(totalMinutes / 60) * 2;
 }
 
 // ---------------------------------------------------------
@@ -4619,3 +4635,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 });
+// ==========================================
+// ฟังก์ชันคำนวณคะแนน MOU อัตโนมัติ
+// ==========================================
+function calculateMOUScore(totalHours) {
+    const totalMinutes = parseFloat(totalHours || 0) * 60;
+    
+    if (totalMinutes <= 0) return 0;
+    if (totalMinutes < 60) return 1;
+    
+    const fullHours = Math.floor(totalMinutes / 60);
+    return fullHours * 2;
+}
