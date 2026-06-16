@@ -1,3 +1,9 @@
+// ==================== GLOBAL VARIABLES ====================
+let adminCoursesData = [];
+let adminExternalCourseData = [];
+let currentUser = null;
+let adminMode = false;
+
 // ==================== MOU Score Calculation Function ====================
 /**
  * คำนวณคะแนน MOU ตามเกณฑ์:
@@ -40,8 +46,64 @@ function calculateMOUScore(hoursOrMinutes) {
     return Math.max(score, 0);
 }
 
-// ==================== Initialize Form Event Listeners ====================
+// ==================== Alert Functions ====================
+function showAlert(title, message) {
+    document.getElementById('alertTitle').textContent = title;
+    document.getElementById('alertMessage').textContent = message;
+    document.getElementById('customAlert').classList.remove('hidden');
+}
+
+function closeAlert() {
+    document.getElementById('customAlert').classList.add('hidden');
+}
+
+function showConfirm(title, message, callback) {
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    const btnYes = document.getElementById('btnConfirmYes');
+    
+    // ลบ event listener เดิม
+    const newBtnYes = btnYes.cloneNode(true);
+    btnYes.parentNode.replaceChild(newBtnYes, btnYes);
+    
+    newBtnYes.onclick = () => {
+        document.getElementById('customConfirm').classList.add('hidden');
+        callback(true);
+    };
+    
+    document.getElementById('customConfirm').classList.remove('hidden');
+}
+
+function cancelConfirm() {
+    document.getElementById('customConfirm').classList.add('hidden');
+}
+
+// ==================== Initialize Page ====================
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded');
+    
+    // Initialize auth enhancements
+    initializeAuthEnhancements();
+    
+    // Bind form events
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm) {
+        registerForm.addEventListener('submit', handleRegister);
+    }
+
+    // Initialize form event listeners for MOU calculation
+    setTimeout(() => {
+        initializeMOUCalculation();
+    }, 500);
+});
+
+// ==================== Form Event Listeners ====================
+function initializeMOUCalculation() {
     // 1. Bind event listeners for calculate MOU Score (Course)
     const cHoursInput = document.getElementById('cHours');
     const cMinsInput = document.getElementById('cMins');
@@ -103,9 +165,166 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-});
+}
 
-// ==================== Original Code Functions ====================
+// ==================== Authentication Functions ====================
+function handleLogin(e) {
+    e.preventDefault();
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+
+    if (!username || !password) {
+        showAlert('ข้อมูลไม่ครบ', 'กรุณากรอกชื่อผู้ใช้งานและรหัสผ่าน');
+        return;
+    }
+
+    // Simulate login (replace with actual backend call)
+    console.log('Login attempt:', username);
+    
+    // Check localStorage for test data
+    const users = JSON.parse(localStorage.getItem('elearning_users')) || [];
+    const user = users.find(u => u.username === username && u.password === password);
+
+    if (user) {
+        currentUser = user;
+        sessionStorage.setItem('currentUser', JSON.stringify(user));
+        showDashboard();
+    } else {
+        showAlert('เข้าสู่ระบบไม่สำเร็จ', 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
+    }
+}
+
+function handleRegister(e) {
+    e.preventDefault();
+    const name = document.getElementById('regName').value.trim();
+    const position = document.getElementById('regPosition').value.trim();
+    const workingGroup = document.getElementById('regWorkingGroup').value;
+    const dept = document.getElementById('regDept').value;
+    const username = document.getElementById('regUsername').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const confirmPassword = document.getElementById('regConfirmPassword')?.value;
+
+    if (!name || !position || !workingGroup || !dept || !username || !email || !password) {
+        showAlert('ข้อมูลไม่ครบ', 'กรุณากรอกข้อมูลให้ครบทั้งหมด');
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        showAlert('รหัสผ่านไม่ตรงกัน', 'กรุณายืนยันรหัสผ่านให้ถูกต้อง');
+        return;
+    }
+
+    // Save to localStorage (replace with actual backend call)
+    const users = JSON.parse(localStorage.getItem('elearning_users')) || [];
+    
+    if (users.find(u => u.username === username)) {
+        showAlert('ชื่อผู้ใช้งานซ้ำ', 'ชื่อผู้ใช้งานนี้ถูกใช้ไปแล้ว');
+        return;
+    }
+
+    const newUser = {
+        id: Date.now().toString(),
+        name,
+        position,
+        workingGroup,
+        dept,
+        username,
+        email,
+        password,
+        role: 'user',
+        createdAt: new Date().toISOString()
+    };
+
+    users.push(newUser);
+    localStorage.setItem('elearning_users', JSON.stringify(users));
+    
+    showAlert('ลงทะเบียนสำเร็จ', 'กรุณาเข้าสู่ระบบด้วยชื่อผู้ใช้งานและรหัสผ่านของคุณ');
+    toggleAuth();
+}
+
+function toggleAuth() {
+    const loginForm = document.getElementById('loginForm')?.parentElement;
+    const registerForm = document.getElementById('registerForm')?.parentElement;
+    
+    if (loginForm?.classList.contains('hidden')) {
+        loginForm.classList.remove('hidden');
+        registerForm?.classList.add('hidden');
+    } else {
+        loginForm?.classList.add('hidden');
+        registerForm?.classList.remove('hidden');
+    }
+}
+
+function showDashboard() {
+    document.getElementById('authSection').classList.add('hidden');
+    document.getElementById('appSection').classList.remove('hidden');
+    
+    // Update user display
+    document.getElementById('userNameDisplay').textContent = currentUser?.name || 'ผู้ใช้งาน';
+    document.getElementById('userDeptDisplay').textContent = currentUser?.dept || 'หน่วยงาน';
+    
+    // Show admin button if user is admin
+    if (currentUser?.role === 'admin') {
+        document.getElementById('adminBtn').classList.remove('hidden');
+    }
+    
+    loadDashboardData();
+}
+
+function logout() {
+    if (confirm('คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบ?')) {
+        currentUser = null;
+        sessionStorage.removeItem('currentUser');
+        adminMode = false;
+        document.getElementById('appSection').classList.add('hidden');
+        document.getElementById('adminSection').classList.add('hidden');
+        document.getElementById('authSection').classList.remove('hidden');
+        document.getElementById('loginForm').reset();
+    }
+}
+
+function loadDashboardData() {
+    // Load courses and other data
+    console.log('Loading dashboard data for user:', currentUser?.name);
+}
+
+// ==================== Tab Navigation ====================
+function switchUserTab(tabName, element) {
+    const tabs = document.querySelectorAll('.user-tab');
+    tabs.forEach(tab => tab.classList.add('hidden'));
+    
+    const menuItems = document.querySelectorAll('.sidebar-menu li');
+    menuItems.forEach(item => item.classList.remove('active'));
+    
+    document.getElementById(tabName).classList.remove('hidden');
+    if (element) element.classList.add('active');
+}
+
+function switchAdminTab(tabName, element) {
+    const tabs = document.querySelectorAll('.admin-tab');
+    tabs.forEach(tab => tab.classList.add('hidden'));
+    
+    const menuItems = document.querySelectorAll('.navbar-menu li');
+    menuItems.forEach(item => item.classList.remove('active'));
+    
+    document.getElementById(tabName).classList.remove('hidden');
+    if (element) element.classList.add('active');
+}
+
+function goToAdminPanel() {
+    adminMode = true;
+    document.getElementById('appSection').classList.add('hidden');
+    document.getElementById('adminSection').classList.remove('hidden');
+}
+
+function exitAdmin() {
+    adminMode = false;
+    document.getElementById('adminSection').classList.add('hidden');
+    document.getElementById('appSection').classList.remove('hidden');
+}
+
+// ==================== Auth Enhancement Functions ====================
 function initializeAuthEnhancements() {
     ensureForgotPasswordModal();
     applyAuthTextOverrides();
@@ -262,6 +481,7 @@ function calculateModeBHours() {
     }
 }
 
+// ==================== Course Management Functions ====================
 function toggleCourseDeliveryFields() {
     const deliveryType = document.getElementById('cDeliveryType').value;
     const unitsSection = document.getElementById('courseUnitsSection');
@@ -282,12 +502,10 @@ function toggleCourseDeliveryFields() {
     }
 }
 
-// นำข้อมูลลงฟอร์มเพื่อเตรียมแก้ไข
 function editCourse(courseId) {
     const course = adminCoursesData.find(c => c.course_id === courseId);
     if(!course) return;
 
-    // เปลี่ยนหน้าตา UI
     document.getElementById('courseFormTitle').innerHTML = '<i class="fas fa-edit"></i> แก้ไขข้อมูลหลักสูตร';
     document.getElementById('btnSubmitCourse').innerHTML = '<i class="fas fa-save"></i> บันทึกการแก้ไข';
     document.getElementById('btnCancelEdit').classList.remove('hidden');
@@ -333,7 +551,6 @@ function editCourse(courseId) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ล้างฟอร์มกลับเป็นโหมดเพิ่มหลักสูตร
 function resetCourseForm() {
     document.getElementById('addCourseForm').reset();
     document.getElementById('courseFormTitle').innerHTML = '<i class="fas fa-plus-circle"></i> เพิ่มหลักสูตรใหม่';
@@ -345,7 +562,6 @@ function resetCourseForm() {
     toggleCourseDeliveryFields();
 }
 
-// ล้างฟอร์มสำหรับภายนอก
 function resetExternalRecommendationForm() {
     document.getElementById('externalRecommendationForm').reset();
     document.getElementById('externalRecFormTitle').innerHTML = '<i class="fas fa-link"></i> เพิ่มหลักสูตรภายนอกแนะนำ';
@@ -380,6 +596,8 @@ function editExternalRecommendation(extRecId) {
 
 function addUnitField(title = '', videoUrl = '', minTime = 0) {
     const container = document.getElementById('unitsContainer');
+    if (!container) return;
+    
     const unitIndex = container.children.length;
     
     const unitBox = document.createElement('div');
@@ -422,6 +640,8 @@ function addQuestionBox() {
 
 function addOption(qIndex) {
     const container = document.getElementById(`options-${qIndex}`);
+    if (!container) return;
+    
     const oIndex = container.children.length + 1;
     const optionBox = document.createElement('div');
     optionBox.style.marginBottom = '8px';
@@ -447,4 +667,48 @@ function previewCoverImage(input) {
         }
     };
     reader.readAsDataURL(input.files[0]);
+}
+
+function getDriveImageUrl(fileId) {
+    return `https://drive.google.com/thumbnail?id=${fileId}`;
+}
+
+// ==================== Sidebar Toggle ====================
+function toggleSidebar() {
+    const sidebar = document.querySelector('.user-sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebar) {
+        sidebar.style.display = sidebar.style.display === 'none' ? 'flex' : 'none';
+    }
+    
+    if (overlay) {
+        overlay.classList.toggle('hidden');
+    }
+}
+
+function toggleAdminMenu() {
+    const menu = document.getElementById('adminNavbarMenu');
+    const actions = document.getElementById('adminNavbarActions');
+    
+    if (menu) menu.classList.toggle('open');
+    if (actions) actions.classList.toggle('open');
+}
+
+// ==================== Utility Functions ====================
+function scrollGuideTo(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (section) {
+        section.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+function filterCourses() {
+    const searchText = (document.getElementById('courseSearchInput')?.value || '').toLowerCase();
+    const courseCards = document.querySelectorAll('.course-card');
+    
+    courseCards.forEach(card => {
+        const title = (card.querySelector('.course-title')?.textContent || '').toLowerCase();
+        card.style.display = title.includes(searchText) ? 'flex' : 'none';
+    });
 }
