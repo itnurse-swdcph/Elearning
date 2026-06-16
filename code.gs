@@ -2316,6 +2316,10 @@ function updateExternalStatus(sheet, payload) {
       if (payload.training_time) {
         wsExt.getRange(i+1, 11).setValue(payload.training_time); // col K: Training_Time
       }
+      // Update topic if admin changes it
+      if (payload.topic) {
+        wsExt.getRange(i+1, 3).setValue(payload.topic); // col C: Topic
+      }
       // Update hours if admin changes it
       if (payload.hours) {
         wsExt.getRange(i+1, 6).setValue(parseFloat(payload.hours) || extData[i][5]); // col F: Hours
