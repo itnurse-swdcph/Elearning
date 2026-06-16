@@ -1000,7 +1000,8 @@ function buildExternalRecommendationRecord_(row) {
     created_at: row[7] || '',
     audience: audience,
     mandatory_groups: mandatoryGroups,
-    is_mandatory: mandatoryGroups.length > 0
+    is_mandatory: mandatoryGroups.length > 0,
+    mou_score: parseFloat(row[10]) || 0 // <--- เพิ่มบรรทัดนี้
   };
 }
 
@@ -1681,6 +1682,9 @@ function addExternalRecommendation(sheet, payload) {
   const recId = 'ERC' + new Date().getTime();
   const audience = normalizeCourseAudience_(payload.audience);
   const isMandatory = payload.is_mandatory === true || parseBooleanFlag_(payload.is_mandatory);
+  
+  // รองรับการรับค่าคะแนนจาก Frontend (ลองเช็คชื่อ Key ใน app.js ที่ส่งมานะครับ เช่น payload.mou_score หรือ payload.extMouScore)
+  const mouScore = parseFloat(payload.extMouScore || payload.mou_score) || 0; 
 
   ws.appendRow([
     recId,
@@ -1692,7 +1696,8 @@ function addExternalRecommendation(sheet, payload) {
     payload.status || 'active',
     new Date(),
     audience,
-    serializeMandatoryGroups_(payload.mandatory_groups, audience, isMandatory)
+    serializeMandatoryGroups_(payload.mandatory_groups, audience, isMandatory),
+    mouScore // <--- เพิ่มบรรทัดนี้ (คอลัมน์ที่ 11)
   ]);
 
   clearSheetCache('External_Course_Recommendations');
@@ -1715,32 +1720,17 @@ function updateExternalRecommendation(sheet, payload) {
       ws.getRange(i + 1, 7).setValue(payload.status || 'active');
       ws.getRange(i + 1, 9).setValue(audience);
       ws.getRange(i + 1, 10).setValue(serializeMandatoryGroups_(payload.mandatory_groups, audience, isMandatory));
+      
+      // <--- เพิ่มการบันทึกค่า MOU Score ที่คอลัมน์ 11 --->
+      const mouScore = parseFloat(payload.extMouScore || payload.mou_score) || 0;
+      ws.getRange(i + 1, 11).setValue(mouScore);
+
       clearSheetCache('External_Course_Recommendations');
       return responseJSON({ status: 'success', message: 'อัปเดตหลักสูตรภายนอกแนะนำเรียบร้อยแล้ว' });
     }
   }
 
   return responseJSON({ status: 'error', message: 'ไม่พบหลักสูตรภายนอกแนะนำที่ต้องการแก้ไข' });
-}
-
-function updateExternalRecommendationStatus(sheet, payload) {
-  const ws = getExternalRecommendationSheet_(sheet);
-  const data = ws.getDataRange().getValues();
-  const nextStatus = String(payload.status || '').trim().toLowerCase();
-
-  if (['active', 'inactive', 'deleted'].indexOf(nextStatus) === -1) {
-    return responseJSON({ status: 'error', message: 'สถานะหลักสูตรภายนอกไม่ถูกต้อง' });
-  }
-
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0] === payload.rec_id) {
-      ws.getRange(i + 1, 7).setValue(nextStatus);
-      clearSheetCache('External_Course_Recommendations');
-      return responseJSON({ status: 'success', message: 'อัปเดตสถานะหลักสูตรภายนอกเรียบร้อยแล้ว' });
-    }
-  }
-
-  return responseJSON({ status: 'error', message: 'ไม่พบหลักสูตรภายนอกแนะนำที่ต้องการอัปเดตสถานะ' });
 }
 
 function getAdminCourses(sheet) {
