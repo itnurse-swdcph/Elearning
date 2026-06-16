@@ -337,19 +337,41 @@ async function loadDashboardData() {
         const response = await fetch(API_URL, {
             method: 'POST',
             body: JSON.stringify({
-                action: 'getDashboardStats',
-                payload: { userId: currentUser.id } // อ้างอิง ID ของผู้ใช้งาน
+                action: 'loadInitialData', // ใช้ฟังก์ชันนี้เพื่อดึงข้อมูลทั้งหมดรวดเดียว
+                payload: { user_id: currentUser.id } // แก้เป็น user_id ให้ตรงกับ code.gs
             })
         });
 
         const result = await response.json();
         
         if (result.status === 'success') {
-            // โค้ดสำหรับนำ result.data มาแสดงผลในหน้าเว็บ เช่น จำนวนคอร์สที่เรียนจบ, ชั่วโมงอบรม ฯลฯ
-            console.log('Dashboard Data:', result.data);
+            console.log('Dashboard Initial Data Loaded:', result);
+            
+            // 1. อัปเดตข้อมูลสถิติด้านบนของ Dashboard
+            // ตรวจสอบว่า ID เหล่านี้ตรงกับหน้า index.html ของคุณ (สมมติว่าคุณใช้ ID ตามมาตรฐานเดิม)
+            if (result.stats) {
+                const inProgressElem = document.getElementById('statInProgress');
+                const completedElem = document.getElementById('statCompleted');
+                const hoursElem = document.getElementById('statHours');
+
+                if (inProgressElem) inProgressElem.textContent = result.stats.inProgress || 0;
+                if (completedElem) completedElem.textContent = result.stats.certCount || 0;
+                if (hoursElem) hoursElem.textContent = result.stats.totalHours || '0.00';
+            }
+
+            // 2. นำข้อมูลไปใช้ร่วมกับฟังก์ชันแสดงผล (Render) เดิมของคุณ
+            // ระบบของคุณมีข้อมูลรายวิชาและประวัติเรียนคืนกลับมาให้ใน result.courses และ result.enrollments
+            
+            if (typeof renderCourses === 'function') {
+                // หากคุณมีฟังก์ชันแสดงรายวิชา ให้ส่งข้อมูลให้ฟังก์ชันนั้น
+                renderCourses(result.courses, result.enrollments); 
+            }
+
+        } else {
+            console.error('Error from server:', result.message);
         }
     } catch (error) {
-        console.error('Error loading dashboard:', error);
+        console.error('Error loading dashboard data:', error);
     }
 }
 
