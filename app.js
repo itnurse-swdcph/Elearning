@@ -4568,3 +4568,54 @@ document.addEventListener('DOMContentLoaded', function() {
         initializeCertificateDownloadButtons();
     }, 500);
 });
+/**
+ * ฟังก์ชันคำนวณคะแนน MOU อัตโนมัติตามเกณฑ์เวลา
+ * @param {number} totalHours - จำนวนหน่วยกิต/ชั่วโมงที่ได้ (รองรับทศนิยม เช่น 1.5 = 1 ชั่วโมง 30 นาที)
+ * @returns {number} - คะแนน MOU ที่คำนวณได้
+ */
+function calculateMOUScore(totalHours) {
+    // แปลงชั่วโมงที่กรอกให้เป็นนาทีทั้งหมด
+    const totalMinutes = parseFloat(totalHours || 0) * 60;
+    
+    // ป้องกันกรณีไม่ได้กรอก หรือกรอกค่า 0
+    if (totalMinutes <= 0) return 0;
+    
+    // เกณฑ์: น้อยกว่า 1 ชั่วโมง (< 60 นาที) ให้ 1 คะแนน
+    if (totalMinutes < 60) return 1;
+    
+    // เกณฑ์: 1 ชม. = 2 คะแนน, 2 ชม. = 4 คะแนน, 3 ชม. = 6 คะแนน (วนลูปสัดส่วนเดิม)
+    // ใช้ Math.floor ตัดเศษนาทีทิ้ง เพื่อหาจำนวนชั่วโมงเต็ม
+    const fullHours = Math.floor(totalMinutes / 60);
+    return fullHours * 2;
+}
+
+// ---------------------------------------------------------
+// การผูก Event Listener เพื่อดักจับการพิมพ์แบบ Real-time
+// ---------------------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+
+    // 1. สำหรับฟอร์ม "หลักสูตรภายใน/หลักสูตรใหม่"
+    // ** คำแนะนำ: เปลี่ยน 'cHours' และ 'cMouScore' ให้ตรงกับ ID จริงในไฟล์ HTML ของคุณ **
+    const internalHoursInput = document.getElementById('cHours'); 
+    const internalMouInput = document.getElementById('cMouScore'); 
+
+    if (internalHoursInput && internalMouInput) {
+        internalHoursInput.addEventListener('input', function() {
+            // คำนวณและอัปเดตช่องคะแนน MOU ทันทีที่มีการคีย์ข้อมูล
+            internalMouInput.value = calculateMOUScore(this.value);
+        });
+    }
+
+    // 2. สำหรับฟอร์ม "หลักสูตรภายนอกแนะนำ"
+    // ** คำแนะนำ: เปลี่ยน 'extHours' ให้ตรงกับ ID ฟิลด์ชั่วโมงในฟอร์มภายนอกของคุณ **
+    const externalHoursInput = document.getElementById('extHours');
+    const externalMouInput = document.getElementById('extMouScore'); // ตรงกับ ID ใน HTML ด้านบน
+
+    if (externalHoursInput && externalMouInput) {
+        externalHoursInput.addEventListener('input', function() {
+            // คำนวณและอัปเดตช่องคะแนน MOU ทันทีที่มีการคีย์ข้อมูล
+            externalMouInput.value = calculateMOUScore(this.value);
+        });
+    }
+
+});
