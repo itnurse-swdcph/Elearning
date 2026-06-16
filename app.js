@@ -407,15 +407,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // 5. [เพิ่มใหม่] คำนวณคะแนน MOU อัตโนมัติ (Internal Course)
-    const cHoursInput = document.getElementById('cHours');
-    const cMouScoreInput = document.getElementById('cMOU');
-    if (cHoursInput && cMouScoreInput) {
-        cHoursInput.addEventListener('input', () => {
-            cMouScoreInput.value = calculateMOUScore(cHoursInput.value);
-        });
-    }
-
     // 6. [แก้ไข] คำนวณคะแนน MOU อัตโนมัติ (External Recommendation - รองรับชั่วโมงและนาที)
     const extHoursInput = document.getElementById('extHours');
     const extMinsInput = document.getElementById('extMins');
@@ -1619,12 +1610,8 @@ function exportToExcel() {
 }
 
 // ==================== Course Management UI & Logic ====================
+let adminCoursesData = [];
 
-/**
- * ฟังก์ชันสำหรับสลับการแสดงผลแบบฟอร์ม (เปิด/ปิด)
- * @param {string} containerId - ID ของกล่องที่หุ้มแบบฟอร์มไว้
- * @param {boolean} forceOpen - บังคับให้เปิด (ใช้กรณีที่กดปุ่ม 'แก้ไข' แล้วต้องการให้ฟอร์มแสดงทันที)
- */
 function toggleAdminForm(containerId, forceOpen = false) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -1818,9 +1805,8 @@ function resetExternalRecommendationForm() {
 
 function displayAdminExternalCourseList() {
     const tbody = document.getElementById('adminExternalCourseListBody');
-    if (!tbody || typeof adminExternalCoursesData === 'undefined') return;
-
-    tbody.innerHTML = adminExternalCoursesData.map(course => {
+    if (!tbody || typeof adminExternalRecommendationsData === 'undefined') return;
+    tbody.innerHTML = adminExternalRecommendationsData.map(course => {
         const mouScore = course.mou_score || (typeof calculateMOUScore === 'function' ? calculateMOUScore(course.hours * 60) : 0);
         
         const statusBadgeClass = course.status === 'active' ? 'active' : 'inactive';
