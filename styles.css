@@ -1645,3 +1645,93 @@ body { background-color: var(--bg-color); color: var(--text-main); }
     .portfolio-table { min-width: unset; }
     .portfolio-table th { background-color: #1e3a5f !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* ==================== Admin: ตารางตรวจสอบประวัติอบรมภายนอก ====================
+   คลาสแยกเฉพาะหน้านี้ (ไม่กระทบ .admin-table ที่ใช้ร่วมกับหน้าแอดมินอื่น) */
+.ext-approve-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    padding: 1px;
+    width: 100%;
+}
+
+/* ตารางหลัก: เต็มพื้นที่ ไม่ล้นจอ */
+.ext-approve-table {
+    width: 100%;
+    table-layout: auto;
+    border-collapse: collapse;
+}
+
+/* สัดส่วนคอลัมน์ตาม <colgroup> */
+.ext-approve-table .eacol-name   { width: 15%; }
+.ext-approve-table .eacol-topic  { width: 40%; }
+.ext-approve-table .eacol-date   { width: 12%; }
+.ext-approve-table .eacol-mou    { width: 13%; }
+.ext-approve-table .eacol-cert   { width: 10%; }
+.ext-approve-table .eacol-action { width: 10%; }
+
+/* Cell defaults */
+.ext-approve-table th,
+.ext-approve-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.875rem;
+    vertical-align: middle;
+}
+
+.ext-approve-table th {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.ext-approve-table tr:hover { background-color: #f9f9f9; }
+
+/* หัวข้อ: ตัดขึ้นบรรทัดใหม่ได้ ไม่ดันตารางล้นจอ */
+.ext-approve-table .ea-cell-topic {
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.5;
+}
+
+/* เซลล์จัดกึ่งกลาง (วันที่ / ชม.+MOU / หลักฐาน / จัดการ) */
+.ext-approve-table .ea-cell-center {
+    text-align: center;
+}
+
+/* MOU เป็น 0: แสดงสีจางลงให้แยกจากคะแนนที่ได้จริง */
+.ea-mou-none {
+    color: #94a3b8;
+    font-size: 0.8rem;
+}
+
+/* ปุ่ม "จัดการ" เรียงกึ่งกลางและไม่ล้นคอลัมน์ */
+.ext-approve-table .ea-cell-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+/* ==================== Responsive: ตารางตรวจสอบอบรมภายนอกบนมือถือ ==================== */
+@media (max-width: 900px) {
+    .ext-approve-table-wrap {
+        margin: 0 -15px;
+        width: calc(100% + 30px);
+        border-radius: 0;
+    }
+    /* บังคับ min-width ให้รูดได้สะดวกบนจอเล็ก */
+    .ext-approve-table {
+        min-width: 720px;
+    }
+    .ext-approve-table .ea-cell-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
