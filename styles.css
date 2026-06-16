@@ -569,7 +569,7 @@ body { background-color: var(--bg-color); color: var(--text-main); }
 }
 .table-actions {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 8px;
 }
 /* ================= Classroom Layout ================= */
