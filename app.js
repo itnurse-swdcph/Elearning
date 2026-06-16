@@ -4654,6 +4654,73 @@ function isValidUrl_(url) {
 }
 
 // ==================== Initialize Page ====================
+// ==================== Auth Handlers ====================
+
+async function handleLogin(e) {
+    e.preventDefault();
+    const username = document.getElementById('loginUsername')?.value.trim();
+    const password = document.getElementById('loginPassword')?.value.trim();
+
+    if (!username || !password) {
+        showAlert('แจ้งเตือน', 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
+        return;
+    }
+
+    showLoader();
+    try {
+        const res = await callAPI('login', { username, password });
+        if (res && res.status === 'success') {
+            localStorage.setItem('swd_user', JSON.stringify(res.user));
+            appState.user = res.user;
+            checkSession(); // โหลด UI หลัง login
+        } else {
+            showAlert('เข้าสู่ระบบไม่สำเร็จ', res?.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+        }
+    } catch (err) {
+        console.error('handleLogin error:', err);
+        showAlert('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับระบบได้ กรุณาลองใหม่');
+    } finally {
+        hideLoader();
+    }
+}
+
+async function handleRegister(e) {
+    e.preventDefault();
+    // รวบรวม field จาก form
+    const payload = {
+        username:      document.getElementById('regUsername')?.value.trim(),
+        email:         document.getElementById('regEmail')?.value.trim(),
+        password:      document.getElementById('regPassword')?.value.trim(),
+        firstName:     document.getElementById('regFirstName')?.value.trim(),
+        lastName:      document.getElementById('regLastName')?.value.trim(),
+        position:      getPositionFieldValue('regPosition', 'regPositionOther'),
+        working_group: document.getElementById('regWorkingGroup')?.value.trim(),
+        department:    document.getElementById('regDepartment')?.value.trim(),
+    };
+
+    // ตรวจ confirm password
+    const confirmPassword = document.getElementById('regConfirmPassword')?.value.trim();
+    if (payload.password !== confirmPassword) {
+        showAlert('แจ้งเตือน', 'รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน');
+        return;
+    }
+
+    showLoader();
+    try {
+        const res = await callAPI('register', payload);
+        if (res && res.status === 'success') {
+            showAlert('ลงทะเบียนสำเร็จ', res.message || 'สร้างบัญชีสำเร็จ กรุณาเข้าสู่ระบบ');
+            showPage('loginPage'); // หรือฟังก์ชัน navigate ที่ระบบใช้
+        } else {
+            showAlert('ลงทะเบียนไม่สำเร็จ', res?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
+        }
+    } catch (err) {
+        console.error('handleRegister error:', err);
+        showAlert('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับระบบได้');
+    } finally {
+        hideLoader();
+    }
+}
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Page loaded');
     
