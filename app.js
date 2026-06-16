@@ -2848,7 +2848,7 @@ let globalAdminExtRequests = [];
 
 async function loadAdminExtRequests() {
     const tbody = document.getElementById('adminExtReqBody');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
     
     const res = await callAPI('getAdminExternalReq', {});
     
@@ -2856,7 +2856,7 @@ async function loadAdminExtRequests() {
         globalAdminExtRequests = res.data;
         tbody.innerHTML = '';
         if (res.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">ไม่มีรายการรออนุมัติ</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">ไม่มีรายการรออนุมัติ</td></tr>';
             return;
         }
         
@@ -2865,15 +2865,25 @@ async function loadAdminExtRequests() {
             const dateObj = new Date(req.date);
             const dateStr = !isNaN(dateObj) ? dateObj.toLocaleDateString('th-TH') : req.date;
 
+            // คอลัมน์รวม "ชม./คะแนน MOU"
+            const mouPoints = parseFloat(req.mou_points) || 0;
+            const mouDisplay = mouPoints > 0
+                ? `<span class="badge-mou-score"><i class="fas fa-star"></i> ${mouPoints} คะแนน</span>`
+                : '<span class="ea-mou-none">0 คะแนน</span>';
+
             tbody.innerHTML += `
                 <tr>
                     <td><strong>${req.user_name}</strong></td>
-                    <td>${req.topic}<br><small style="color:var(--text-light);">${req.organizer}</small></td>
-                    <td>${dateStr}<br><span class="badge-hours">${req.hours} ชม.</span></td>
-                    <td><a href="${req.cert_url}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-file-pdf"></i> ตรวจสอบไฟล์</a></td>
-                    <td>
-                        <button class="btn btn-outline btn-sm" onclick="openExtEditModal('${req.ext_id}')" style="margin-right: 5px;"><i class="fas fa-edit"></i> แก้ไข</button>
-                        <button class="btn btn-success btn-sm" onclick="handleExtReq('${req.ext_id}', 'approved')" style="margin-right: 5px;"><i class="fas fa-check"></i> อนุมัติ</button>
+                    <td class="ea-cell-topic">${req.topic}${req.organizer ? `<br><small style="color:var(--text-light);">${req.organizer}</small>` : ''}</td>
+                    <td class="ea-cell-center">${dateStr}</td>
+                    <td class="ea-cell-center">
+                        <span class="badge-hours">${req.hours} ชม.</span><br>
+                        ${mouDisplay}
+                    </td>
+                    <td class="ea-cell-center"><a href="${req.cert_url}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-file-pdf"></i> ตรวจสอบไฟล์</a></td>
+                    <td class="ea-cell-center ea-cell-actions">
+                        <button class="btn btn-outline btn-sm" onclick="openExtEditModal('${req.ext_id}')"><i class="fas fa-edit"></i> แก้ไข</button>
+                        <button class="btn btn-success btn-sm" onclick="handleExtReq('${req.ext_id}', 'approved')"><i class="fas fa-check"></i> อนุมัติ</button>
                         <button class="btn btn-sm" style="background:#EF4444; color:white;" onclick="handleExtReq('${req.ext_id}', 'rejected')"><i class="fas fa-times"></i> ปฏิเสธ</button>
                     </td>
                 </tr>
