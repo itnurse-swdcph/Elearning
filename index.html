@@ -1109,9 +1109,26 @@
                             <h3>ตรวจสอบประวัติอบรมภายนอก</h3>
                             <input type="text" id="approveExtSearch" placeholder="ค้นหาชื่อ/หัวข้อ..." oninput="filterApproveExtReq()" style="padding:8px 14px; border-radius:6px; border:1px solid #cbd5e1; min-width:200px;">
                         </div>
-                        <div class="table-responsive">
-                            <table class="admin-table">
-                                <thead><tr><th>ชื่อผู้ขอ</th><th>หัวข้อ</th><th>วันที่/ชม.</th><th>หลักฐาน</th><th>จัดการ</th></tr></thead>
+                        <div class="table-responsive ext-approve-table-wrap">
+                            <table class="admin-table ext-approve-table">
+                                <colgroup>
+                                    <col class="eacol-name">
+                                    <col class="eacol-topic">
+                                    <col class="eacol-date">
+                                    <col class="eacol-mou">
+                                    <col class="eacol-cert">
+                                    <col class="eacol-action">
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th>ชื่อผู้ขอ</th>
+                                        <th>หัวข้อ</th>
+                                        <th style="text-align:center;">วันที่</th>
+                                        <th style="text-align:center;">ชม./คะแนน MOU</th>
+                                        <th style="text-align:center;">หลักฐาน</th>
+                                        <th style="text-align:center;">จัดการ</th>
+                                    </tr>
+                                </thead>
                                 <tbody id="adminExtReqBody"></tbody>
                             </table>
                         </div>
