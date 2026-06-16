@@ -866,107 +866,151 @@
                         </div>
                     </div>
 
-                    <div id="courseMgtTab" class="admin-tab hidden">
-                        <div class="tab-header">
-                            <h3 id="courseFormTitle"><i class="fas fa-plus-circle"></i> เพิ่มหลักสูตรใหม่</h3>
-                            <button id="btnCancelEdit" class="btn btn-outline hidden" onclick="resetCourseForm()">ยกเลิกการแก้ไข</button>
+                    <div id="courseMgtTab" class="admin-tab hidden">             
+                        <div class="tab-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
+                            <h3 style="margin: 0;"><i class="fas fa-book"></i> จัดการหลักสูตรในระบบ</h3>
+                            <button class="btn btn-primary" onclick="toggleAdminForm('internalCourseFormContainer')">
+                                <i class="fas fa-plus"></i> เพิ่มหลักสูตรในระบบ
+                            </button>
                         </div>
-                        <form id="addCourseForm" class="admin-form">
-                            <input type="hidden" id="editCourseId" value="">
-                            <div class="form-grid">
-                                <div class="input-group"><label>ชื่อหลักสูตร</label><input type="text" id="cTitle" required></div>
-                                <div class="input-group"><label>หน่วยงานที่จัด/วิทยากร</label><input type="text" id="cOrganizer" required></div>
-                                <div class="input-group">
-                                    <label>รูปแบบหลักสูตร</label>
-                                    <select id="cDeliveryType" onchange="toggleCourseDeliveryFields()" required>
-                                        <option value="video">เรียนออนไลน์ (มีวิดีโอ)</option>
-                                        <option value="classroom">อบรมในห้อง / เข้าสอบหลังเรียน</option>
-                                    </select>
-                                </div>
-                                <div class="input-group">
-                                    <label>กลุ่มเป้าหมาย</label>
-                                    <select id="cAudience" required>
-                                        <option value="all">ทุกตำแหน่ง</option>
-                                        <option value="nurse">พยาบาลวิชาชีพ</option>
-                                        <option value="support">สายสนับสนุน</option>
-                                    </select>
-                                </div>
-                                <div class="input-group time-input-group">
-                                    <label>ชั่วโมงที่ได้ (ชม : น)</label><br>
-                                    <input type="number" id="cHours" placeholder="ชม" min="0" required> :
-                                    <input type="number" id="cMins" placeholder="นาที" min="0" max="59" required>
-                                </div>
-                                <div class="input-group"><label>เกณฑ์ผ่าน (%)</label><input type="number" id="cPassingScore" value="80" required></div>
-                                <div class="input-group"><label>คะแนน MOU (กรณีเป็นหลักสูตร MOU)</label><input type="number" id="cMOU" placeholder="0" min="0" step="0.5" value="0"></div>
-                                <div class="input-group" style="grid-column: 1 / -1;">
-                                    <label style="display: flex; align-items: center; gap: 10px;">
-                                        <input type="checkbox" id="cIsMandatory" style="width: auto; margin-bottom: 0;">
-                                        กำหนดเป็นหลักสูตรบังคับสำหรับกลุ่มเป้าหมายนี้
-                                    </label>
-                                </div>
-                                <div class="input-group" style="grid-column: 1 / -1;">
-                                    <label>รูปหน้าปก</label>
-                                    <input type="file" id="cCoverUpload" accept="image/*" onchange="previewCoverImage(this)">
-                                    <input type="hidden" id="cCover">
-                                    <small id="cCoverStatus"></small>
-                                    <img id="cCoverPreview" src="" alt="ตัวอย่างรูปหน้าปก" style="display:none; max-width:200px; max-height:120px; border-radius:8px; margin-top:10px; border:1px solid #e2e8f0;">
-                                </div>
-                                <div class="input-group" style="grid-column: 1 / -1;"><label>Slides Template ID</label><input type="text" id="cCertTemplate" required></div>
+                    
+                        <div id="internalCourseFormContainer" class="hidden" style="background: var(--card-bg, #fff); padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #e2e8f0;">
+                            <div class="tab-header" style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                                <h4 id="courseFormTitle" style="margin: 0;"><i class="fas fa-plus-circle"></i> แบบฟอร์มหลักสูตรในระบบ</h4>
+                                <button id="btnCancelEdit" class="btn btn-outline hidden" onclick="resetCourseForm()">ยกเลิกการแก้ไข</button>
                             </div>
-                            <div class="units-section" id="courseUnitsSection">
-                                <div class="units-header">
-                                    <h4>หน่วยการเรียนรู้ (วิดีโอ)</h4>
-                                    <button type="button" class="btn btn-outline btn-sm" onclick="addUnitField()">+ เพิ่มหน่วย</button>
+                            
+                            <form id="addCourseForm" class="admin-form">
+                                <input type="hidden" id="editCourseId" value="">
+                                <div class="form-grid">
+                                    <div class="input-group"><label>ชื่อหลักสูตร</label><input type="text" id="cTitle" required></div>
+                                    <div class="input-group"><label>หน่วยงานที่จัด/วิทยากร</label><input type="text" id="cOrganizer" required></div>
+                                    <div class="input-group">
+                                        <label>รูปแบบหลักสูตร</label>
+                                        <select id="cDeliveryType" onchange="toggleCourseDeliveryFields()" required>
+                                            <option value="video">เรียนออนไลน์ (มีวิดีโอ)</option>
+                                            <option value="classroom">อบรมในห้อง / เข้าสอบหลังเรียน</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>กลุ่มเป้าหมาย</label>
+                                        <select id="cAudience" required>
+                                            <option value="all">ทุกตำแหน่ง</option>
+                                            <option value="nurse">พยาบาลวิชาชีพ</option>
+                                            <option value="support">สายสนับสนุน</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group time-input-group">
+                                        <label>ชั่วโมงที่ได้ (ชม : น)</label><br>
+                                        <input type="number" id="cHours" placeholder="ชม" min="0" required> :
+                                        <input type="number" id="cMins" placeholder="นาที" min="0" max="59" required>
+                                    </div>
+                                    <div class="input-group"><label>เกณฑ์ผ่าน (%)</label><input type="number" id="cPassingScore" value="80" required></div>
+                                    <div class="input-group"><label>คะแนน MOU (กรณีเป็นหลักสูตร MOU)</label><input type="number" id="cMOU" placeholder="0" min="0" step="0.5" value="0"></div>
+                                    <div class="input-group" style="grid-column: 1 / -1;">
+                                        <label style="display: flex; align-items: center; gap: 10px;">
+                                            <input type="checkbox" id="cIsMandatory" style="width: auto; margin-bottom: 0;">
+                                            กำหนดเป็นหลักสูตรบังคับสำหรับกลุ่มเป้าหมายนี้
+                                        </label>
+                                    </div>
+                                    <div class="input-group" style="grid-column: 1 / -1;">
+                                        <label>รูปหน้าปก</label>
+                                        <input type="file" id="cCoverUpload" accept="image/*" onchange="previewCoverImage(this)">
+                                        <input type="hidden" id="cCover">
+                                        <small id="cCoverStatus"></small>
+                                        <img id="cCoverPreview" src="" alt="ตัวอย่างรูปหน้าปก" style="display:none; max-width:200px; max-height:120px; border-radius:8px; margin-top:10px; border:1px solid #e2e8f0;">
+                                    </div>
+                                    <div class="input-group" style="grid-column: 1 / -1;"><label>Slides Template ID</label><input type="text" id="cCertTemplate" required></div>
                                 </div>
-                                <div id="unitsContainer"></div>
-                            </div>
-                            <div id="courseClassroomHint" class="hidden" style="margin-top: 15px; padding: 14px 16px; border-radius: 12px; background: #eff6ff; color: var(--secondary-color); border: 1px solid #bfdbfe;">
-                                หลักสูตรรูปแบบนี้จะไม่แสดงวิดีโอในระบบ ผู้เข้าอบรมจะเข้าใช้งานเพื่อทำแบบทดสอบหลังเรียน และหากผ่านเกณฑ์ระบบจะออกใบประกาศพร้อมบันทึกลงประวัติให้
-                            </div>
-                            <button type="submit" id="btnSubmitCourse" class="btn btn-primary w-100" style="margin-top: 20px;"><i class="fas fa-save"></i> บันทึกหลักสูตร</button>
-                        </form>
-                        <div class="table-responsive" style="margin-top: 30px;">
+                                
+                                <div class="units-section" id="courseUnitsSection">
+                                    <div class="units-header">
+                                        <h4>หน่วยการเรียนรู้ (วิดีโอ)</h4>
+                                        <button type="button" class="btn btn-outline btn-sm" onclick="addUnitField()">+ เพิ่มหน่วย</button>
+                                    </div>
+                                    <div id="unitsContainer"></div>
+                                </div>
+                                
+                                <div id="courseClassroomHint" class="hidden" style="margin-top: 15px; padding: 14px 16px; border-radius: 12px; background: #eff6ff; color: var(--secondary-color); border: 1px solid #bfdbfe;">
+                                    หลักสูตรรูปแบบนี้จะไม่แสดงวิดีโอในระบบ ผู้เข้าอบรมจะเข้าใช้งานเพื่อทำแบบทดสอบหลังเรียน และหากผ่านเกณฑ์ระบบจะออกใบประกาศพร้อมบันทึกลงประวัติให้
+                                </div>
+                                
+                                <button type="submit" id="btnSubmitCourse" class="btn btn-primary w-100" style="margin-top: 20px;"><i class="fas fa-save"></i> บันทึกหลักสูตร</button>
+                            </form>
+                        </div>
+                    
+                        <div class="table-responsive" style="margin-top: 20px;">
                             <table class="admin-table">
-                                <thead><tr><th>ชื่อหลักสูตร</th><th>รูปแบบ / กลุ่มเป้าหมาย</th><th>ชั่วโมงที่ได้</th><th>คะแนน MOU</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+                                <thead>
+                                    <tr>
+                                        <th class="col-title">ชื่อหลักสูตร</th>
+                                        <th class="col-type">รูปแบบ / กลุ่มเป้าหมาย</th>
+                                        <th class="col-hours">ชั่วโมงที่ได้</th>
+                                        <th class="col-mou">คะแนน MOU</th>
+                                        <th class="col-status">สถานะ</th>
+                                        <th class="col-actions">จัดการ</th>
+                                    </tr>
+                                </thead>
                                 <tbody id="adminCourseListBody"></tbody>
                             </table>
                         </div>
-                        <div class="tab-header" style="margin-top: 40px;">
-                            <h3 id="externalRecFormTitle"><i class="fas fa-link"></i> เพิ่มหลักสูตรภายนอกแนะนำ</h3>
-                            <button id="btnCancelExternalRecEdit" class="btn btn-outline hidden" onclick="resetExternalRecommendationForm()">ยกเลิกการแก้ไข</button>
+                    
+                        <div class="tab-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-top: 50px; margin-bottom: 15px;">
+                            <h3 style="margin: 0;"><i class="fas fa-link"></i> จัดการหลักสูตรภายนอกแนะนำ</h3>
+                            <button class="btn btn-primary" onclick="toggleAdminForm('externalCourseFormContainer')">
+                                <i class="fas fa-plus"></i> เพิ่มหลักสูตรภายนอก
+                            </button>
                         </div>
-                        <form id="externalRecommendationForm" class="admin-form">
-                            <input type="hidden" id="editExtRecId" value="">
-                            <div class="form-grid">
-                                <div class="input-group"><label>ชื่อหลักสูตร</label><input type="text" id="extRecTitle" required></div>
-                                <div class="input-group"><label>ชื่อหน่วยงานที่จัด</label><input type="text" id="extRecOrganizer" required></div>
-                                <div class="input-group time-input-group">
-                                    <label>ชั่วโมงที่ได้ (ชั่วโมง : นาที)</label><br>
-                                    <input type="number" id="extRecHours" placeholder="ชม." min="0" required> :
-                                    <input type="number" id="extRecMins" placeholder="นาที" min="0" max="59" required>
-                                </div>
-                                <div class="input-group">
-                                    <div class="input-group">
-                                    <label for="extMouScore">คะแนน MOU <span class="text-danger">*</span></label>
-                                    <input type="number" id="extMouScore" name="extMouScore" placeholder="ระบบจะคำนวณให้อัตโนมัติ หรือกรอกเอง" min="0" step="1" required>
-                                </div>
-                                </div>
-                                <div class="input-group" style="grid-column: 1 / -1;">
-                                    <label>ภาพหน้าปก</label>
-                                    <input type="file" id="extRecCoverUpload" accept="image/*">
-                                    <input type="hidden" id="extRecCover" required>
-                                    <small id="extRecCoverStatus"></small>
-                                </div>
-                                <div class="input-group" style="grid-column: 1 / -1;"><label>URL ลงทะเบียน</label><input type="url" id="extRecUrl" placeholder="https://example.com/register" required></div>
+                    
+                        <div id="externalCourseFormContainer" class="hidden" style="background: var(--card-bg, #fff); padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #e2e8f0;">
+                            <div class="tab-header" style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                                <h4 id="externalRecFormTitle" style="margin: 0;"><i class="fas fa-plus-circle"></i> แบบฟอร์มหลักสูตรภายนอกแนะนำ</h4>
+                                <button id="btnCancelExternalRecEdit" class="btn btn-outline hidden" onclick="resetExternalRecommendationForm()">ยกเลิกการแก้ไข</button>
                             </div>
-                            <button type="submit" id="btnSubmitExternalRec" class="btn btn-primary w-100" style="margin-top: 20px;"><i class="fas fa-save"></i> บันทึกหลักสูตรภายนอก</button>
-                        </form>
-                        <div class="table-responsive" style="margin-top: 30px;">
+                            
+                            <form id="externalRecommendationForm" class="admin-form">
+                                <input type="hidden" id="editExtRecId" value="">
+                                <div class="form-grid">
+                                    <div class="input-group"><label>ชื่อหลักสูตร</label><input type="text" id="extRecTitle" required></div>
+                                    <div class="input-group"><label>ชื่อหน่วยงานที่จัด</label><input type="text" id="extRecOrganizer" required></div>
+                                    <div class="input-group time-input-group">
+                                        <label>ชั่วโมงที่ได้ (ชั่วโมง : นาที)</label><br>
+                                        <input type="number" id="extRecHours" placeholder="ชม." min="0" required> :
+                                        <input type="number" id="extRecMins" placeholder="นาที" min="0" max="59" required>
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="extMouScore">คะแนน MOU <span class="text-danger">*</span></label>
+                                        <input type="number" id="extMouScore" name="extMouScore" placeholder="ระบบจะคำนวณให้อัตโนมัติ หรือกรอกเอง" min="0" step="1" required>
+                                    </div>
+                                    <div class="input-group" style="grid-column: 1 / -1;">
+                                        <label>ภาพหน้าปก</label>
+                                        <input type="file" id="extRecCoverUpload" accept="image/*">
+                                        <input type="hidden" id="extRecCover" required>
+                                        <small id="extRecCoverStatus"></small>
+                                    </div>
+                                    <div class="input-group" style="grid-column: 1 / -1;"><label>URL ลงทะเบียน</label><input type="url" id="extRecUrl" placeholder="https://example.com/register" required></div>
+                                </div>
+                                <button type="submit" id="btnSubmitExternalRec" class="btn btn-primary w-100" style="margin-top: 20px;"><i class="fas fa-save"></i> บันทึกหลักสูตรภายนอก</button>
+                            </form>
+                        </div>
+                    
+                        <div class="table-responsive" style="margin-top: 20px;">
                             <table class="admin-table">
-                                <thead><tr><th>ชื่อหลักสูตร</th><th>หน่วยงานที่จัด</th><th>ชั่วโมง</th><th>คะแนน MOU</th><th>URL</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+                                <thead>
+                                    <tr>
+                                        <th class="col-title">ชื่อหลักสูตร</th>
+                                        <th class="col-org">หน่วยงานที่จัด</th>
+                                        <th class="col-hours">ชั่วโมง</th>
+                                        <th class="col-mou">คะแนน MOU</th>
+                                        <th class="col-url">URL (ลิงก์)</th>
+                                        <th class="col-status">สถานะ</th>
+                                        <th class="col-actions">จัดการ</th>
+                                    </tr>
+                                </thead>
                                 <tbody id="adminExternalCourseListBody"></tbody>
                             </table>
                         </div>
+                        
                     </div>
 
                     <div id="examMgtTab" class="admin-tab hidden">
