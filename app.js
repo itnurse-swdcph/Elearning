@@ -415,13 +415,23 @@ window.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // 6. [เพิ่มใหม่] คำนวณคะแนน MOU อัตโนมัติ (External Recommendation)
+    // 6. [แก้ไข] คำนวณคะแนน MOU อัตโนมัติ (External Recommendation - รองรับชั่วโมงและนาที)
     const extHoursInput = document.getElementById('extHours');
+    const extMinsInput = document.getElementById('extMins');
     const extMouScoreInput = document.getElementById('extMouScore');
-    if (extHoursInput && extMouScoreInput) {
-        extHoursInput.addEventListener('input', () => {
-            extMouScoreInput.value = calculateMOUScore(extHoursInput.value);
-        });
+
+    if (extHoursInput && extMinsInput && extMouScoreInput) {
+        const updateExternalMOUScore = () => {
+            const hours = parseFloat(extHoursInput.value) || 0;
+            const mins = parseFloat(extMinsInput.value) || 0;
+            const totalMinutes = (hours * 60) + mins;
+            extMouScoreInput.value = calculateMOUScore(totalMinutes);
+        };
+        
+        extHoursInput.addEventListener('input', updateExternalMOUScore);
+        extHoursInput.addEventListener('change', updateExternalMOUScore);
+        extMinsInput.addEventListener('input', updateExternalMOUScore);
+        extMinsInput.addEventListener('change', updateExternalMOUScore);
     }
 });
 
@@ -4592,58 +4602,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 500);
 });
 /**
- * ฟังก์ชันคำนวณคะแนน MOU อัตโนมัติตามเกณฑ์เวลา
- * @param {number} totalHours - จำนวนหน่วยกิต/ชั่วโมงที่ได้ (รองรับทศนิยม เช่น 1.5 = 1 ชั่วโมง 30 นาที)
+ * ฟังก์ชันคำนวณคะแนน MOU ตามเกณฑ์ใหม่
+ * @param {number} totalMinutes - จำนวนนาทีรวมทั้งหมด
  * @returns {number} - คะแนน MOU ที่คำนวณได้
+ * 
+ * เกณฑ์การคำนวณ:
+ * - < 60 นาที (< 1 ชั่วโมง): 1 คะแนน
+ * - 60-119 นาที (1-1:59 ชั่วโมง): 2 คะแนน
+ * - 120-179 นาที (2-2:59 ชั่วโมง): 4 คะแนน
+ * - 180+ นาที (3+ ชั่วโมง): เพิ่ม 2 คะแนนต่อชั่วโมง
  */
-// ฟังก์ชันคำนวณคะแนน MOU (วางไว้นอก event listener เพื่อเรียกใช้ซ้ำได้)
-function calculateMOUScore(totalHours) {
-    const totalMinutes = parseFloat(totalHours || 0) * 60;
-    if (totalMinutes <= 0) return 0;
-    if (totalMinutes < 60) return 1;
-    // สัดส่วน: 1 ชม. = 2, 2 ชม. = 4, 3 ชม. = 6...
-    return Math.floor(totalMinutes / 60) * 2;
-}
-
-// ---------------------------------------------------------
-// การผูก Event Listener เพื่อดักจับการพิมพ์แบบ Real-time
-// ---------------------------------------------------------
-document.addEventListener('DOMContentLoaded', () => {
-
-    // 1. สำหรับฟอร์ม "หลักสูตรภายใน/หลักสูตรใหม่"
-    // ** คำแนะนำ: เปลี่ยน 'cHours' และ 'cMouScore' ให้ตรงกับ ID จริงในไฟล์ HTML ของคุณ **
-    const internalHoursInput = document.getElementById('cHours'); 
-    const internalMouInput = document.getElementById('cMouScore'); 
-
-    if (internalHoursInput && internalMouInput) {
-        internalHoursInput.addEventListener('input', function() {
-            // คำนวณและอัปเดตช่องคะแนน MOU ทันทีที่มีการคีย์ข้อมูล
-            internalMouInput.value = calculateMOUScore(this.value);
-        });
-    }
-
-    // 2. สำหรับฟอร์ม "หลักสูตรภายนอกแนะนำ"
-    // ** คำแนะนำ: เปลี่ยน 'extHours' ให้ตรงกับ ID ฟิลด์ชั่วโมงในฟอร์มภายนอกของคุณ **
-    const externalHoursInput = document.getElementById('extHours');
-    const externalMouInput = document.getElementById('extMouScore'); // ตรงกับ ID ใน HTML ด้านบน
-
-    if (externalHoursInput && externalMouInput) {
-        externalHoursInput.addEventListener('input', function() {
-            // คำนวณและอัปเดตช่องคะแนน MOU ทันทีที่มีการคีย์ข้อมูล
-            externalMouInput.value = calculateMOUScore(this.value);
-        });
-    }
-
-});
-// ==========================================
-// ฟังก์ชันคำนวณคะแนน MOU อัตโนมัติ
-// ==========================================
-function calculateMOUScore(totalHours) {
-    const totalMinutes = parseFloat(totalHours || 0) * 60;
+function calculateMOUScore(totalMinutes) {
+    const minutes = parseFloat(totalMinutes) || 0;
     
-    if (totalMinutes <= 0) return 0;
-    if (totalMinutes < 60) return 1;
+    if (minutes <= 0) {
+        return 0;
+    }
     
-    const fullHours = Math.floor(totalMinutes / 60);
+    // เกณฑ์เฉพาะ: น้อยกว่า 60 นาที (< 1 ชั่วโมง)
+    if (minutes < 60) {
+        return 1;
+    }
+    
+    // เกณฑ์เฉพาะ: 60-119 นาที (1-1:59 ชั่วโมง)
+    if (minutes < 120) {
+        return 2;
+    }
+    
+    // เกณฑ์เฉพาะ: 120-179 นาที (2-2:59 ชั่วโมง)
+    if (minutes < 180) {
+        return 4;
+    }
+    
+    // เกณฑ์ 3+ ชั่วโมง: คำนวณเป็น 2 คะแนนต่อชั่วโมง
+    // (3 ชม. = 180 นาที -> 6 คะแนน, 4 ชม. = 240 นาที -> 8 คะแนน, เป็นต้น)
+    const fullHours = Math.floor(minutes / 60);
     return fullHours * 2;
 }
