@@ -1039,16 +1039,35 @@ async function loadTrainingHistory() {
     const tbody = document.getElementById('historyTableBody');
     if(!tbody) return;
     
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-light);">กำลังดึงข้อมูลประวัติการอบรม...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-light);">กำลังดึงข้อมูลประวัติการอบรม...</td></tr>';
     const res = await callAPI('getUserHistory', { user_id: user.id });
     
     if (res.status === 'success') {
         tbody.innerHTML = ''; 
         if (res.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-light);">ยังไม่มีประวัติการอบรมในระบบครับ</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-light);">ยังไม่มีประวัติการอบรมในระบบครับ</td></tr>';
             return;
         }
         
+        // ========== MOU Backfill: สร้าง Map สำหรับดึงคะแนนย้อนหลัง ==========
+        // ดึง mou_score จาก globalCourses (Internal) และ externalRecommendationCourses (External)
+        const internalMouMap = {};   // course_id → mou_score
+        if (Array.isArray(window.globalCourses)) {
+            window.globalCourses.forEach(c => {
+                if (c.id) internalMouMap[c.id] = parseFloat(c.mou_score) || 0;
+            });
+        }
+        const externalMouById    = {};   // rec_id → mou_score
+        const externalMouByTitle = {};   // normalized title → mou_score
+        if (Array.isArray(window.externalRecommendationCourses)) {
+            window.externalRecommendationCourses.forEach(r => {
+                const mou = parseFloat(r.mou_score) || 0;
+                if (r.rec_id) externalMouById[r.rec_id] = mou;
+                const titleKey = String(r.title || '').trim().toLowerCase().replace(/\s+/g,' ');
+                if (titleKey) externalMouByTitle[titleKey] = mou;
+            });
+        }
+
         res.data.forEach(item => {
             const certBtn = item.cert_url && item.cert_url.trim() !== '' 
                 ? `<a href="${item.cert_url}" target="_blank" class="btn btn-outline" style="padding: 5px 10px; font-size: 0.85rem; white-space: nowrap;"><i class="fas fa-file-pdf text-danger"></i> หลักฐาน</a>`
@@ -1081,17 +1100,53 @@ async function loadTrainingHistory() {
                     statusBadge = '<span class="badge" style="background:#10b981; color:white; font-size: 0.7rem; white-space: nowrap;">อนุมัติ</span>';
                 }
             }
+
+            // ========== MOU Backfill: คำนวณ earned_mou_points รายแถว ==========
+            // ลำดับ 1: ใช้ค่าที่ Server ส่งมาแล้ว (หลัง Backfill Script ทำงาน)
+            // ลำดับ 2: Fallback ดึงจาก Cache ฝั่ง Client อัตโนมัติ
+            let earnedMou = parseFloat(item.mou_points) || 0;
+
+            if (earnedMou === 0) {
+                if (item.source === 'internal' && item.course_id) {
+                    // Internal: ดึงจาก globalCourses Map ตาม course_id
+                    earnedMou = internalMouMap[item.course_id] || 0;
+                } else if (item.source === 'external') {
+                    // External กลยุทธ์ A: ใช้ Recommendation ID ก่อน
+                    if (item.recommendation_id && externalMouById[item.recommendation_id] !== undefined) {
+                        earnedMou = externalMouById[item.recommendation_id];
+                    } else {
+                        // External กลยุทธ์ B: Text Match ชื่อหลักสูตร
+                        const titleKey = String(item.title || '').trim().toLowerCase().replace(/\s+/g,' ');
+                        if (titleKey && externalMouByTitle[titleKey] !== undefined) {
+                            earnedMou = externalMouByTitle[titleKey];
+                        }
+                    }
+                }
+            }
+
+            // แสดงผล MOU: เฉพาะรายการที่ได้รับคะแนนจริง (ผ่าน/อนุมัติ) เท่านั้น
+            const isEarned = item.source === 'internal' ||
+                             (item.source === 'external' && item.status === 'approved');
+            let mouCell = '';
+            if (!isEarned) {
+                mouCell = '<span style="color:#94a3b8; font-size:0.8rem;">-</span>';
+            } else if (earnedMou > 0) {
+                mouCell = `<span class="badge-mou-score"><i class="fas fa-star" style="color:#f59e0b; font-size:0.7rem;"></i> ${earnedMou}</span>`;
+            } else {
+                mouCell = '<span style="color:#94a3b8; font-size:0.8rem;">0</span>';
+            }
                 
             tbody.innerHTML += `
                 <tr>
-                    <td style="text-align: center; white-space: nowrap;">${item.date || '-'}</td>
-                    <td><strong>${item.title}</strong></td>
-                    <td>${item.organizer || '-'}</td>
-                    <td style="text-align: center; white-space: nowrap;"><span class="badge-hours" style="background: #f1f5f9; color: var(--text-light); box-shadow: none; white-space: nowrap;">${item.type}</span></td>
-                    <td style="text-align: center;"><strong>${item.hours}</strong></td>
-                    <td style="text-align: center;">${statusBadge}</td>
-                    <td style="text-align: center; white-space: nowrap;">${certBtn}</td>
-                    <td style="text-align: center;" class="no-print">${actionBtns}</td>
+                    <td class="pcell-date">${item.date || '-'}</td>
+                    <td class="pcell-title"><strong>${item.title}</strong></td>
+                    <td class="pcell-org">${item.organizer || '-'}</td>
+                    <td class="pcell-center"><span class="badge-hours" style="background:#f1f5f9; color:var(--text-light); box-shadow:none; white-space:nowrap;">${item.type}</span></td>
+                    <td class="pcell-center"><strong>${item.hours}</strong></td>
+                    <td class="pcell-center">${mouCell}</td>
+                    <td class="pcell-center">${statusBadge}</td>
+                    <td class="pcell-center" style="white-space:nowrap;">${certBtn}</td>
+                    <td class="pcell-center no-print">${actionBtns}</td>
                 </tr>
             `;
         });
@@ -1100,7 +1155,7 @@ async function loadTrainingHistory() {
         document.querySelectorAll('.stat-number')[1].innerText = certCount;
         
     } else {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #EF4444;">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #EF4444;">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่</td></tr>';
     }
 }
 // ================= Course Display & Search Logic =================
